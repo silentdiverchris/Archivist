@@ -1,0 +1,222 @@
+{
+  "JobSpecifications": [
+    {
+      "Name": "QuickBackup",
+      "WriteToConsole": true,
+      "PauseBeforeExit": true,
+      "ProcessTestOnly": false,
+      "ProcessSlowVolumes": false,
+      "ArchiveFairlyStatic": false,
+      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveFolderName",
+      "EncryptionPassword": "passwordinplaintext-scary",
+      "SourceDirectories": [],
+      "ArchiveDirectories": [],
+      "SecureDirectories": []
+    },
+    {
+      "Name": "TestBackup",
+      "WriteToConsole": true,
+      "PauseBeforeExit": true,
+      "ProcessTestOnly": true,
+      "ProcessSlowVolumes": false,
+      "ArchiveFairlyStatic": false,
+      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveFolderName",
+      "EncryptionPassword": "passwordinplaintext-scary",
+      "SourceDirectories": [],
+      "ArchiveDirectories": [],
+      "SecureDirectories": []
+    }
+  ],
+  "GlobalSourceDirectories": [
+    {
+      "MinutesOldThreshold": 0,
+      "CheckTaskNameIsNotRunning": null,
+      "IsFairlyStatic": false,
+      "CompressionLevel": 0,
+      "ReplaceExisting": true,
+      "EncryptOutput": false,
+      "DeleteArchiveAfterEncryption": true,
+      "AddVersionSuffix": true,
+      "OutputFileName": null,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "IsSlowVolume": false,
+      "RetainVersions": 2,
+      "DirectoryPath": "C:\\ProbablyDoesntExist",
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "SynchoniseFileTimestamps": true
+    },
+    {
+      "MinutesOldThreshold": 0,
+      "CheckTaskNameIsNotRunning": null,
+      "IsFairlyStatic": false,
+      "CompressionLevel": 0,
+      "ReplaceExisting": true,
+      "EncryptOutput": true,
+      "DeleteArchiveAfterEncryption": true,
+      "AddVersionSuffix": true,
+      "OutputFileName": null,
+      "Priority": 3,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "IsSlowVolume": false,
+      "RetainVersions": 2,
+      "DirectoryPath": "C:\\ProbablyDoesntExistEither",
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "SynchoniseFileTimestamps": true
+    },
+    {
+      "MinutesOldThreshold": 60,
+      "CheckTaskNameIsNotRunning": null,
+      "IsFairlyStatic": false,
+      "CompressionLevel": 1,
+      "ReplaceExisting": true,
+      "EncryptOutput": false,
+      "DeleteArchiveAfterEncryption": false,
+      "AddVersionSuffix": true,
+      "OutputFileName": null,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": true,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "IsSlowVolume": false,
+      "RetainVersions": 2,
+      "DirectoryPath": "D:\\Temp",
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "SynchoniseFileTimestamps": true
+    },
+    {
+      "MinutesOldThreshold": 0,
+      "CheckTaskNameIsNotRunning": null,
+      "IsFairlyStatic": true,
+      "CompressionLevel": 2,
+      "ReplaceExisting": true,
+      "EncryptOutput": false,
+      "DeleteArchiveAfterEncryption": false,
+      "AddVersionSuffix": false,
+      "OutputFileName": null,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "IsSlowVolume": false,
+      "RetainVersions": 0,
+      "DirectoryPath": "M:\\Media\\Movies",
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "SynchoniseFileTimestamps": true
+    }
+  ],
+  "GlobalArchiveDirectories": [
+    {
+      "Priority": 3,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "Description": "A very slow but big and cheap MicroSD card",
+      "IsEnabled": true,
+      "IsRemovable": true,
+      "IsSlowVolume": true,
+      "RetainVersions": 2,
+      "DirectoryPath": "S:\\ArchivedFilesBlah",
+      "IncludeSpecifications": [
+        "*.zip"
+      ],
+      "ExcludeSpecifications": [
+        "Media-*.*",
+        "Temp*.*",
+        "Incoming*.*"
+      ],
+      "SynchoniseFileTimestamps": true
+    },
+    {
+      "Priority": 1,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": true,
+      "Description": "External SSD set, 2 x 476GB, connected alternately on demand",
+      "IsEnabled": true,
+      "IsRemovable": true,
+      "IsSlowVolume": true,
+      "RetainVersions": 2,
+      "DirectoryPath": "Y:\\ArchivedFilesAgain",
+      "IncludeSpecifications": [
+        "*.zip"
+      ],
+      "ExcludeSpecifications": [
+        "Temp*.*",
+        "Incoming*.*"
+      ],
+      "SynchoniseFileTimestamps": true
+    },
+    {
+      "Priority": 2,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": true,
+      "Description": "External massive HDD, connected almost all the time",
+      "IsEnabled": true,
+      "IsRemovable": true,
+      "IsSlowVolume": true,
+      "RetainVersions": 4,
+      "DirectoryPath": "Z:\\Archive",
+      "IncludeSpecifications": [
+        "*.zip"
+      ],
+      "ExcludeSpecifications": [],
+      "SynchoniseFileTimestamps": true
+    }
+  ],
+  "GlobalSecureDirectories": [
+    {
+      "DeleteSourceAfterEncrypt": false,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "IsSlowVolume": false,
+      "RetainVersions": 0,
+      "DirectoryPath": "C:\\Something\\Secure",
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "SynchoniseFileTimestamps": true
+    },
+    {
+      "DeleteSourceAfterEncrypt": false,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "IsSlowVolume": false,
+      "RetainVersions": 0,
+      "DirectoryPath": "C:\\SomethingElse\\AlsoSecure",
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "SynchoniseFileTimestamps": true
+    }
+  ]
+}
