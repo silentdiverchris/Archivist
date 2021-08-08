@@ -268,6 +268,7 @@ Here you define the set of directories you want zipping up into files in the pri
 |DeleteArchiveAfterEncryption|Delete the unencrypted zip archive after successful encryption.|
 |OutputFileName|The name of the zipped output file (no path), if not specified it uses the path to generate the name so directory 'C:\AbC\DeF\GhI' will be archived to 'AbC-DeF-GhI.zip'. For ease of use and clarity it's best to default this unless you really want to set the name to something else.|
 |AddVersionSuffix|Adds a suffix to the file name of the form '-nnnn' before the extension, each new file adds 1 to the number. So archiving 'C:\Blah' with the default OutputFileName setting results in files 'Blah-0001.zip', 'Blah-0002.zip' etc. This works alongside RetainVersions to limit the number of these which it keeps.|
+|MinutesOldThreshold|Set this to more than zero to have the system ignore new and altered files until they are this old. This allows you to stop the system making many archives of files that change frequently if you run archiver often. For example, you might set a directory to 60 so it only archives files in there that were created or changed over an hour ago.|
 
 ## Archive directories
 
