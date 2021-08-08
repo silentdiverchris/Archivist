@@ -1,13 +1,13 @@
 # Archivist
-A simple archiving utility to do backups the way I like to, which is essentially zipping the contents of numerous directories into individual zip files in a local archive directory, keeping one or more generations of them there, then copying some or all of them from there to numerous other places depending on various criteria and whether those volumes are mounted, keeping one or more generations there.
+A simple archiving utility that can be made as complicated as you want it to be.
+
+Essentially I got frustrated with built-in and otherwise existing backup systems for Windows and wanted something to do regular backups and archive my media the way I want, which is essentially zipping the contents of numerous directories into individual zip files in a local archive directory, keeping one or more generations of them there, then copying some or all of them from there to numerous other places depending on various criteria and whether those volumes are mounted, keeping one or more generations on each of those.
 
 There is no UI other than the console output, it's driven from a json configuration file and reports to the console and optionally to a text log file and/or a SQL table.
 
 This was written to do exactly what I want from a backup/archiving system, it's not intended to be a panacea for everyone but it pretty much covers what one might want from such a thing in as much as it compresses, encrypts, copies files around and retains however many versions of the files you want.
 
-It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of it used RoboCopy which did the copying more quickly. I might update it to use RoboCopy again but it's not really a priority for me, it wasn't all that much faster and I don't sit waiting for it to finish anyway.
-
-The text below is fairly detailed but isn't as full as it could be, please feel free to get in touch or raise an issue to ask for more details or point out mistakes, I'll update the below with any corrections, clarifications or expansions.
+The text below is fairly detailed but isn't as full as it could be, please feel free to get in touch or raise an issue to ask for more details, point out mistakes or report bugs, I'll update the below with any corrections, clarifications or expansions.
 
 # Licence
 Feel free to do whatever you like with the code.
@@ -93,9 +93,15 @@ If AddVersionSuffix for a directory is false, files will not be versioned and th
 
 This versioning can start to eat up disk space of course, the system will report the space free on drives it uses to the console/log, and generate a warning if it is below 50Gb, currently.
 
+# Performance
+
+It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of the code used RoboCopy which did the copying more quickly especially with muti-threaded copies. 
+
+I might update it to use RoboCopy again but it's not really a priority, it wasn't all that much faster, I don't sit waiting for it to finish anyway and having complete control over what gets copied is nicer than tweaking parameters to RoboCopy.
+
 # Full disk
 
-If the destination disk fills up during an archive or a copy it will fail that operation and report an error but continue, so an archive of your music library might fail but the archives of smaller sets of files defined later in the job will still be attempted.
+If the destination disk fills up while creatign a zip or copying a file it will fail that operation and report an error but continue, so an archive of your music library might fail but the archives of smaller sets of files defined later in the job will still be attempted.
 
 # Jobs
 
