@@ -292,38 +292,45 @@ namespace Archivist.Models
         [JsonIgnore]
         internal JobSpecification SelectedJobSpecification { get; private set; }
 
-        internal Result SelectJobSpecification(string jobSpecName)
+        internal Result SelectJob(string jobName)
         {
-            Result result = new("SelectJobSpecification");
+            Result result = new("SelectJob");
 
-            SelectedJobSpecification = JobSpecifications.SingleOrDefault(_ => _.Name == jobSpecName);
-
-            if (SelectedJobSpecification is not null)
+            if (jobName.Contains(" "))
             {
-                SelectedJobSpecification.SourceDirectories.AddRange(GlobalSourceDirectories);
-                SelectedJobSpecification.ArchiveDirectories.AddRange(GlobalArchiveDirectories);
-                SelectedJobSpecification.SecureDirectories.AddRange(GlobalSecureDirectories);
+                result.AddError("Job name cannot contain spaces");
+            }
+            else
+            {
+                SelectedJobSpecification = JobSpecifications.SingleOrDefault(_ => _.Name == jobName);
 
-                if (!string.IsNullOrEmpty(SelectedJobSpecification.EncryptionPasswordFile))
+                if (SelectedJobSpecification is not null)
                 {
-                    if (!string.IsNullOrEmpty(SelectedJobSpecification.EncryptionPassword))
-                    {
-                        result.AddWarning($"EncryptionPasswordFile will override EncryptionPassword value for job {SelectedJobSpecification.Name}");
-                    }
+                    SelectedJobSpecification.SourceDirectories.AddRange(GlobalSourceDirectories);
+                    SelectedJobSpecification.ArchiveDirectories.AddRange(GlobalArchiveDirectories);
+                    SelectedJobSpecification.SecureDirectories.AddRange(GlobalSecureDirectories);
 
-                    if (File.Exists(SelectedJobSpecification.EncryptionPasswordFile))
+                    if (!string.IsNullOrEmpty(SelectedJobSpecification.EncryptionPasswordFile))
                     {
-                        SelectedJobSpecification.EncryptionPassword = File.ReadAllText(SelectedJobSpecification.EncryptionPasswordFile);
+                        if (!string.IsNullOrEmpty(SelectedJobSpecification.EncryptionPassword))
+                        {
+                            result.AddWarning($"EncryptionPasswordFile will override EncryptionPassword value for job {SelectedJobSpecification.Name}");
+                        }
+
+                        if (File.Exists(SelectedJobSpecification.EncryptionPasswordFile))
+                        {
+                            SelectedJobSpecification.EncryptionPassword = File.ReadAllText(SelectedJobSpecification.EncryptionPasswordFile);
+                        }
+                    }
+                    else
+                    {
+                        result.AddError($"EncryptionPasswordFile '{SelectedJobSpecification.EncryptionPasswordFile}' does not exist");
                     }
                 }
                 else
                 {
-                    result.AddError($"EncryptionPasswordFile '{SelectedJobSpecification.EncryptionPasswordFile}' does not exist");
+                    result.AddError($"cabnnot find job specificatrion '{jobName}'");
                 }
-            }
-            else
-            {
-                result.AddError($"cabnnot find job specificatrion '{jobSpecName}'");
             }
 
             return result;

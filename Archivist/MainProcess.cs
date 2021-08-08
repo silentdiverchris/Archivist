@@ -37,7 +37,7 @@ namespace Archivist
 #endif
             Configuration config = ConfigurationHelpers.LoadConfiguration(jobDetails.ConfigFilePath);
 
-            Result selectJobResult = config.SelectJobSpecification(jobDetails.JobName);
+            Result selectJobResult = config.SelectJob(jobDetails.JobName);
 
             if (selectJobResult.HasNoErrors)
             {

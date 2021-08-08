@@ -100,7 +100,7 @@
       "IsEnabled": true,
       "IsRemovable": false,
       "IsSlowVolume": false,
-      "RetainVersions": 2,
+      "RetainVersions": 5,
       "DirectoryPath": "C:\\Personal",
       "IncludeSpecifications": null,
       "ExcludeSpecifications": null,
@@ -220,7 +220,7 @@
       "IsEnabled": true,
       "IsRemovable": false,
       "IsSlowVolume": false,
-      "RetainVersions": 2,
+      "RetainVersions": 5,
       "DirectoryPath": "C:\\Dev",
       "IncludeSpecifications": null,
       "ExcludeSpecifications": null,
@@ -573,7 +573,7 @@
       "IsEnabled": true,
       "IsRemovable": true,
       "IsSlowVolume": true,
-      "RetainVersions": 3,
+      "RetainVersions": 5,
       "DirectoryPath": "S:\\Archive",
       "IncludeSpecifications": [
         "*.zip"
@@ -594,7 +594,7 @@
       "IsEnabled": true,
       "IsRemovable": true,
       "IsSlowVolume": true,
-      "RetainVersions": 3,
+      "RetainVersions": 5,
       "DirectoryPath": "Y:\\Archive",
       "IncludeSpecifications": [
         "*.zip"

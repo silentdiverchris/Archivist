@@ -1,6 +1,5 @@
 ﻿using Archivist.Classes;
 using Archivist.Models;
-using Microsoft.SqlServer.Management.Smo.Agent;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -413,7 +412,7 @@ namespace Archivist.Helpers
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         DirectoryPath = @"S:\Archive",
-                        RetainVersions = 3
+                        RetainVersions = 5
                     },
                     new ArchiveDirectory {
                         Priority = 1,
@@ -426,7 +425,7 @@ namespace Archivist.Helpers
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         DirectoryPath = @"Y:\Archive",
-                        RetainVersions = 3
+                        RetainVersions = 5
                     },
                     new ArchiveDirectory {
                         Priority = 2,
@@ -501,7 +500,7 @@ namespace Archivist.Helpers
                     result.AddWarning($"SourceDirectories.RetainVersions = {src.RetainVersions} is pointless with AddversionSuffix false for source '{src.DirectoryPath}'");
                 }
 
-                if (src.RetainVersions <= 0)
+                if (src.RetainVersions < 0)
                 {
                     result.AddError($"SourceDirectories.RetainVersions = {src.RetainVersions} is invalid for source '{src.DirectoryPath}'");
                 }
@@ -519,7 +518,7 @@ namespace Archivist.Helpers
                     result.AddError($"ArchiveDirectories.DirectoryPath '{arc.DirectoryPath}' does not exist");
                 }
 
-                if (arc.RetainVersions <= 0)
+                if (arc.RetainVersions < 0)
                 {
                     result.AddError($"ArchiveDirectories.RetainVersions = {arc.RetainVersions} is invalid for archive '{arc.DirectoryPath}'");
                 }
