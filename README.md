@@ -1,9 +1,9 @@
 # Archivist
-A simple archiving utility to do backups the way I like to, which is essentially zipping the contents of numerous directories into individual zip files in a generic archive directory, keeping one or more generations of them there, then copying some or all of them from there to numerous other places depending on various criteria and whether those volumes are mounted, keeping one or more generations there.
+A simple archiving utility to do backups the way I like to, which is essentially zipping the contents of numerous directories into individual zip files in a local archive directory, keeping one or more generations of them there, then copying some or all of them from there to numerous other places depending on various criteria and whether those volumes are mounted, keeping one or more generations there.
 
 There is no UI other than the console output, it's driven from a json configuration file and reports to the console and optionally to a text log file and/or a SQL table.
 
-This was written to do exactly what I want from a backup/archiving system, it's not intended to be a panacea for everyone but it pretty much covers what one might want from such a thing in as much as it compresses, encrypts, copies files around and retains a series of versions of the files.
+This was written to do exactly what I want from a backup/archiving system, it's not intended to be a panacea for everyone but it pretty much covers what one might want from such a thing in as much as it compresses, encrypts, copies files around and retains however many versions of the files you want.
 
 It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of it used RoboCopy which did the copying more quickly. I might update it to use RoboCopy again but it's not really a priority for me, it wasn't all that much faster and I don't sit waiting for it to finish anyway.
 
@@ -15,9 +15,9 @@ Feel free to do whatever you like with the code.
 # Caveat
 Code and executables provided as-is, caveat emptor. This system runs on my machines several times a day to process my own precious files and it is written with caution in mind by somebody experienced enough to be paranoid about these things.
 
-It doesn't write to, or delete any of the source files it processes with one exception, it will delete unencrypted files in the 'secure directories' if any are defined, but only when it's specifically told to, after having checked the encryption reported success and that the new encrypted version of the file exists.
+It doesn't write to or delete any of the source files it processes with one exception, it will delete unencrypted files in the 'secure directories' if any are defined, but only when it's specifically told to, after having checked an encrypted version exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
 
-In the end, if it ruins your day, life or marriage, it's not my responsibility. Having said that, I would be devastated if it did.
+In the end, if it ruins your day, life or marriage, it's not my responsibility. Having said that, I would be devastated if it did, which would obviously be a great comfort to you.
 
 # The process
 
@@ -25,19 +25,19 @@ There are three main parts to the archiving process, done in the order listed be
 
 ## Securing directories
 
-You can nominate a list of 'secure directories' that the system will automatically encrypt files found in, each to its own separate file, and optionally remove the unencrypted version.
+You can nominate a list of 'secure directories' that the system will automatically encrypt files found in, each to its own individual '.aes' file, and optionally remove the unencrypted version.
 
-The reason for this step being, I keep credentials, account details etc. in text files, screen shots etc. in various directories, decrypting them manually to view and update. 
+The reason for this process being that I like to keep credentials, account details etc. in little text files, screen shots etc. in various directories, decrypting them manually to view and update them, and either immediately (re-)encrypt manually or more likely, leave them for Archivist to do the next time it runs. My machine runs Archivist several times a day for different jobs, so they don't stay that way for long.
 
 It will take each file name and append '.aes' to it to determine the encrypted file name, so 'SecretPassword.txt' will be encrypted into 'SecretPassword.txt.aes'.
 
-It will ignore any file called 'clue.txt' in upper, lower or mixed case, I use a file of that name to store a cryptic reminder of the password I use for that directory.
+It will ignore any file called 'clue.txt' in upper, lower or mixed case, I use a file of that name to store a cryptic reminder of the password I use for files in that directory.
 
 When files are encrypted it sets the last write time to that of the source file, and uses the last write times to determine which file is most recent.
 
-When Archivist runs it will encrypt any files that are not of the fom '\*.aes' if the unencrypted verion has a later write time. It will optionally delete the unencrypted version if an encrypted version exists once it is sure the encryption happened successfully.
+When Archivist runs it will encrypt any files that are not of the fom '\*.aes' if the unencrypted version has a later write time. It will optionally delete the unencrypted version if an encrypted version exists once it is sure the encryption happened successfully, dependign on configuration DeleteArchiveAfterEncryption.
 
-If it finds an unencrypted file with a write time the same as, or earlier than the encrypted version it will assume the file was manually unencrypted to view it, and just delete the file again, retaining the encrypted one. To restate the previous paragraph, if the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption.
+If it finds an unencrypted file with a write time the same as, or earlier than the encrypted version it will assume the file was manually unencrypted to view it, and just delete the file, retaining the encrypted one. To restate the previous paragraph, if the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption.
 
 The is done in the first step, so the files zipped up in the next step are safe from prying eyes and the files at rest on your local folder are secured again.
 
@@ -45,7 +45,7 @@ To nominate secure directories, add them to the GlobalSecureDirectories or Secur
 
 ## Archiving source directories
 
-The second part of the process is to take the list of directories in the GlobalSourceDirectories and SourceDirectories configuration and recursively zip each into a single output file in a nominated directory, known as the primary atchive directory (specified in the configuration as PrimaryArchiveDirectoryName.
+The second part of the process is to take the list of directories in the GlobalSourceDirectories and SourceDirectories configuration and recursively zip each into a single output file in a nominated directory, known as the primary archive directory,  specified in the configuration as PrimaryArchiveDirectoryName.
 
 This uses the 'ZipFile.CreateFromDirectory' interface in Microsoft's Sytem.IO.Compression library, see https://docs.microsoft.com/en-us/dotnet/api/system.io.compression?view=net-5.0 for details.
 
@@ -69,7 +69,7 @@ See IncludeSpecifications and ExcludeSpecifications, below.
 
 ## Slow volumes
 
-I mainly archive to external SSDs and HDDs but also to a set of MicroSD cards, which are pretty slow, so the system can be set up to only write to these slow volumes on an overnight run, or at the end of the week, say.
+I mainly archive to external SSDs and HDDs but also to a set of MicroSD cards, which are pretty slow but cheap for the capacity, fairly indestructable and handy to carry around and store in quantity. The system can be set up to only write to these slow volumes on an overnight run, or at the end of the week, say.
 
 See IsSlowVolume and ProcessSlowVolumes, below.
 
@@ -81,17 +81,21 @@ If an archive would be to file 'FileName.zip', setting AddVersionSuffix would na
 
 When it gets to 9999 it will fail to create the next file, hopefully I'll have fixed that by then.
 
-Using the RetainVersions setting you can tell it to keep the last 2, 5 or however many versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision.
+Using the RetainVersions setting you can tell it to keep the last 2, 5 or however many versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision, it judges purely by the digits in the file name.
 
 If it finds any file name that isn't of the form \[base file name]\[hyphen\]\[4 digits\]\[dot]\[extension] it won't touch it.
 
-If you set the number of versions in a source directory higher than the numer in an archive directory the system will end up copying files from source to archive and then immediately deleting them, it'd be nice to catch this and not do it but it doesn't at present.
+If you set the number of versions in a source directory higher than the retain number in an archive directory the system will end up copying files from source to archive and then immediately deleting them, it'd be nice to catch this and not do it but it doesn't at present.
 
 If this is the case, the system will warn you in the console/log but will carry on and do it anyway.
 
-If AddVersionSuffix for a directory is false, files will not be versioned and there will only ever be one version of each archive.
+If AddVersionSuffix for a directory is false, files will not be versioned and there will only ever be one version of each archive in that directory.
 
 This versioning can start to eat up disk space of course, the system will report the space free on drives it uses to the console/log, and generate a warning if it is below 50Gb, currently.
+
+# Full disk
+
+If the destination disk fills up during an archive or a copy it will fail that operation and report an error but continue, so an archive of your music library might fail but the archives of smaller sets of files defined later in the job will still be attempted.
 
 # Jobs
 
@@ -99,7 +103,7 @@ You can define any number of different jobs which can select different sets of d
 
 # Removable volumes
 
-My backup system involves having several external drives which I mount for various reasons, eg. one for daily backups wich i almost always connected, one I plug in at the start of each week, one for the start of each month, and a pair of two identical big SSDs which I generally leave one of attached but alternate between them which my media libraries are archived to. So sometimes S:\ or Y:\ might exist, sometimes it won't.
+My backup system involves having several external drives which I mount for various reasons, eg. one for daily backups which is almost always connected, one which I plug in just at the start of each week, one for the start of each month, and a pair of two identical large SSDs which I generally leave one of attached but alternate between them. So sometimes S:\ or Y:\ might exist, sometimes it won't.
 
 If you mark a directory as removable with IsRemovable, the system will try to use it but if it's not there it won't be considered as an error. Any drive that is not found which is not marked as removable will be reported as an error.
 
@@ -107,7 +111,9 @@ This means you don't need to be too bothered about exactly which drives you plug
 
 # Scheduling
 
-There is no built in scheduler, it works just fine with Windows Scheduler and any other decent cron system. Just specify the the job name in the app settings file as 'RunJobName' or, better, as the first parameter to the executable.
+There is no built in scheduler, it works just fine with Windows Scheduler and any other decent cron system that can call an executable and ideally specify a parameter. 
+
+Just specify the the job name in the app settings file as 'RunJobName' or, better, as the first parameter to the executable.
 
 # Logging
 
@@ -117,13 +123,13 @@ It will write most or all log messages to the console, with warnings in yellow, 
 
 Setting DebugConsole to true in the app settings file makes it write everything to the console. 
 
-Without DebugConsole the console will get a more readable subset of the messages, so it's nicer to leave this turned off for readability if you're running interactively, and dig into the text/SQL log if you need more detail.
+Without DebugConsole the console will get a more readable subset of just the important messages and will always let you know what it's doing right now, so it's generally best to leave this turned off for readability and dig into the text/SQL log if you need more detail.
 
-Full logging always goes to the file and SQL logs, which includes a lot of verbose stuff about what decisions it made according to settings, file timestamps etc.
+Full logging always goes to the file and SQL logs, which includes a lot of verbose stuff about the decisions it made according to settings, file timestamps etc.
 
 ## Text file
 
-You can nominate a directory with the LogDirectory item in app settings, this tells it where to create text log files, files names are in the form;
+You can nominate a directory with the LogDirectory item in app settings, this tells it where to create text log files. Log file names are in the form;
 
 Archiver-\[JobName]-YYYYMMDDHHMMSS.log
 
@@ -151,22 +157,24 @@ If you like, you can read the code for fuller descriptions of how it all works, 
 
 To make the encryption work you need to either add the password to use to the EncryptionPassword section of the configuration file, or put it in a text file and specify the full path in the EncryptionPasswordFile setting. 
 
-Obviously this is a plain-text password in a file of one kind or another so definitely to be done with some consideration as to how good an idea that is, especially if the configuration or password files themselves are archived by the system. You could end up with a nicely encrypted set of files with the password considerately provided in plain text nearby.
+Obviously this is a plain-text password in a file of one kind or another so definitely to be done with some consideration as to how good an idea that is, especially if the configuration or password files themselves are archived by the system. 
+
+You could end up with a nicely encrypted set of files with the password conveniently provided in plain text nearby.
 
 # AESCrypt
 
 It uses AESCrypt to do the encryption rather than a built-in library, the reason being that I routinely use AESCrypt's explorer extension to decrypt these files to view and alter my little credential files and want the encryption to be done by the same code I'm expecting to decrypt it with.
 
-To enable enctyption you'll need to manually install AESCrypt from https://www.aescrypt.com/. Thanks to Paketizer for this great utility and being happy for me to involve their product in my utility.
+To enable encryption you'll need to manually install AESCrypt from https://www.aescrypt.com/. Thanks to Paketizer for this great utility and being happy for me to involve their product in my utility.
 
 Once it's installed, add the path to the executable to the appsettings.json file as AESEncryptPath, see App settings, below.
 
-Encryption is disabled by default, to enable it, EncryptOutput to true in the source directories in the configuration file and/or define one or more secure dictories.
+Encryption is disabled by default, to enable it, set EncryptOutput to true in the source directories in the configuration file and/or define one or more secure directories.
 
 If the path to the exe isn't specified then no encryption will be attempted. If the path is specified but not found, an error will be reported and obviously nothing will be encrypted.
 
 # Parameters
-There is only one parameter to the executable Archivist.exe, which is optional. It defines the name of the job to run eg. 'DailyBackup' or 'BackupMusic'. 
+There is only one parameter to the executable Archivist.exe, which is optional. It defines the name of the job to run eg. 'DailyBackup' or 'BackupMusic'. Job names cannot contain spaces. 
 
 If no parameter is supplied, the system will run the job named in the app settings 'RunJobName'.
 
