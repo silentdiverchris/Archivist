@@ -33,7 +33,7 @@ namespace Archivist.Helpers
                 ProcessSlowVolumes = false,
                 ArchiveFairlyStatic = false,
                 PrimaryArchiveDirectoryName = @"M:\PrimaryArchiveFolderName",
-                EncryptionPassword = "passwordinplaintext-scary",
+                EncryptionPassword = "passwordinplaintextscary",
             };
 
             var backupTypeQuick = new JobSpecification
@@ -229,9 +229,7 @@ namespace Archivist.Helpers
                         DirectoryPath = @"C:\Batch",
                         OutputFileName = null,
                         AddVersionSuffix = true,
-                        RetainVersions = 2,
-                        //EncryptOutput = false,
-                        //DeleteArchiveAfterEncryption = true
+                        RetainVersions = 2
                     },
                     new SourceDirectory {
                         Priority = 3,
@@ -240,9 +238,7 @@ namespace Archivist.Helpers
                         DirectoryPath = @"C:\Personal",
                         OutputFileName = null,
                         AddVersionSuffix = true,
-                        RetainVersions = 5,
-                        //EncryptOutput = true,
-                        //DeleteArchiveAfterEncryption = true
+                        RetainVersions = 5
                     },
                     new SourceDirectory {
                         Priority = 4,
@@ -252,9 +248,7 @@ namespace Archivist.Helpers
                         DirectoryPath = @"C:\Users\Chris\AppData\Roaming\Thunderbird",
                         OutputFileName = null,
                         AddVersionSuffix = true,
-                        RetainVersions = 2,
-                        //EncryptOutput = true,
-                        //DeleteArchiveAfterEncryption = true
+                        RetainVersions = 2
                     },
                     new SourceDirectory {
                         IsEnabled = true,
