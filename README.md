@@ -1,5 +1,5 @@
 # Archivist
-A simple archiving utility that can be made as complicated as you want it to be.
+A simple C# Net Core archiving utility that can be made as complicated as you want it to be.
 
 Essentially I got frustrated with built-in and otherwise existing backup systems for Windows and wanted something to do regular backups and archive my media the way I want, which is essentially zipping the contents of numerous directories into individual zip files in a local archive directory, keeping one or more generations of them there, then copying some or all of them from there to numerous other places depending on various criteria and whether those volumes are mounted, keeping one or more generations on each of those.
 
@@ -7,13 +7,17 @@ There is no UI other than the console output, it's driven from a json configurat
 
 This was written to do exactly what I want from a backup/archiving system, it's not intended to be a panacea for everyone but it pretty much covers what one might want from such a thing in as much as it compresses, encrypts, copies files around and retains however many versions of the files you want.
 
+It uses the LastWriteTime of the zip files it creates to decide whether a new archive should be taken, so won't constantly be zipping up identical sets of files.
+
 The text below is fairly detailed but isn't as full as it could be, please feel free to get in touch or raise an issue to ask for more details, point out mistakes or report bugs, I'll update the below with any corrections, clarifications or expansions.
 
 # Licence
 Feel free to do whatever you like with the code.
 
-# Caveat
+# Caveats
 Code and executables provided as-is. This system runs on my machines several times a day to process my own precious files and is written with caution very much in mind by somebody who is paranoid about these things.
+
+This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll gradually move it along as newer versions are released.
 
 ## Does it alter or delete any of my files ?
 
@@ -159,11 +163,15 @@ If you mess things up, delete them and the standard stored procedure and table w
 
 ## Windows event log
 
-Errors and warnings will always be written to the event log, by default, information messages will not by default. Set app settings WriteProgressToEventLog to true to write all progress messages to it too.
+Errors, warnings and job start and finish messages will always be written to the Windows event log.
+
+By default, information messages will not, set boolean app settings WriteProgressToEventLog to true to write all progress messages to it too.
+
+The program is written with Net Core so can be used on platforms other than Windows but the event log writing will currently only work on Windows.
 
 # Code
 
-If you like, you can read the code for fuller descriptions of how it all works, most functions and other declarations are decorated with top-level comments, the structure is pretty clear and names of things are nice and descriptive.
+You can read the source code for fuller descriptions and a better understanding of how it works, most functions and other declarations are decorated with top-level comments, the structure is pretty clear and names of things are nice and descriptive.
 
 # Plain-text password alert !
 
