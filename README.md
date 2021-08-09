@@ -13,15 +13,17 @@ The text below is fairly detailed but isn't as full as it could be, please feel 
 Feel free to do whatever you like with the code.
 
 # Caveat
-Code and executables provided as-is, caveat emptor. This system runs on my machines several times a day to process my own precious files and it is written with caution in mind by somebody experienced enough to be paranoid about these things.
+Code and executables provided as-is. This system runs on my machines several times a day to process my own precious files and is written with caution very much in mind by somebody who is paranoid about these things.
 
-It doesn't write to or delete any of the source files it processes with one exception, it will delete unencrypted files in the 'secure directories' if any are defined, but only when it's specifically told to, after having checked an encrypted version exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
+## Does it alter or delete any of my files ?
 
-In the end, if it ruins your day, life or marriage, it's not my responsibility. Having said that, I would be devastated if it did, which would obviously be a great comfort to you.
+It doesn't write to or delete any of the source files it processes, it purely reads them to zip them up; with one optional exception.
 
-# The process
+If you enable the secure directory function it will delete unencrypted files in the set of secure directories, if any are defined, but only when it's specifically told to, after having checked an encrypted version exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
 
-There are three main parts to the archiving process, done in the order listed below.
+# The archiving process
+
+There are three main parts to the process, done in the order listed below.
 
 ## Securing directories
 
@@ -155,6 +157,10 @@ The system knows nothing about the SQL table, all it relies on is calling the Ad
 
 If you mess things up, delete them and the standard stored procedure and table will be recreated on the next run.
 
+## Windows event log
+
+Errors and warnings will always be written to the event log, by default, information messages will not by default. Set app settings WriteProgressToEventLog to true to write all progress messages to it too.
+
 # Code
 
 If you like, you can read the code for fuller descriptions of how it all works, most functions and other declarations are decorated with top-level comments, the structure is pretty clear and names of things are nice and descriptive.
@@ -197,6 +203,7 @@ Standard json configuration file, sample below;
   "LogDirectory": "C:\\Dev\\Archivist\\Log",
   "AESEncryptPath": "C:\\Program Files\\AESCrypt_console_v310_x64\\aescrypt.exe",
   "DebugConsole": "true",
+  "WriteProgressToEventLog": "false",
 
   "ConnectionStrings": {
     "DefaultConnection": "Data Source=ServerNameOrAddress;Initial Catalog=Archivist;Integrated Security=true"
