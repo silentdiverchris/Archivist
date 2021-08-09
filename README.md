@@ -41,7 +41,7 @@ It will ignore any file called 'clue.txt' in upper, lower or mixed case, I use a
 
 When files are encrypted it sets the last write time to that of the source file, and uses the last write times to determine which file is most recent.
 
-When Archivist runs it will encrypt any files that are not of the fom '\*.aes' if the unencrypted version has a later write time. It will optionally delete the unencrypted version if an encrypted version exists once it is sure the encryption happened successfully, dependign on configuration DeleteArchiveAfterEncryption.
+When Archivist runs it will encrypt any files that are not of the fom '\*.aes' if the unencrypted version has a later write time. It will optionally delete the unencrypted version if an encrypted version exists once it is sure the encryption happened successfully, depending on configuration setting DeleteArchiveAfterEncryption.
 
 If it finds an unencrypted file with a write time the same as, or earlier than the encrypted version it will assume the file was manually unencrypted to view it, and just delete the file, retaining the encrypted one. To restate the previous paragraph, if the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption.
 
@@ -55,11 +55,13 @@ The second part of the process is to take the list of directories in the GlobalS
 
 This uses the 'ZipFile.CreateFromDirectory' interface in Microsoft's Sytem.IO.Compression library, see https://docs.microsoft.com/en-us/dotnet/api/system.io.compression?view=net-5.0 for details.
 
-The resulting zip files can then optionally be encrypted, creating a file with a '.aes' extension, so 'ArchivedFile.zip' is encrypted to 'ArchieFile.zip.aes'. Set EncryptOutput on the source directory to enable this. See the AESCrypt section below to set up encryption.
+The resulting zip files can then optionally be encrypted, creating a file with a '.aes' extension, so 'ArchivedFile.zip' is encrypted to 'ArchivedFile.zip.aes'. Set the EncryptOutput configuration setting on the source directory to enable this. 
+
+See the AESCrypt section below to set up encryption.
 
 ## Copying archives
 
-The final part takes the lists of directories in GlobalArchiveDirectories and ArchiveDirectories defined in the configuration file and copies files from the primary archive directory to those directories depending on all the filters, inclusions and exclusions specified in the configuration ArchiveDirectories settngs.
+The final part takes the lists of directories in GlobalArchiveDirectories and ArchiveDirectories defined in the configuration file and copies files from the primary archive directory to those directories depending on all the filters, inclusions and exclusions specified in the configuration ArchiveDirectories settings.
 
 # Global and non-global directories
 
@@ -71,11 +73,13 @@ Directories and files can be selected, included and excluded in various ways acc
 
 ## File inclusions and exclusions
 
+Include or exclude files to be copied to archives depending on a simple file specification eg. 'Media*.zip'.
+
 See IncludeSpecifications and ExcludeSpecifications, below.
 
 ## Slow volumes
 
-I mainly archive to external SSDs and HDDs but also to a set of MicroSD cards, which are pretty slow but cheap for the capacity, fairly indestructable and handy to carry around and store in quantity. The system can be set up to only write to these slow volumes on an overnight run, or at the end of the week, say.
+I mainly archive to external SSDs and HDDs but also to a set of MicroSD cards, which are rather slow to write to but cheap for the capacity and fairly indestructable. The system can be set up to only write to these slow volumes on an overnight run, or at the end of the week, say.
 
 See IsSlowVolume and ProcessSlowVolumes, below.
 
@@ -83,13 +87,15 @@ See IsSlowVolume and ProcessSlowVolumes, below.
 
 At two points in the process, namely when a zip archive is created and after copying it to an archive directory, the system can delete older generations of each file and keep a specific number of them. To do this, set the AddVersionSuffix and RetainVersions settings on the directory in question.
 
-If an archive would be to file 'FileName.zip', setting AddVersionSuffix would name the first one as 'FileName-0001.zip', the next as 'FileName-0002.zip' etc. Then setting RetainVersions to 3, for example, would leave those as-is when 'FileName-0003.zip' was created, then when 'FileName-0004.zip' was created would delete 'FileName-0001.zip', retaining the last 3.
+An archive of folder 'Development' would normally create file 'Development.zip', setting AddVersionSuffix would name the first one as 'Development-0001.zip', the next as 'Development-0002.zip' etc. Then setting RetainVersions to 3, for example, would leave those as-is when 'Development-0003.zip' was created, then when 'Development-0004.zip' was created would delete 'Development-0001.zip', retaining the last 3.
 
-When it gets to 9999 it will fail to create the next file, hopefully I'll have fixed that by then.
+When it gets to 9900 it will start generating warnings, and at 9999 it will generate an error and not creae the next version of that file. Currently you need to renumber the files, eg. back to 0001, 0002 etc. to get it working again. 
 
-Using the RetainVersions setting you can tell it to keep the last 2, 5 or however many versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision, it judges purely by the digits in the file name.
+The system stores no internal record of what it calls files, it goes from what it finds at the time.
 
-If it finds any file name that isn't of the form \[base file name]\[hyphen\]\[4 digits\]\[dot]\[extension] it won't touch it.
+Using the RetainVersions setting you can tell it to keep the last 2, 5 or however many versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision, it judges purely by the digits in the file names.
+
+If it finds any file name that isn't of the form \[base file name]\[hyphen\]\[4 digits\]\[dot]\[extension] it won't touch it. Nor will it touch any file that has a \[base file name] that it isn't actively writing at the time.
 
 If you set the number of versions in a source directory higher than the retain number in an archive directory the system will end up copying files from source to archive and then immediately deleting them, it'd be nice to catch this and not do it but it doesn't at present.
 
@@ -101,13 +107,13 @@ This versioning can start to eat up disk space of course, the system will report
 
 # Performance
 
-It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of the code used RoboCopy which did the copying more quickly especially with muti-threaded copies. 
+It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of the code used RoboCopy, which did the copying more quickly especially with muti-threaded copies. 
 
-I might update it to use RoboCopy again but it's not really a priority, it wasn't all that much faster, I don't sit waiting for it to finish anyway and having complete control over what gets copied is nicer than tweaking parameters to RoboCopy.
+I might update it to use RoboCopy again but it's not really a priority, it wasn't all that much faster, and I don't sit waiting for it to finish anyway.
 
 # Full disk
 
-If the destination disk fills up while creatign a zip or copying a file it will fail that operation and report an error but continue, so an archive of your music library might fail but the archives of smaller sets of files defined later in the job will still be attempted.
+If the destination disk fills up while creating a zip or copying a file it will fail that operation and report an error but continue, so an archive of your music library might fail but the archives of smaller sets of files defined later in the job will still be attempted.
 
 # Jobs
 
