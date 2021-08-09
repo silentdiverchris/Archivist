@@ -2,8 +2,6 @@
 using Archivist.Helpers;
 using Archivist.Models;
 using Microsoft.Data.SqlClient;
-using Microsoft.SqlServer.Management.Common;
-using Microsoft.SqlServer.Management.Smo;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -128,6 +126,11 @@ namespace Archivist.Services
 
         private async Task AddLogAsync (LogEntry entry)
         {
+            if (_jobDetails.ProgressToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
+            {
+                EventLogHelper.WriteEntry(entry.Text, severity: entry.Severity);
+            }
+
             if (_logToConsole && (_jobDetails.DebugConsole || entry.Severity != enSeverity.Debug))
             {
                 _consoleDelegate.Invoke(entry);
@@ -176,10 +179,10 @@ namespace Archivist.Services
                     if (logTableExists == "0")
                     {
                         string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "InitialiseDatabase.sql");
-                        sql = File.ReadAllText(path);
+                        sql = System.IO.File.ReadAllText(path);
 
                         // Use Sql Management Objects as the script is multi-statement
-                        Server server = new Server(new ServerConnection(conn));
+                        Microsoft.SqlServer.Management.Smo.Server server = new(new Microsoft.SqlServer.Management.Common.ServerConnection(conn));
                         server.ConnectionContext.ExecuteNonQuery(sql);
                     }
                 }

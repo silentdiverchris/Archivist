@@ -34,6 +34,9 @@ namespace Archivist.Classes
 
         internal List<ResultMessage> UnprocessedMessages => Messages.Where(_ => _.HasBeenWritten == false).ToList();
 
+        internal int ReturnedInt { get; set; }
+        internal string ReturnedString { get; set; }
+
         internal int ItemsFound { get; set; }
         internal int ItemsProcessed { get; set; }
         internal long BytesProcessed { get; set; }

@@ -85,145 +85,156 @@ namespace Archivist.Services
             {
                 bool needToArchive = true;
                 string movedFileName = null;
-                string outputFileName = GenerateOutputFileName(sourceDirectory, archiveDirectoryName, out string currentOutputFileName);
 
-                if (sourceDirectory.CheckTaskNameIsNotRunning is not null)
+                Result generateOutputFileNameResult = GenerateOutputFileName(sourceDirectory, archiveDirectoryName, out string currentOutputFileName);
+                result.SubsumeResult(generateOutputFileNameResult);
+
+                if (generateOutputFileNameResult.HasNoErrors)
                 {
-                    var procList = Process.GetProcessesByName(sourceDirectory.CheckTaskNameIsNotRunning);
+                    string outputFileName = generateOutputFileNameResult.ReturnedString;
 
-                    if (procList.Any())
+                    if (sourceDirectory.CheckTaskNameIsNotRunning is not null)
                     {
-                        result.AddWarning($"{sourceDirectory.CheckTaskNameIsNotRunning} is running, skipping archive");
-                        needToArchive = false;
-                    }
-                    else
-                    {
-                        result.AddDebug($"{sourceDirectory.CheckTaskNameIsNotRunning} is not running");
-                    }
-                }
+                        var procList = Process.GetProcessesByName(sourceDirectory.CheckTaskNameIsNotRunning);
 
-                if (needToArchive)
-                {
-                    if (File.Exists(currentOutputFileName))
-                    {
-                        var fiCurrentArchive = new FileInfo(currentOutputFileName);
-
-                        var lastWriteThreshold = fiCurrentArchive.LastWriteTimeUtc + new TimeSpan(0, sourceDirectory.MinutesOldThreshold, 0);
-
-                        result.AddDebug($"Archive '{currentOutputFileName}' last written {fiCurrentArchive.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC, looking for files written after {lastWriteThreshold.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
-
-                        using (var fileService = new FileService(_jobSpec, _logService))
+                        if (procList.Any())
                         {
-                            var fiLater = FileService.GetLaterFile(sourceDirectory.DirectoryPath, true, lastWriteThreshold);
-
-                            if (fiLater is not null)
-                            {
-                                result.AddDebug($"Found a later file '{fiLater.FullName}' at {fiLater.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} in '{sourceDirectory.DirectoryPath}'");
-                            }
-                            else
-                            {
-                                result.AddDebug($"Found no later files in '{sourceDirectory.DirectoryPath}'");
-                                needToArchive = false;
-                            }
+                            result.AddWarning($"{sourceDirectory.CheckTaskNameIsNotRunning} is running, skipping archive");
+                            needToArchive = false;
                         }
-                    }
-                    else
-                    {
-                        result.AddInfo($"Found no existing '{currentOutputFileName}'");
-                    }
-                }
-
-                if (needToArchive)
-                {
-                    //result.AddDebug($"Decided to archive '{sourceDirectory.DirectoryPath}'");
-
-                    if (File.Exists(outputFileName))
-                    {
-                        if (sourceDirectory.ReplaceExisting)
+                        else
                         {
-                            movedFileName = outputFileName + ".tobereplaced";
-                            File.Move(outputFileName, movedFileName);
+                            result.AddDebug($"{sourceDirectory.CheckTaskNameIsNotRunning} is not running");
                         }
                     }
 
-                    result.AddInfo($"Archiving '{sourceDirectory.DirectoryPath}' to '{outputFileName}' ({sourceDirectory.CompressionLevel})");
-                    await _logService.ProcessResult(result);
-
-                    try
+                    if (needToArchive)
                     {
-                        string tempDestFileName = outputFileName + ".compressing";
-
-                        if (File.Exists(tempDestFileName))
+                        if (File.Exists(currentOutputFileName))
                         {
-                            File.Delete(tempDestFileName);
-                        }
+                            var fiCurrentArchive = new FileInfo(currentOutputFileName);
 
-                        ZipFile.CreateFromDirectory(sourceDirectory.DirectoryPath, tempDestFileName, (CompressionLevel)sourceDirectory.CompressionLevel, true);
+                            var lastWriteThreshold = fiCurrentArchive.LastWriteTimeUtc + new TimeSpan(0, sourceDirectory.MinutesOldThreshold, 0);
 
-                        if (File.Exists(tempDestFileName))
-                        {
-                            File.Move(tempDestFileName, outputFileName, true);
-                        }
+                            result.AddDebug($"Archive '{currentOutputFileName}' last written {fiCurrentArchive.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC, looking for files written after {lastWriteThreshold.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
 
-                        var fiOutput = new FileInfo(outputFileName);
-
-                        if (fiOutput.Exists)
-                        {
-                            result.ItemsProcessed++;
-                            result.BytesProcessed += fiOutput.Length;
-
-                            if (movedFileName is not null)
+                            using (var fileService = new FileService(_jobSpec, _logService))
                             {
-                                File.Delete(movedFileName);
-                            }
+                                var fiLater = FileService.GetLaterFile(sourceDirectory.DirectoryPath, true, lastWriteThreshold);
 
-                            result.AddSuccess($"Zipped {sourceDirectory.DirectoryPath} to {outputFileName} OK");
-
-                            TotalBytesArchived += fiOutput.Length;
-                            TotalArchivesCreated++;
-
-                            if (sourceDirectory.EncryptOutput)
-                            {
-                                using (var encryptionService = new EncryptionService(_jobSpec, _logService))
+                                if (fiLater is not null)
                                 {
-                                    Result encryptionResult = await encryptionService.EncryptFileAsync(
-                                        aesEncryptExecutable: _aesEncryptExecutable,
-                                        sourceFileName: outputFileName,
-                                        destinationFileName: null, 
-                                        password: _jobSpec.EncryptionPassword,
-                                        deleteSourceFile: sourceDirectory.DeleteArchiveAfterEncryption);
-
-                                    result.SubsumeResult(encryptionResult);
+                                    result.AddDebug($"Found a later file '{fiLater.FullName}' at {fiLater.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} in '{sourceDirectory.DirectoryPath}'");
                                 }
-                            }
-
-                            if (sourceDirectory.RetainVersions > 0 && FileService.FileNameMatchesVersionedPattern(fiOutput.FullName))
-                            {
-                                using (var fileService = new FileService(_jobSpec, _logService))
+                                else
                                 {
-                                    Result deleteResult = await fileService.DeleteOldVersions(outputFileName, sourceDirectory.RetainVersions);
-
-                                    result.SubsumeResult(deleteResult);
+                                    result.AddDebug($"Found no later files in '{sourceDirectory.DirectoryPath}'");
+                                    needToArchive = false;
                                 }
                             }
                         }
-                    }
-                    catch (Exception zipException)
-                    {
-                        result.AddException(zipException);
-                    }
-                    finally
-                    {
-                        if (!File.Exists(outputFileName) & movedFileName is not null)
+                        else
                         {
-                            result.AddError($"Failed to generate '{outputFileName}', replacing the existing file");
-                            File.Move(movedFileName, outputFileName);
+                            result.AddInfo($"Found no existing '{currentOutputFileName}'");
                         }
+                    }
+
+                    if (needToArchive)
+                    {
+                        //result.AddDebug($"Decided to archive '{sourceDirectory.DirectoryPath}'");
+
+                        if (File.Exists(outputFileName))
+                        {
+                            if (sourceDirectory.ReplaceExisting)
+                            {
+                                movedFileName = outputFileName + ".tobereplaced";
+                                File.Move(outputFileName, movedFileName);
+                            }
+                        }
+
+                        result.AddInfo($"Archiving '{sourceDirectory.DirectoryPath}' to '{outputFileName}' ({sourceDirectory.CompressionLevel})");
+                        await _logService.ProcessResult(result);
+
+                        try
+                        {
+                            string tempDestFileName = outputFileName + ".compressing";
+
+                            if (File.Exists(tempDestFileName))
+                            {
+                                File.Delete(tempDestFileName);
+                            }
+
+                            ZipFile.CreateFromDirectory(sourceDirectory.DirectoryPath, tempDestFileName, (CompressionLevel)sourceDirectory.CompressionLevel, true);
+
+                            if (File.Exists(tempDestFileName))
+                            {
+                                File.Move(tempDestFileName, outputFileName, true);
+                            }
+
+                            var fiOutput = new FileInfo(outputFileName);
+
+                            if (fiOutput.Exists)
+                            {
+                                result.ItemsProcessed++;
+                                result.BytesProcessed += fiOutput.Length;
+
+                                if (movedFileName is not null)
+                                {
+                                    File.Delete(movedFileName);
+                                }
+
+                                result.AddSuccess($"Zipped {sourceDirectory.DirectoryPath} to {outputFileName} OK");
+
+                                TotalBytesArchived += fiOutput.Length;
+                                TotalArchivesCreated++;
+
+                                if (sourceDirectory.EncryptOutput)
+                                {
+                                    using (var encryptionService = new EncryptionService(_jobSpec, _logService))
+                                    {
+                                        Result encryptionResult = await encryptionService.EncryptFileAsync(
+                                            aesEncryptExecutable: _aesEncryptExecutable,
+                                            sourceFileName: outputFileName,
+                                            destinationFileName: null,
+                                            password: _jobSpec.EncryptionPassword,
+                                            deleteSourceFile: sourceDirectory.DeleteArchiveAfterEncryption);
+
+                                        result.SubsumeResult(encryptionResult);
+                                    }
+                                }
+
+                                if (sourceDirectory.RetainVersions > 0 && FileService.FileNameMatchesVersionedPattern(fiOutput.FullName))
+                                {
+                                    using (var fileService = new FileService(_jobSpec, _logService))
+                                    {
+                                        Result deleteResult = await fileService.DeleteOldVersions(outputFileName, sourceDirectory.RetainVersions);
+
+                                        result.SubsumeResult(deleteResult);
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception zipException)
+                        {
+                            result.AddException(zipException);
+                        }
+                        finally
+                        {
+                            if (!File.Exists(outputFileName) & movedFileName is not null)
+                            {
+                                result.AddError($"Failed to generate '{outputFileName}', replacing the existing file");
+                                File.Move(movedFileName, outputFileName);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        result.AddDebug($"Archive '{outputFileName}' does not need updating");
                     }
                 }
                 else
                 {
-                    result.AddDebug($"Archive '{outputFileName}' does not need updating");
+                    result.AddError($"Failed to generate output file anme for '{sourceDirectory.DirectoryPath}'");
                 }
             }
             else
@@ -243,49 +254,72 @@ namespace Archivist.Services
         /// <param name="archiveDirectoryName"></param>
         /// <param name="getNextFileName">Controls whether it gets the current one or the next</param>
         /// <returns></returns>
-        private string GenerateOutputFileName(SourceDirectory sourceDirectory, string archiveDirectoryName, out string currentFileName)
+        private Result GenerateOutputFileName(SourceDirectory sourceDirectory, string archiveDirectoryName, out string currentFileName)
         {
+            Result result = new("GenerateOutputFileName", false);
 
-            string fileName = sourceDirectory.OutputFileName ?? GenerateFileNameFromPath(sourceDirectory.DirectoryPath);
-            currentFileName = $"{archiveDirectoryName}\\{fileName}";
+            currentFileName = null;
 
-            if (sourceDirectory.AddVersionSuffix)
+            try
             {
-                // The suffix is of the form -nnnn.zip, so for file abcde.zip we are looking for abcde-nnnnn.zip
+                string fileName = sourceDirectory.OutputFileName ?? GenerateFileNameFromPath(sourceDirectory.DirectoryPath);
+                currentFileName = $"{archiveDirectoryName}\\{fileName}";
 
-                int expectedFilenameLength = archiveDirectoryName.Length + 1 + fileName.Length + 5;
-
-                var existingFiles = Directory.GetFiles(archiveDirectoryName, fileName.Replace(".zip", "*.zip"))
-                    .Where(_ => _.Length == expectedFilenameLength)
-                    .OrderBy(_ => _);
-
-                if (existingFiles.Any())
+                if (sourceDirectory.AddVersionSuffix)
                 {
-                    var lastFileName = existingFiles.Last();
+                    // The suffix is of the form -nnnn.zip, so for file abcde.zip we are looking for abcde-nnnnn.zip
 
-                    if (lastFileName.Length > 10)
+                    int expectedFilenameLength = archiveDirectoryName.Length + 1 + fileName.Length + 5;
+
+                    var existingFiles = Directory.GetFiles(archiveDirectoryName, fileName.Replace(".zip", "*.zip"))
+                        .Where(_ => _.Length == expectedFilenameLength)
+                        .OrderBy(_ => _);
+
+                    if (existingFiles.Any())
                     {
-                        var hyphen = lastFileName.Substring(lastFileName.Length - 9, 1);
-                        var numbers = lastFileName.Substring(lastFileName.Length - 8, 4);
+                        var lastFileName = existingFiles.Last();
 
-                        if (hyphen == "-" && StringHelpers.IsDigits(numbers))
+                        if (lastFileName.Length > 10)
                         {
-                            int currentNumber = Int32.Parse(numbers);
-                            int nextNumber = currentNumber + 1;
+                            var hyphen = lastFileName.Substring(lastFileName.Length - 9, 1);
+                            var numbers = lastFileName.Substring(lastFileName.Length - 8, 4);
 
-                            currentFileName = $"{archiveDirectoryName}\\" + fileName.Replace(".zip", $"-{currentNumber:0000}.zip");
-                            return Path.Combine(archiveDirectoryName, fileName.Replace(".zip", $"-{nextNumber:0000}.zip"));
+                            if (hyphen == "-" && StringHelpers.IsDigits(numbers))
+                            {
+                                int currentNumber = Int32.Parse(numbers);
+                                int nextNumber = currentNumber + 1;
+
+                                if (currentNumber == 9999)
+                                {
+                                    result.AddError($"Current version number for '{currentFileName}' is {currentNumber}, not generating the next file name, you need to manually renumber the existing files to a lower numbers, ideally 0001.");
+                                }
+                                else if (currentNumber > 9900)
+                                {
+                                    result.AddWarning($"Current version number for '{currentFileName}' is {currentNumber}, this will break when it reaches 9999 and you will need to manually renumber the existing files to a lower numbers, ideally 0001, best do that now.");
+                                }
+
+                                currentFileName = $"{archiveDirectoryName}\\" + fileName.Replace(".zip", $"-{currentNumber:0000}.zip");
+                                result.ReturnedString = Path.Combine(archiveDirectoryName, fileName.Replace(".zip", $"-{nextNumber:0000}.zip"));
+                            }
                         }
                     }
+                    else
+                    {
+                        currentFileName = $"{archiveDirectoryName}\\{fileName.Replace(".zip", "-0001.zip")}";
+                        result.ReturnedString = $"{archiveDirectoryName}\\{fileName.Replace(".zip", "-0001.zip")}";
+                    }
                 }
-
-                currentFileName = $"{archiveDirectoryName}\\{fileName.Replace(".zip", "-0001.zip")}";
-                return $"{archiveDirectoryName}\\{fileName.Replace(".zip", "-0001.zip")}";
+                else
+                {
+                    result.ReturnedString = $"{archiveDirectoryName}\\{fileName}";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return $"{archiveDirectoryName}\\{fileName}";
+                result.AddException(ex);
             }
+
+            return result;
         }
 
         private string GenerateFileNameFromPath(string directoryName)

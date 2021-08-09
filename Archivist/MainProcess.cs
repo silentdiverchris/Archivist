@@ -4,7 +4,6 @@ using Archivist.Models;
 using Archivist.Services;
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using static Archivist.Delegates;
 using static Archivist.Enumerations;
@@ -19,13 +18,14 @@ namespace Archivist
 
         internal MainProcess(JobDetails jobDetails)
         {
-            _jobDetails = jobDetails;
-
             ConsoleDelegate consoleDelegate = new(WriteToConsole);
 
+            try
+            {
+                _jobDetails = jobDetails;
 #if DEBUG
-            // For development, overwrite the config file with the declaration in the helper
-            ConfigurationHelpers.CreateCustomConfiguration(jobDetails.ConfigFilePath);
+                // For development, overwrite the config file with the declaration in the helper
+                ConfigurationHelpers.CreateCustomConfiguration(jobDetails.ConfigFilePath);
 #else
             if (!File.Exists(jobDetails.ConfigFilePath))
             {
@@ -35,17 +35,23 @@ namespace Archivist
                 ConfigurationHelpers.CreateCustomConfiguration(jobDetails.ConfigFilePath + ".json");
             }
 #endif
-            Configuration config = ConfigurationHelpers.LoadConfiguration(jobDetails.ConfigFilePath);
+                Configuration config = ConfigurationHelpers.LoadConfiguration(jobDetails.ConfigFilePath);
 
-            Result selectJobResult = config.SelectJob(jobDetails.JobName);
+                Result selectJobResult = config.SelectJob(jobDetails.JobName);
 
-            if (selectJobResult.HasNoErrors)
-            {
-                _jobSpecification = config.SelectedJobSpecification;
+                if (selectJobResult.HasNoErrors)
+                {
+                    _jobSpecification = config.SelectedJobSpecification;
+                }
+                else
+                {
+                    throw new Exception($"Failed to select job '{jobDetails.JobName}', {selectJobResult.TextSummary}");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                throw new Exception($"Failed to select job '{jobDetails.JobName}', {selectJobResult.TextSummary}");
+                EventLogHelper.WriteEntry($"Exception in MainProcess constructor {ex.Message} {ex.Source}", enSeverity.Error);
+                throw;
             }
 
             _logService = new LogService(jobDetails, consoleDelegate);
@@ -181,6 +187,6 @@ namespace Archivist
             return result;
         }
 
-        
+
     }
 }

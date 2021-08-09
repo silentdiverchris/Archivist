@@ -10,7 +10,8 @@ namespace Archivist.Models
             string sqlConnectionString,
             string logDirectoryName,
             string aesEncryptExecutable,
-            bool debugConsole)
+            bool debugConsole = true,
+            bool progressToEventLog = true)
         {
             StartedUtc = DateTime.UtcNow;
 
@@ -20,6 +21,7 @@ namespace Archivist.Models
             LogDirectoryName = logDirectoryName;
             AesEncryptExecutable = aesEncryptExecutable;
             DebugConsole = debugConsole;
+            ProgressToEventLog = progressToEventLog;
         }
 
         internal string JobName { get; set; }
@@ -32,5 +34,6 @@ namespace Archivist.Models
         internal string LogDirectoryName { get; set; }
         internal string AesEncryptExecutable { get; set; }
         internal bool DebugConsole { get; set; }
+        internal bool ProgressToEventLog { get; set; }
     }
 }

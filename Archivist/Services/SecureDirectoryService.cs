@@ -16,11 +16,14 @@ namespace Archivist.Services
             LogService logService,
             string aesEncryptExecutable) : base(jobSpec, logService)
         {
-            if (aesEncryptExecutable is null || !File.Exists(aesEncryptExecutable))
+            if (string.IsNullOrEmpty(aesEncryptExecutable))
             {
-                throw new ArgumentException(aesEncryptExecutable is null
-                    ? "No AESEncrypt executable path supplied"
-                    : $"AESEncrypt executable {aesEncryptExecutable} does not exist");
+                throw new ArgumentException("No AESEncrypt executable path supplied");
+            }
+
+            if (!File.Exists(aesEncryptExecutable))
+            {
+                throw new ArgumentException($"AESEncrypt executable '{aesEncryptExecutable}' does not exist");
             }
 
             _aesEncryptExecutable = aesEncryptExecutable;
@@ -32,14 +35,11 @@ namespace Archivist.Services
 
             if (_jobSpec.SecureDirectories != null)
             {
-                foreach (var secureDirectory in _jobSpec.SecureDirectories.Where(_ => _.IsToBeProcessed(_jobSpec)))
+                foreach (var secureDirectory in _jobSpec.SecureDirectories
+                    .Where(_ => _.IsToBeProcessed(_jobSpec)))
                 {
                     Result processResult = await ProcessSecureDirectoryAsync(secureDirectory);
-
                     result.SubsumeResult(processResult);
-
-                    if (result.HasErrors)
-                        break;
                 }
             }
 
