@@ -38,6 +38,8 @@ namespace Archivist.Services
 
             if (Directory.Exists(_jobSpec.PrimaryArchiveDirectoryName))
             {
+                result.SubsumeResult(FileHelpers.CheckDiskSpace(_jobSpec.PrimaryArchiveDirectoryName));
+
                 var foldersToCompress = _jobSpec.SourceDirectories
                     .Where(_ => _.IsToBeProcessed(_jobSpec))
                     .OrderBy(_ => _.Priority)

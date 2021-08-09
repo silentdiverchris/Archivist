@@ -126,7 +126,7 @@ namespace Archivist.Services
 
         private async Task AddLogAsync (LogEntry entry)
         {
-            if (_jobDetails.ProgressToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
+            if (_jobDetails.ProgressToEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
             {
                 EventLogHelper.WriteEntry(entry.Text, severity: entry.Severity);
             }

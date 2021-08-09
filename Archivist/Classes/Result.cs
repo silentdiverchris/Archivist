@@ -8,13 +8,14 @@ namespace Archivist.Classes
 {
     internal class ResultMessage
     {
-        internal ResultMessage(string text, enSeverity severity = enSeverity.Info, Exception ex = null, string functionName = null)
+        internal ResultMessage(string text, enSeverity severity = enSeverity.Info, Exception ex = null, string functionName = null, bool alwaysWriteToEventLog = false)
         {
             CreatedUtc = DateTime.UtcNow;
             Text = text;
             Severity = severity;
             Exception = ex;
             FunctionName = functionName;
+            AlwaysWriteToEventLog = alwaysWriteToEventLog;
         }
 
         internal DateTime CreatedUtc { get; private set; }
@@ -23,6 +24,7 @@ namespace Archivist.Classes
         internal Exception Exception { get; set; }
         internal string FunctionName { get; set; }
         internal bool HasBeenWritten { get; set; }
+        internal bool AlwaysWriteToEventLog { get; set; }
     }
 
     internal class Result

@@ -37,6 +37,8 @@ namespace Archivist
                     debugConsole: debugConsole,
                     progressToEventLog: progressToEventlog);
 
+                EventLogHelper.WriteEntry($"Archivist starting job '{jobDetails.JobName}'", enSeverity.Info);
+
                 using (var archivist = new MainProcess(jobDetails))
                 {
                     await archivist.RunAsync();

@@ -22,32 +22,6 @@ namespace Archivist.Services
         {
         }
 
-        internal static Result CheckDiskSpace(string directoryName)
-        {
-            Result result = new("CheckDiskSpace", false);
-
-            string drive = Path.GetPathRoot(directoryName);
-
-            DriveInfo di = new(drive);
-
-            double gbFree = di.TotalFreeSpace;
-
-            const double threshold = 50L * 1024 * 1024 * 1024;
-
-            string freeSpaceText = $"Remaining disk space on drive {drive[0]} is {FileHelpers.GetByteSizeAsText(gbFree)}";
-
-            if (gbFree < (threshold))
-            {
-                result.AddWarning(freeSpaceText);
-            }
-            else
-            {
-                result.AddInfo(freeSpaceText);
-            }
-
-            return result;
-        }
-
         internal async Task<Result> DeleteOldVersions(string archiveFileName, int retainVersions)
         {
             Result result = new("DeleteOldVersions", true, $"latest file is '{archiveFileName}', retaining {retainVersions}");
@@ -352,7 +326,7 @@ namespace Archivist.Services
 
                     result.AddSuccess($"Copied {result.ItemsProcessed} files, total {FileHelpers.GetByteSizeAsText(result.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
 
-                    result.SubsumeResult(CheckDiskSpace(destination.DirectoryPath));
+                    result.SubsumeResult(FileHelpers.CheckDiskSpace(destination.DirectoryPath));
                 }
                 else
                 {

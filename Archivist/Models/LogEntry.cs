@@ -10,13 +10,15 @@ namespace Archivist.Models
             CreatedUtc = DateTime.UtcNow;
         }
 
-        internal LogEntry(string logText, enSeverity severity = enSeverity.Info, DateTime? createdUtc = null)
+        internal LogEntry(string logText, enSeverity severity = enSeverity.Info, DateTime? createdUtc = null, bool alwaysWriteToEventLog = false)
         {
             Text = logText;
             Severity = severity;
             CreatedUtc = createdUtc ?? DateTime.UtcNow;
+            AlwaysWriteToEventLog = alwaysWriteToEventLog;
         }
 
+        internal bool AlwaysWriteToEventLog { get; set; }
         internal DateTime CreatedUtc { get; private set; }
         internal enSeverity Severity { get; set; }
         internal string Text { get; set; }

@@ -7,6 +7,7 @@ namespace Archivist.Helpers
     {
         internal static void WriteEntry(string text, enSeverity severity)
         {
+#pragma warning disable CA1416 // Validate platform compatibility
             var type = severity switch
             {
                 enSeverity.Error => EventLogEntryType.Error,
@@ -15,6 +16,7 @@ namespace Archivist.Helpers
             };
 
             EventLog.WriteEntry("Archivist", message: text, type: type);
+#pragma warning restore CA1416 // Validate platform compatibility
         }
     }
 }

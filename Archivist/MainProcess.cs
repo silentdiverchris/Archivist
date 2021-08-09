@@ -59,7 +59,7 @@ namespace Archivist
 
         internal async Task RunAsync()
         {
-            Result result = new("RunAsync", true, $"job '{_jobDetails.JobName}'");
+            Result result = new("Archivist", true, $"job '{_jobDetails.JobName}'");
             result.AddInfo($"Config file '{_jobDetails.ConfigFilePath}'");
             result.AddInfo($"Log file '{_logService.LogFileName}'");
 
@@ -106,14 +106,17 @@ namespace Archivist
 
             if (result.HasErrors)
             {
+                EventLogHelper.WriteEntry($"Archivist completed job {_jobDetails.JobName} with errors", enSeverity.Error);
                 result.AddError($"{_jobDetails.JobName} completed with errors");
             }
             else if (result.HasWarnings)
             {
+                EventLogHelper.WriteEntry($"Archivist completed job {_jobDetails.JobName} with warnings", enSeverity.Warning);
                 result.AddWarning($"{_jobDetails.JobName} completed with warnings");
             }
             else
             {
+                EventLogHelper.WriteEntry($"Archivist completed job {_jobDetails.JobName} successfully", enSeverity.Info);
                 result.AddSuccess($"{_jobDetails.JobName} completed successfully");
             }
 
