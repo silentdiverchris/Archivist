@@ -13,7 +13,7 @@ set up the program somewhere else.
 
 appsettings.json
 ----------------
-This defines the basic settigs that allow the program to run, for the dsimplest setup, you will not need 
+This defines the basic settigs that allow the program to run. For the simplest setup, you will not need 
 to alter this initially. 
 
 To tell it to log to text files in a folder, put the full path to the folder into the 'LogDirectory' 

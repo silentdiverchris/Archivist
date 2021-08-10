@@ -23,7 +23,7 @@ namespace Archivist
                 string configFileName = config["ConfigurationFile"];
                 string configFilePath = configFileName.Contains(Path.DirectorySeparatorChar)
                     ? configFileName
-                    : Path.Join(AppDomain.CurrentDomain.BaseDirectory, configFileName);
+                    : Path.Join(AppDomain.CurrentDomain.BaseDirectory, "configuration.json");
 
                 _ = bool.TryParse(config["DebugConsole"], out bool debugConsole);
                 _ = bool.TryParse(config["WriteProgressToEventLog"], out bool progressToEventlog);
