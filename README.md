@@ -211,13 +211,23 @@ If no parameter is supplied, the system will run the job named in the app settin
 
 Standard json configuration file, sample below;
 
-## Sample app settings.json
+## Sample app settings.json files
+
+Here is the minimal appsettings.json for it to work, the configuration.json file is assumed to be in the install directory.
+
+```json
+{
+  "RunJobName": "AValidJobName"
+}
+```
+
+Here is a fuller version, pointing at different places for the configuration and log files, enabling encryption etc.
 
 ```json
 {
   "RunJobName": "FullBackup",
-  "ConfigurationFile": "C:\\Dev\\Archivist\\Configuration.json",
-  "LogDirectory": "C:\\Dev\\Archivist\\Log",
+  "ConfigurationFile": "C:\\Somewhere\\ArchivistConfiguration.json",
+  "LogDirectory": "C:\\SomewhereElse\\Archivist\\Log",
   "AESEncryptPath": "C:\\Program Files\\AESCrypt_console_v310_x64\\aescrypt.exe",
   "DebugConsole": "true",
   "WriteProgressToEventLog": "false",
