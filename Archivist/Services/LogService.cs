@@ -54,6 +54,20 @@ namespace Archivist.Services
 
             if (!string.IsNullOrEmpty(_jobDetails.LogDirectoryName))
             {
+                if (!Directory.Exists(_jobDetails.LogDirectoryName))
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(_jobDetails.LogDirectoryName);
+                    }
+                    catch (Exception ex)
+                    {
+                        string msg = $"Log directory '{_jobDetails.LogDirectoryName}' does not exist and cannot be created, remove the setting or ensure it refers to an existing directory or one that can be created.";
+                        EventLogHelper.WriteEntry(msg, enSeverity.Error);
+                        throw new Exception(msg, ex);
+                    }
+                }
+
                 if (Directory.Exists(_jobDetails.LogDirectoryName))
                 {
                     _logFileName = Path.Combine(_jobDetails.LogDirectoryName, $"Archivist-{_jobDetails.JobName}-{DateTime.UtcNow.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)}.log");

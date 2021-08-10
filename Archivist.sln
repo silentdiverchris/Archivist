@@ -7,10 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Archivist", "Archivist\Arch
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		All|Any CPU = All|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B08A2578-849A-4EEB-B28B-07847259B359}.All|Any CPU.ActiveCfg = Release|Any CPU
+		{B08A2578-849A-4EEB-B28B-07847259B359}.All|Any CPU.Build.0 = Release|Any CPU
 		{B08A2578-849A-4EEB-B28B-07847259B359}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B08A2578-849A-4EEB-B28B-07847259B359}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B08A2578-849A-4EEB-B28B-07847259B359}.Release|Any CPU.ActiveCfg = Release|Any CPU

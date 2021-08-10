@@ -1,0 +1,111 @@
+{
+  "JobSpecifications": [
+    {
+      "Name": "ExampleBackup",
+      "WriteToConsole": true,
+      "PauseBeforeExit": true,
+      "ProcessTestOnly": false,
+      "ProcessSlowVolumes": false,
+      "ArchiveFairlyStatic": false,
+      "PrimaryArchiveDirectoryName": "M:\\Archive",
+      "EncryptionPassword": null,
+      "EncryptionPasswordFile": null,
+      "SourceDirectories": [],
+      "ArchiveDirectories": [],
+      "SecureDirectories": []
+    }
+  ],
+  "GlobalSourceDirectories": [
+    {
+      "MinutesOldThreshold": 0,
+      "CheckTaskNameIsNotRunning": null,
+      "IsFairlyStatic": false,
+      "CompressionLevel": 0,
+      "ReplaceExisting": true,
+      "EncryptOutput": false,
+      "DeleteArchiveAfterEncryption": false,
+      "AddVersionSuffix": true,
+      "OutputFileName": null,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "IsSlowVolume": false,
+      "RetainVersions": 2,
+      "DirectoryPath": "C:\\FirstDirectoryToArchive",
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "SynchoniseFileTimestamps": true
+    },
+    {
+      "MinutesOldThreshold": 0,
+      "CheckTaskNameIsNotRunning": null,
+      "IsFairlyStatic": false,
+      "CompressionLevel": 0,
+      "ReplaceExisting": true,
+      "EncryptOutput": false,
+      "DeleteArchiveAfterEncryption": false,
+      "AddVersionSuffix": true,
+      "OutputFileName": null,
+      "Priority": 3,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "IsSlowVolume": false,
+      "RetainVersions": 5,
+      "DirectoryPath": "C:\\Path\\Path",
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "SynchoniseFileTimestamps": true
+    }
+  ],
+  "GlobalArchiveDirectories": [
+    {
+      "Priority": 3,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "Description": "External USB drive, for example",
+      "IsEnabled": true,
+      "IsRemovable": true,
+      "IsSlowVolume": true,
+      "RetainVersions": 5,
+      "DirectoryPath": "S:\\Archive",
+      "IncludeSpecifications": [
+        "*.zip"
+      ],
+      "ExcludeSpecifications": [
+        "Media-*.*",
+        "Temp*.*",
+        "Incoming*.*"
+      ],
+      "SynchoniseFileTimestamps": true
+    },
+    {
+      "Priority": 1,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": true,
+      "Description": "External hard disk, for example",
+      "IsEnabled": true,
+      "IsRemovable": true,
+      "IsSlowVolume": true,
+      "RetainVersions": 5,
+      "DirectoryPath": "Y:\\Archive",
+      "IncludeSpecifications": [
+        "*.zip"
+      ],
+      "ExcludeSpecifications": [
+        "Temp*.*",
+        "Incoming*.*"
+      ],
+      "SynchoniseFileTimestamps": true
+    }
+  ]
+}
