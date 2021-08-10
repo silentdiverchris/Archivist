@@ -1,5 +1,5 @@
 # Archivist
-A simple archiving utility that can be made as complicated as you want it to be.
+A simple C# Net Core archiving utility that can be made as complicated as you want it to be.
 
 Essentially I got frustrated with built-in and otherwise existing backup systems for Windows and wanted something to do regular backups and archive my media the way I want, which is essentially zipping the contents of numerous directories into individual zip files in a local archive directory, keeping one or more generations of them there, then copying some or all of them from there to numerous other places depending on various criteria and whether those volumes are mounted, keeping one or more generations on each of those.
 
@@ -7,21 +7,27 @@ There is no UI other than the console output, it's driven from a json configurat
 
 This was written to do exactly what I want from a backup/archiving system, it's not intended to be a panacea for everyone but it pretty much covers what one might want from such a thing in as much as it compresses, encrypts, copies files around and retains however many versions of the files you want.
 
+It uses the LastWriteTime of the zip files it creates to decide whether a new archive should be taken, so won't constantly be zipping up identical sets of files.
+
 The text below is fairly detailed but isn't as full as it could be, please feel free to get in touch or raise an issue to ask for more details, point out mistakes or report bugs, I'll update the below with any corrections, clarifications or expansions.
 
 # Licence
 Feel free to do whatever you like with the code.
 
-# Caveat
-Code and executables provided as-is, caveat emptor. This system runs on my machines several times a day to process my own precious files and it is written with caution in mind by somebody experienced enough to be paranoid about these things.
+# Caveats
+Code and executables provided as-is. This system runs on my machines several times a day to process my own precious files and is written with caution very much in mind by somebody who is paranoid about these things.
 
-It doesn't write to or delete any of the source files it processes with one exception, it will delete unencrypted files in the 'secure directories' if any are defined, but only when it's specifically told to, after having checked an encrypted version exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
+This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll gradually move it along as newer versions are released. It's my intention that it remains on this 'bleeding edge' if it can be called that, but with it essentially just zipping and copying files I don't see that would make it in any way dangerous to use.
 
-In the end, if it ruins your day, life or marriage, it's not my responsibility. Having said that, I would be devastated if it did, which would obviously be a great comfort to you.
+## Does it alter or delete any of my files ?
 
-# The process
+It doesn't write to or delete any of the source files it processes, it purely reads them to zip them up; with one optional exception.
 
-There are three main parts to the archiving process, done in the order listed below.
+If you enable the secure directory function it will delete unencrypted files in the set of secure directories, if any are defined, but only when it's specifically told to, after having checked an encrypted version exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
+
+# The archiving process
+
+There are three main parts to the process, done in the order listed below.
 
 ## Securing directories
 
@@ -35,7 +41,7 @@ It will ignore any file called 'clue.txt' in upper, lower or mixed case, I use a
 
 When files are encrypted it sets the last write time to that of the source file, and uses the last write times to determine which file is most recent.
 
-When Archivist runs it will encrypt any files that are not of the fom '\*.aes' if the unencrypted version has a later write time. It will optionally delete the unencrypted version if an encrypted version exists once it is sure the encryption happened successfully, dependign on configuration DeleteArchiveAfterEncryption.
+When Archivist runs it will encrypt any files that are not of the fom '\*.aes' if the unencrypted version has a later write time. It will optionally delete the unencrypted version if an encrypted version exists once it is sure the encryption happened successfully, depending on configuration setting DeleteArchiveAfterEncryption.
 
 If it finds an unencrypted file with a write time the same as, or earlier than the encrypted version it will assume the file was manually unencrypted to view it, and just delete the file, retaining the encrypted one. To restate the previous paragraph, if the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption.
 
@@ -49,11 +55,13 @@ The second part of the process is to take the list of directories in the GlobalS
 
 This uses the 'ZipFile.CreateFromDirectory' interface in Microsoft's Sytem.IO.Compression library, see https://docs.microsoft.com/en-us/dotnet/api/system.io.compression?view=net-5.0 for details.
 
-The resulting zip files can then optionally be encrypted, creating a file with a '.aes' extension, so 'ArchivedFile.zip' is encrypted to 'ArchieFile.zip.aes'. Set EncryptOutput on the source directory to enable this. See the AESCrypt section below to set up encryption.
+The resulting zip files can then optionally be encrypted, creating a file with a '.aes' extension, so 'ArchivedFile.zip' is encrypted to 'ArchivedFile.zip.aes'. Set the EncryptOutput configuration setting on the source directory to enable this. 
+
+See the AESCrypt section below to set up encryption.
 
 ## Copying archives
 
-The final part takes the lists of directories in GlobalArchiveDirectories and ArchiveDirectories defined in the configuration file and copies files from the primary archive directory to those directories depending on all the filters, inclusions and exclusions specified in the configuration ArchiveDirectories settngs.
+The final part takes the lists of directories in GlobalArchiveDirectories and ArchiveDirectories defined in the configuration file and copies files from the primary archive directory to those directories depending on all the filters, inclusions and exclusions specified in the configuration ArchiveDirectories settings.
 
 # Global and non-global directories
 
@@ -65,11 +73,13 @@ Directories and files can be selected, included and excluded in various ways acc
 
 ## File inclusions and exclusions
 
+Include or exclude files to be copied to archives depending on a simple file specification eg. 'Media*.zip'.
+
 See IncludeSpecifications and ExcludeSpecifications, below.
 
 ## Slow volumes
 
-I mainly archive to external SSDs and HDDs but also to a set of MicroSD cards, which are pretty slow but cheap for the capacity, fairly indestructable and handy to carry around and store in quantity. The system can be set up to only write to these slow volumes on an overnight run, or at the end of the week, say.
+I mainly archive to external SSDs and HDDs but also to a set of MicroSD cards, which are rather slow to write to but cheap for the capacity and fairly indestructable. The system can be set up to only write to these slow volumes on an overnight run, or at the end of the week, say.
 
 See IsSlowVolume and ProcessSlowVolumes, below.
 
@@ -77,13 +87,15 @@ See IsSlowVolume and ProcessSlowVolumes, below.
 
 At two points in the process, namely when a zip archive is created and after copying it to an archive directory, the system can delete older generations of each file and keep a specific number of them. To do this, set the AddVersionSuffix and RetainVersions settings on the directory in question.
 
-If an archive would be to file 'FileName.zip', setting AddVersionSuffix would name the first one as 'FileName-0001.zip', the next as 'FileName-0002.zip' etc. Then setting RetainVersions to 3, for example, would leave those as-is when 'FileName-0003.zip' was created, then when 'FileName-0004.zip' was created would delete 'FileName-0001.zip', retaining the last 3.
+An archive of folder 'Development' would normally create file 'Development.zip', setting AddVersionSuffix would name the first one as 'Development-0001.zip', the next as 'Development-0002.zip' etc. Then setting RetainVersions to 3, for example, would leave those as-is when 'Development-0003.zip' was created, then when 'Development-0004.zip' was created would delete 'Development-0001.zip', retaining the last 3.
 
-When it gets to 9999 it will fail to create the next file, hopefully I'll have fixed that by then.
+When it gets to 9900 it will start generating warnings, and at 9999 it will generate an error and not creae the next version of that file. Currently you need to renumber the files, eg. back to 0001, 0002 etc. to get it working again. 
 
-Using the RetainVersions setting you can tell it to keep the last 2, 5 or however many versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision, it judges purely by the digits in the file name.
+The system stores no internal record of what it calls files, it goes from what it finds at the time.
 
-If it finds any file name that isn't of the form \[base file name]\[hyphen\]\[4 digits\]\[dot]\[extension] it won't touch it.
+Using the RetainVersions setting you can tell it to keep the last 2, 5 or however many versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision, it judges purely by the digits in the file names.
+
+If it finds any file name that isn't of the form \[base file name]\[hyphen\]\[4 digits\]\[dot]\[extension] it won't touch it. Nor will it touch any file that has a \[base file name] that it isn't actively writing at the time.
 
 If you set the number of versions in a source directory higher than the retain number in an archive directory the system will end up copying files from source to archive and then immediately deleting them, it'd be nice to catch this and not do it but it doesn't at present.
 
@@ -95,13 +107,13 @@ This versioning can start to eat up disk space of course, the system will report
 
 # Performance
 
-It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of the code used RoboCopy which did the copying more quickly especially with muti-threaded copies. 
+It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of the code used RoboCopy, which did the copying more quickly especially with muti-threaded copies. 
 
-I might update it to use RoboCopy again but it's not really a priority, it wasn't all that much faster, I don't sit waiting for it to finish anyway and having complete control over what gets copied is nicer than tweaking parameters to RoboCopy.
+I might update it to use RoboCopy again but it's not really a priority, it wasn't all that much faster, and I don't sit waiting for it to finish anyway.
 
 # Full disk
 
-If the destination disk fills up while creatign a zip or copying a file it will fail that operation and report an error but continue, so an archive of your music library might fail but the archives of smaller sets of files defined later in the job will still be attempted.
+If the destination disk fills up while creating a zip or copying a file it will fail that operation and report an error but continue, so an archive of your music library might fail but the archives of smaller sets of files defined later in the job will still be attempted.
 
 # Jobs
 
@@ -155,9 +167,17 @@ The system knows nothing about the SQL table, all it relies on is calling the Ad
 
 If you mess things up, delete them and the standard stored procedure and table will be recreated on the next run.
 
+## Windows event log
+
+Errors, warnings and job start and finish messages will always be written to the Windows event log.
+
+By default, information messages will not, set boolean app settings WriteProgressToEventLog to true to write all progress messages to it too.
+
+The program is written with Net Core so can be used on platforms other than Windows but the event log writing will currently only work on Windows.
+
 # Code
 
-If you like, you can read the code for fuller descriptions of how it all works, most functions and other declarations are decorated with top-level comments, the structure is pretty clear and names of things are nice and descriptive.
+You can read the source code for fuller descriptions and a better understanding of how it works, most functions and other declarations are decorated with top-level comments, the structure is pretty clear and names of things are nice and descriptive.
 
 # Plain-text password alert !
 
@@ -197,6 +217,7 @@ Standard json configuration file, sample below;
   "LogDirectory": "C:\\Dev\\Archivist\\Log",
   "AESEncryptPath": "C:\\Program Files\\AESCrypt_console_v310_x64\\aescrypt.exe",
   "DebugConsole": "true",
+  "WriteProgressToEventLog": "false",
 
   "ConnectionStrings": {
     "DefaultConnection": "Data Source=ServerNameOrAddress;Initial Catalog=Archivist;Integrated Security=true"
