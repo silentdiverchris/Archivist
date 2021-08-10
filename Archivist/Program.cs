@@ -21,9 +21,11 @@ namespace Archivist
                 // Read in and validate the config as much as possible
 
                 string configFileName = config["ConfigurationFile"];
+
+                // If not specified, use the default name in the install folder
                 string configFilePath = configFileName.Contains(Path.DirectorySeparatorChar)
                     ? configFileName
-                    : Path.Join(AppDomain.CurrentDomain.BaseDirectory, "configuration.json");
+                    : Path.Join(AppDomain.CurrentDomain.BaseDirectory, string.IsNullOrEmpty(configFileName) ? "configuration.json" : configFileName);
 
                 _ = bool.TryParse(config["DebugConsole"], out bool debugConsole);
                 _ = bool.TryParse(config["WriteProgressToEventLog"], out bool progressToEventlog);

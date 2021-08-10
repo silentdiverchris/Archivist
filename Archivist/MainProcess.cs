@@ -31,7 +31,7 @@ namespace Archivist
             {
                 ConfigurationHelpers.CreateDefaultConfiguration(jobDetails.ConfigFilePath);
 
-                // Create the custom config as well, just for now - reemove TODO
+                // Create the custom config as well, just for now - remove TODO
                 ConfigurationHelpers.CreateCustomConfiguration(jobDetails.ConfigFilePath + ".json");
             }
 #endif

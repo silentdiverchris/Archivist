@@ -293,7 +293,7 @@ namespace Archivist.Helpers
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         DirectoryPath = @"Y:\Archive",
-                        RetainVersions = 5
+                        RetainVersions = 10
                     },
                     new ArchiveDirectory {
                         Priority = 2,
@@ -306,7 +306,7 @@ namespace Archivist.Helpers
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { },
                         DirectoryPath = @"Z:\Archive",
-                        RetainVersions = 5
+                        RetainVersions = 10
                     }
                 }                
             };
