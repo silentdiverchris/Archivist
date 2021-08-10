@@ -107,17 +107,17 @@ namespace Archivist
             if (result.HasErrors)
             {
                 EventLogHelper.WriteEntry($"Archivist completed job {_jobDetails.JobName} with errors", enSeverity.Error);
-                result.AddError($"{_jobDetails.JobName} completed with errors");
+                result.AddError($"Job {_jobDetails.JobName} completed with errors");
             }
             else if (result.HasWarnings)
             {
                 EventLogHelper.WriteEntry($"Archivist completed job {_jobDetails.JobName} with warnings", enSeverity.Warning);
-                result.AddWarning($"{_jobDetails.JobName} completed with warnings");
+                result.AddWarning($"Job {_jobDetails.JobName} completed with warnings");
             }
             else
             {
                 EventLogHelper.WriteEntry($"Archivist completed job {_jobDetails.JobName} successfully", enSeverity.Info);
-                result.AddSuccess($"{_jobDetails.JobName} completed successfully");
+                result.AddSuccess($"Job {_jobDetails.JobName} completed successfully");
             }
 
             await _logService.ProcessResult(result);

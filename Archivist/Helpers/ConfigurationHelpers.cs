@@ -12,6 +12,327 @@ namespace Archivist.Helpers
     internal static class ConfigurationHelpers
     {
         /// <summary>
+        /// Just for initial development and generating test files, remove 
+        /// passwords before adding to source control TODO
+        /// </summary>
+        /// <param name="configFileName"></param>
+        internal static void CreateCustomConfiguration(string configFileName)
+        {
+            if (File.Exists(configFileName))
+            {
+                File.Delete(configFileName);
+            }
+
+            var backupTypeTest = new JobSpecification
+            {
+                Name = "TestBackup",
+                WriteToConsole = true,
+                PauseBeforeExit = true,
+                ProcessTestOnly = true,
+                ProcessSlowVolumes = false,
+                ArchiveFairlyStatic = false,
+                PrimaryArchiveDirectoryName = @"M:\Archive",
+                EncryptionPassword = null,
+                EncryptionPasswordFile = @"C:\Dev\Archivist\EncryptionPassword.txt"
+            };
+
+            var backupTypeQuick = new JobSpecification
+            {
+                Name = "QuickBackup",
+                PauseBeforeExit = true,
+                ProcessSlowVolumes = false,
+                ArchiveFairlyStatic = false,
+                PrimaryArchiveDirectoryName = @"M:\Archive",
+                EncryptionPassword = null,
+                EncryptionPasswordFile = @"C:\Dev\Archivist\EncryptionPassword.txt"
+            };
+
+            var backupTypeFull = new JobSpecification
+            {
+                Name = "FullBackup",
+                ProcessTestOnly = false,
+                PauseBeforeExit = true,
+                ProcessSlowVolumes = true,
+                ArchiveFairlyStatic = true,
+                PrimaryArchiveDirectoryName = @"M:\Archive",
+                EncryptionPassword = null,
+                EncryptionPasswordFile = @"C:\Dev\Archivist\EncryptionPassword.txt"
+            };
+
+            var backupTypeScheduled = new JobSpecification
+            {
+                Name = "ScheduledBackup",
+                WriteToConsole = false,
+                PauseBeforeExit = false,
+                ProcessSlowVolumes = true,
+                ArchiveFairlyStatic = true,
+                PrimaryArchiveDirectoryName = @"M:\Archive",
+                EncryptionPassword = null,
+                EncryptionPasswordFile = @"C:\Dev\Archivist\EncryptionPassword.txt"
+            };
+
+            var config = new Configuration
+            {
+                JobSpecifications = new() { backupTypeQuick, backupTypeFull, backupTypeScheduled, backupTypeTest },
+                GlobalSecureDirectories = new List<SecureDirectory> {
+                    new SecureDirectory
+                    {
+                        IsEnabled = true,
+                        SynchoniseFileTimestamps = true,
+                        DirectoryPath = @"C:\Personal\Secure"
+                    }
+                },
+                GlobalSourceDirectories = new List<SourceDirectory> {
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsForTesting = false,
+                        DirectoryPath = @"C:\Batch",
+                        OutputFileName = null,
+                        AddVersionSuffix = true,
+                        RetainVersions = 2,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        Priority = 3,
+                        IsEnabled = true,
+                        IsForTesting = false,
+                        DirectoryPath = @"C:\Personal",
+                        OutputFileName = null,
+                        AddVersionSuffix = true,
+                        RetainVersions = 5,
+                        MinutesOldThreshold = 30
+                    },
+                    new SourceDirectory {
+                        Priority = 4,
+                        IsEnabled = true,
+                        IsForTesting = false,
+                        CheckTaskNameIsNotRunning = "Thunderbird",
+                        DirectoryPath = @"C:\Users\Chris\AppData\Roaming\Thunderbird",
+                        OutputFileName = null,
+                        AddVersionSuffix = true,
+                        RetainVersions = 2
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsForTesting = false,
+                        DirectoryPath = @"C:\PowerShell",
+                        AddVersionSuffix = true,
+                        RetainVersions = 2,
+                        MinutesOldThreshold = 30
+                    },
+                    new SourceDirectory {
+                        Priority = 5,
+                        IsEnabled = true,
+                        IsForTesting = false,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Photos",
+                        AddVersionSuffix = true,
+                        EncryptOutput = true,
+                        RetainVersions = 2,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        Priority = 10,
+                        IsEnabled = false,
+                        IsForTesting = false,
+                        DirectoryPath = @"D:\Incoming",
+                        AddVersionSuffix = true,
+                        RetainVersions = 2
+                    },
+                    new SourceDirectory {
+                        Priority = 1,
+                        IsEnabled = true,
+                        IsForTesting = false,
+                        DirectoryPath = @"C:\Dev",
+                        AddVersionSuffix = true,
+                        RetainVersions = 10,
+                        CompressionLevel = CompressionLevel.Fastest,
+                        MinutesOldThreshold = 30
+                    },
+                    new SourceDirectory {
+                        Priority = 1,
+                        IsEnabled = true,
+                        IsForTesting = false,
+                        DirectoryPath = @"C:\RamDiskImages",
+                        AddVersionSuffix = true,
+                        RetainVersions = 2,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Media\Audiobooks",
+                        CompressionLevel = CompressionLevel.NoCompression,
+                        AddVersionSuffix = false,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Media\Books",
+                        CompressionLevel = CompressionLevel.Optimal,
+                        AddVersionSuffix = false,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Media\Music",
+                        CompressionLevel = CompressionLevel.NoCompression,
+                        AddVersionSuffix = false,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Media\Radio",
+                        CompressionLevel = CompressionLevel.NoCompression,
+                        AddVersionSuffix = false,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Media\Video\BBC",
+                        CompressionLevel = CompressionLevel.NoCompression,
+                        AddVersionSuffix = false,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Media\Video\People",
+                        CompressionLevel = CompressionLevel.NoCompression,
+                        AddVersionSuffix = false,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Media\Video\Poker",
+                        CompressionLevel = CompressionLevel.NoCompression,
+                        AddVersionSuffix = false,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Media\Video\Subjects",
+                        CompressionLevel = CompressionLevel.NoCompression,
+                        AddVersionSuffix = false,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Media\TV",
+                        CompressionLevel = CompressionLevel.NoCompression,
+                        AddVersionSuffix = false,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsForTesting = true,
+                        IsFairlyStatic = false,
+                        DirectoryPath = @"D:\Temp",
+                        CompressionLevel = CompressionLevel.Fastest,
+                        AddVersionSuffix = true,
+                        RetainVersions = 2,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"M:\Media\Movies",
+                        CompressionLevel = CompressionLevel.NoCompression,
+                        AddVersionSuffix = false,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        Priority = 3,
+                        IsEnabled = true,
+                        IsFairlyStatic = true,
+                        DirectoryPath = @"D:\Creations",
+                        CompressionLevel = CompressionLevel.Fastest,
+                        AddVersionSuffix = true,
+                        RetainVersions = 2,
+                        MinutesOldThreshold = 60
+                    },
+                    new SourceDirectory {
+                        Priority = 2,
+                        IsEnabled = true,
+                        DirectoryPath = @"C:\SQL\Backup",
+                        CompressionLevel = CompressionLevel.NoCompression,
+                        AddVersionSuffix = true,
+                        RetainVersions = 2,
+                        MinutesOldThreshold = 0
+                    }
+                },
+                GlobalArchiveDirectories = new List<ArchiveDirectory>
+                {
+                    new ArchiveDirectory {
+                        Priority = 3,
+                        Description = "MicroSD card 500GB, connected on demand",
+                        IsSlowVolume = true,
+                        IsEnabled = true,
+                        IsRemovable = true,
+                        SynchoniseFileTimestamps = true,
+                        IncludeSpecifications = new List<string> { "*.zip" },
+                        ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
+                        DirectoryPath = @"S:\Archive",
+                        RetainVersions = 5
+                    },
+                    new ArchiveDirectory {
+                        Priority = 1,
+                        Description = "External SSD set, 2 x 476GB, connected alternately on demand",
+                        IsSlowVolume = true,
+                        IsEnabled = true,
+                        IsForTesting = true,
+                        IsRemovable = true,
+                        SynchoniseFileTimestamps = true,
+                        IncludeSpecifications = new List<string> { "*.zip" },
+                        ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
+                        DirectoryPath = @"Y:\Archive",
+                        RetainVersions = 5
+                    },
+                    new ArchiveDirectory {
+                        Priority = 2,
+                        Description = "External WD 1TB drive, connected almost all the time",
+                        IsSlowVolume = true,
+                        IsEnabled = true,
+                        IsForTesting = true,
+                        IsRemovable = true,
+                        SynchoniseFileTimestamps = true,
+                        IncludeSpecifications = new List<string> { "*.zip" },
+                        ExcludeSpecifications = new List<string> { },
+                        DirectoryPath = @"Z:\Archive",
+                        RetainVersions = 5
+                    }
+                }                
+            };
+
+            string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+
+            File.WriteAllText(configFileName, json);
+        }
+
+        internal static Configuration LoadConfiguration(string configFileName)
+        {
+            if (File.Exists(configFileName))
+            {
+                string json = File.ReadAllText(configFileName);
+
+                var config = JsonSerializer.Deserialize<Configuration>(json);
+
+                return config;
+            }
+            else
+            {
+                throw new Exception($"Config file {configFileName} does not exist");
+            }
+        }
+
+        /// <summary>
         /// Creates a default, and invalid by design configuration file that must be 
         /// customised. This will be created on first run (or if the file does not exist), the
         /// errors will be reported and the program will terminate without doing anything.
@@ -101,7 +422,7 @@ namespace Archivist.Helpers
                         DirectoryPath = @"M:\Media\Movies",
                         CompressionLevel = CompressionLevel.NoCompression,
                         AddVersionSuffix = false
-                    }                    
+                    }
                 },
                 GlobalArchiveDirectories = new List<ArchiveDirectory>
                 {
@@ -149,313 +470,6 @@ namespace Archivist.Helpers
             string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
 
             File.WriteAllText(configFileName, json);
-        }
-
-        /// <summary>
-        /// Just for initial development and generating test files, remove 
-        /// passwords before adding to source control TODO
-        /// </summary>
-        /// <param name="configFileName"></param>
-        internal static void CreateCustomConfiguration(string configFileName)
-        {
-            if (File.Exists(configFileName))
-            {
-                File.Delete(configFileName);
-            }
-
-            var backupTypeTest = new JobSpecification
-            {
-                Name = "TestBackup",
-                WriteToConsole = true,
-                PauseBeforeExit = true,
-                ProcessTestOnly = true,
-                ProcessSlowVolumes = false,
-                ArchiveFairlyStatic = false,
-                PrimaryArchiveDirectoryName = @"M:\Archive",
-                EncryptionPassword = null,
-                EncryptionPasswordFile = @"C:\Dev\Archivist\EncryptionPassword.txt"
-            };
-
-            var backupTypeQuick = new JobSpecification
-            {
-                Name = "QuickBackup",
-                PauseBeforeExit = true,
-                ProcessSlowVolumes = false,
-                ArchiveFairlyStatic = false,
-                PrimaryArchiveDirectoryName = @"M:\Archive",
-                EncryptionPassword = null,
-                EncryptionPasswordFile = @"C:\Dev\Archivist\EncryptionPassword.txt"
-            };
-
-            var backupTypeFull = new JobSpecification
-            {
-                Name = "FullBackup",
-                ProcessTestOnly = false,
-                PauseBeforeExit = true,
-                ProcessSlowVolumes = true,
-                ArchiveFairlyStatic = true,
-                PrimaryArchiveDirectoryName = @"M:\Archive",
-                EncryptionPassword = null,
-                EncryptionPasswordFile = @"C:\Dev\Archivist\EncryptionPassword.txt"
-            };
-
-            var backupTypeScheduled = new JobSpecification
-            {
-                Name = "ScheduledBackup",
-                WriteToConsole = false,
-                PauseBeforeExit = false,
-                ProcessSlowVolumes = true,
-                ArchiveFairlyStatic = true,
-                PrimaryArchiveDirectoryName = @"M:\Archive",
-                EncryptionPassword = null,
-                EncryptionPasswordFile = @"C:\Dev\Archivist\EncryptionPassword.txt"
-            };
-
-            var config = new Configuration
-            {
-                JobSpecifications = new() { backupTypeQuick, backupTypeFull, backupTypeScheduled, backupTypeTest },
-                GlobalSecureDirectories = new List<SecureDirectory> {
-                    new SecureDirectory
-                    {
-                        IsEnabled = true,
-                        SynchoniseFileTimestamps = true,
-                        DirectoryPath = @"C:\Personal\Secure"
-                    }
-                },
-                GlobalSourceDirectories = new List<SourceDirectory> {
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsForTesting = false,
-                        DirectoryPath = @"C:\Batch",
-                        OutputFileName = null,
-                        AddVersionSuffix = true,
-                        RetainVersions = 2
-                    },
-                    new SourceDirectory {
-                        Priority = 3,
-                        IsEnabled = true,
-                        IsForTesting = false,
-                        DirectoryPath = @"C:\Personal",
-                        OutputFileName = null,
-                        AddVersionSuffix = true,
-                        RetainVersions = 5
-                    },
-                    new SourceDirectory {
-                        Priority = 4,
-                        IsEnabled = true,
-                        IsForTesting = false,
-                        CheckTaskNameIsNotRunning = "Thunderbird",
-                        DirectoryPath = @"C:\Users\Chris\AppData\Roaming\Thunderbird",
-                        OutputFileName = null,
-                        AddVersionSuffix = true,
-                        RetainVersions = 2
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsForTesting = false,
-                        DirectoryPath = @"C:\PowerShell",
-                        AddVersionSuffix = true,
-                        RetainVersions = 2
-                    },
-                    new SourceDirectory {
-                        Priority = 5,
-                        IsEnabled = true,
-                        IsForTesting = false,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Photos",
-                        AddVersionSuffix = true,
-                        EncryptOutput = true,
-                        RetainVersions = 2
-                    },
-                    new SourceDirectory {
-                        Priority = 10,
-                        IsEnabled = false,
-                        IsForTesting = false,
-                        DirectoryPath = @"D:\Incoming",
-                        AddVersionSuffix = true,
-                        RetainVersions = 2
-                    },
-                    new SourceDirectory {
-                        Priority = 1,
-                        IsEnabled = true,
-                        IsForTesting = false,
-                        DirectoryPath = @"C:\Dev",
-                        AddVersionSuffix = true,
-                        RetainVersions = 5,
-                        CompressionLevel = CompressionLevel.Fastest,
-                        MinutesOldThreshold = 60
-                    },
-                    new SourceDirectory {
-                        Priority = 1,
-                        IsEnabled = true,
-                        IsForTesting = false,
-                        DirectoryPath = @"C:\RamDiskImages",
-                        AddVersionSuffix = true,
-                        RetainVersions = 2,
-                        MinutesOldThreshold = 60
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Media\Audiobooks",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = false
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Media\Books",
-                        CompressionLevel = CompressionLevel.Optimal,
-                        AddVersionSuffix = false
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Media\Music",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = false
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Media\Radio",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = false
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Media\Video\BBC",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = false
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Media\Video\People",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = false
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Media\Video\Poker",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = false
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Media\Video\Subjects",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = false
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Media\TV",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = false
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsForTesting = true,
-                        IsFairlyStatic = false,
-                        DirectoryPath = @"D:\Temp",
-                        CompressionLevel = CompressionLevel.Fastest,
-                        AddVersionSuffix = true,
-                        RetainVersions = 2,
-                        MinutesOldThreshold = 60
-                    },
-                    new SourceDirectory {
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"M:\Media\Movies",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = false
-                    },
-                    new SourceDirectory {
-                        Priority = 3,
-                        IsEnabled = true,
-                        IsFairlyStatic = true,
-                        DirectoryPath = @"D:\Creations",
-                        CompressionLevel = CompressionLevel.Fastest,
-                        AddVersionSuffix = true,
-                        RetainVersions = 2,
-                        MinutesOldThreshold = 60
-                    },
-                    new SourceDirectory {
-                        Priority = 2,
-                        IsEnabled = true,
-                        DirectoryPath = @"C:\SQL\Backup",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = true,
-                        RetainVersions = 2,
-                        MinutesOldThreshold = 0
-                    }
-                },
-                GlobalArchiveDirectories = new List<ArchiveDirectory>
-                {
-                    new ArchiveDirectory {
-                        Priority = 3,
-                        Description = "MicroSD card 500GB, connected on demand",
-                        IsSlowVolume = true,
-                        IsEnabled = true,
-                        IsRemovable = true,
-                        SynchoniseFileTimestamps = true,
-                        IncludeSpecifications = new List<string> { "*.zip" },
-                        ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
-                        DirectoryPath = @"S:\Archive",
-                        RetainVersions = 5
-                    },
-                    new ArchiveDirectory {
-                        Priority = 1,
-                        Description = "External SSD set, 2 x 476GB, connected alternately on demand",
-                        IsSlowVolume = true,
-                        IsEnabled = true,
-                        IsForTesting = true,
-                        IsRemovable = true,
-                        SynchoniseFileTimestamps = true,
-                        IncludeSpecifications = new List<string> { "*.zip" },
-                        ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
-                        DirectoryPath = @"Y:\Archive",
-                        RetainVersions = 5
-                    },
-                    new ArchiveDirectory {
-                        Priority = 2,
-                        Description = "External WD 1TB drive, connected almost all the time",
-                        IsSlowVolume = true,
-                        IsEnabled = true,
-                        IsForTesting = true,
-                        IsRemovable = true,
-                        SynchoniseFileTimestamps = true,
-                        IncludeSpecifications = new List<string> { "*.zip" },
-                        ExcludeSpecifications = new List<string> { },
-                        DirectoryPath = @"Z:\Archive",
-                        RetainVersions = 5
-                    }
-                }                
-            };
-
-            string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
-
-            File.WriteAllText(configFileName, json);
-        }
-
-        internal static Configuration LoadConfiguration(string configFileName)
-        {
-            if (File.Exists(configFileName))
-            {
-                string json = File.ReadAllText(configFileName);
-
-                var config = JsonSerializer.Deserialize<Configuration>(json);
-
-                return config;
-            }
-            else
-            {
-                throw new Exception($"Config file {configFileName} does not exist");
-            }
         }
 
         /// <summary>
