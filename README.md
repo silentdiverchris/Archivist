@@ -3,9 +3,9 @@ A simple C# Net Core archiving utility that can be made as complicated as you wa
 
 Essentially I got frustrated with built-in and otherwise existing backup systems for Windows and wanted something to do regular backups and archive my media the way I want, which is essentially zipping the contents of numerous directories into individual zip files in a local archive directory, keeping one or more generations of them there, then copying some or all of them from there to numerous other places depending on various criteria and whether those volumes are mounted, keeping one or more generations on each of those.
 
-There is no UI other than the console output, it's driven from a json configuration file and reports to the console and optionally to a text log file and/or a SQL table.
+There is no UI other than the console output, it's driven from a json configuration file and reports to the console and optionally to a text log file and/or a SQL table and/or the Windows event log.
 
-This was written to do exactly what I want from a backup/archiving system, it's not intended to be a panacea for everyone but it pretty much covers what one might want from such a thing in as much as it compresses, encrypts, copies files around and retains however many versions of the files you want.
+This was written to do exactly what I want from a backup/archiving system, it's not intended to be a panacea for everyone but it pretty much covers what one might want from such a thing in as much as it checks for new/altered files, compresses, encrypts, copies files around and retains however many versions of the files you want.
 
 It uses the LastWriteTime of the zip files it creates to decide whether a new archive should be taken, so won't constantly be zipping up identical sets of files.
 
@@ -13,6 +13,9 @@ The text below is fairly detailed but isn't as full as it could be, please feel 
 
 # Licence
 Feel free to do whatever you like with the code.
+
+# Installation
+There is no installer package, currently you need to download the code and build it locally.
 
 # Caveats
 Code and executables provided as-is. This system runs on my machines several times a day to process my own precious files and is written with caution very much in mind by somebody who is paranoid about these things.
@@ -33,7 +36,7 @@ There are three main parts to the process, done in the order listed below.
 
 You can nominate a list of 'secure directories' that the system will automatically encrypt files found in, each to its own individual '.aes' file, and optionally remove the unencrypted version.
 
-The reason for this process being that I like to keep credentials, account details etc. in little text files, screen shots etc. in various directories, decrypting them manually to view and update them, and either immediately (re-)encrypt manually or more likely, leave them for Archivist to do the next time it runs. My machine runs Archivist several times a day for different jobs, so they don't stay that way for long.
+The reason for this process being that I like to keep credentials, account details etc. in little text files, screen shots etc. in various directories, decrypting them manually to view and update them, and either immediately (re-)encrypt manually or more likely, leave them for Archivist to process next time it runs. My main development PC runs Archivist several times a day for different jobs, so they don't stay that way for long.
 
 It will take each file name and append '.aes' to it to determine the encrypted file name, so 'SecretPassword.txt' will be encrypted into 'SecretPassword.txt.aes'.
 
@@ -73,7 +76,7 @@ Directories and files can be selected, included and excluded in various ways acc
 
 ## File inclusions and exclusions
 
-Include or exclude files to be copied to archives depending on a simple file specification eg. 'Media*.zip'.
+Include or exclude files to be copied to archives depending on a set of file specifications eg. 'Media*.zip'.
 
 See IncludeSpecifications and ExcludeSpecifications, below.
 
