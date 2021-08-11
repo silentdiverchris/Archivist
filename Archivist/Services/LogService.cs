@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using static Archivist.Delegates;
@@ -73,6 +75,25 @@ namespace Archivist.Services
                     try
                     {
                         Directory.CreateDirectory(_jobDetails.LogDirectoryName);
+
+                        // Allow autheticated users to write to the log directory
+
+                        var Info = new DirectoryInfo(_jobDetails.LogDirectoryName);
+
+#pragma warning disable CA1416 // Validate platform compatibility
+
+                        var Security = Info.GetAccessControl(AccessControlSections.Access);
+
+                        Security.AddAccessRule(
+                            rule: new FileSystemAccessRule(
+                                identity: "Authenticated Users",
+                                fileSystemRights: FileSystemRights.Modify,
+                                inheritanceFlags: InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                                propagationFlags: PropagationFlags.InheritOnly,
+                                type: AccessControlType.Allow));
+
+#pragma warning restore CA1416 // Validate platform compatibility
+
                     }
                     catch (Exception ex)
                     {
