@@ -138,7 +138,7 @@ namespace Archivist.Models
 
         [JsonIgnore]
         public string IncludeSpecificationsText => IncludeSpecifications.Any()
-            ? IncludeSpecifications.ConcatenateToQuotedList("'", ",")
+            ? IncludeSpecifications.ConcatenateToDelimitedList()
             : "all files";
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace Archivist.Models
 
         [JsonIgnore]
         public string ExcludeSpecificationsText => ExcludeSpecifications.Any()
-            ? ExcludeSpecifications.ConcatenateToQuotedList("'", ",")
+            ? ExcludeSpecifications.ConcatenateToDelimitedList()
             : "nothing";
     }
 
@@ -296,6 +296,8 @@ namespace Archivist.Models
 
     public class Configuration
     {
+        public string LoadedFromFile { get; set; }
+
         /// <summary>
         /// The various different backup jobs, each has it's own 
         /// configuration, eg. for a daily backup, weekly, monthly etc.
@@ -349,7 +351,14 @@ namespace Archivist.Models
                 }
                 else
                 {
-                    result.AddError($"cabnnot find job specificatrion '{jobName}'");
+                    if (JobSpecifications.Any())
+                    {
+                        result.AddError($"cannot find job specification '{jobName}', available names are {JobSpecifications.Select(_ => _.Name).ConcatenateToDelimitedList()}, loaded from '{LoadedFromFile}'");
+                    }
+                    else
+                    {
+                        result.AddError($"cannot find job specification '{jobName}', no job names loaded from '{LoadedFromFile}'");
+                    }
                 }
             }
 

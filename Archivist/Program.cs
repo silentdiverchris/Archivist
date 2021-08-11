@@ -48,8 +48,10 @@ namespace Archivist
             }
             catch (Exception ex)
             {
-                EventLogHelper.WriteEntry($"Exception in Main {ex.Message} {ex.Source}", enSeverity.Error);
-                throw;
+                EventLogHelper.WriteEntry($"Exception in Archivist.Main {ex.Message}", enSeverity.Error);
+
+                Console.WriteLine($"{ex.Message}");
+                Console.ReadLine();
             }
         }
     }

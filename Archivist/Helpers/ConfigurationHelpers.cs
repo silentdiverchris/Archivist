@@ -324,6 +324,8 @@ namespace Archivist.Helpers
 
                 var config = JsonSerializer.Deserialize<Configuration>(json);
 
+                config.LoadedFromFile = configFileName;
+
                 return config;
             }
             else
