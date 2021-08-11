@@ -163,15 +163,10 @@ namespace Archivist.Services
         /// <returns></returns>
         internal async Task<Result> CopyFilesAsync(string sourceDirectoryName, ArchiveDirectory destination)
         {
-            string inclusions = destination.IncludeSpecifications.Any()
-                ? "'" + string.Join(",", destination.IncludeSpecifications) + "'"
-                : "all files";
-
-            string exclusions = destination.ExcludeSpecifications.Any()
-                ? "'" + string.Join(",", destination.ExcludeSpecifications) + "'"
-                : "nothing";
-
-            Result result = new("CopyFilesAsync", true, $"from '{sourceDirectoryName}' to '{destination.DirectoryPath}' including {inclusions}, excluding {exclusions}");
+            Result result = new(
+                functionName: "CopyFilesAsync",
+                addStartingItem: true,
+                appendText: $"from '{sourceDirectoryName}' to '{destination.DirectoryPath}' including {destination.IncludeSpecificationsText}, excluding {destination.ExcludeSpecificationsText}");
 
             var diSrc = new DirectoryInfo(sourceDirectoryName);
             var diDest = new DirectoryInfo(destination.DirectoryPath);
@@ -208,10 +203,12 @@ namespace Archivist.Services
 
             if (diSrc.Exists)
             {
-                result.ItemsFound = Directory.GetFiles(sourceDirectoryName).Count();
+                // NOT RECURSIVE
+
+                result.ItemsFound = Directory.GetFiles(sourceDirectoryName, searchPattern: "*.", searchOption: SearchOption.TopDirectoryOnly).Length;
 
                 var fileNameList = destination.IncludeSpecifications
-                    .SelectMany(_ => Directory.GetFiles(sourceDirectoryName, _, SearchOption.TopDirectoryOnly)) // NOT RECURSIVE
+                    .SelectMany(_ => Directory.GetFiles(sourceDirectoryName, _, SearchOption.TopDirectoryOnly)) 
                     .ToArray()
                     .OrderBy(_ => _)
                     .ToList();
@@ -224,6 +221,7 @@ namespace Archivist.Services
                 }
 
                 // Iterate backwards through the list so we can change it while iterating
+
                 for (int i = fileNameList.Count - 1; i >= 0; i--)
                 {
                     foreach (var excludeRegex in excludeRegexList.ToList())

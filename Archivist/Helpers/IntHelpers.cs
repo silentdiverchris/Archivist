@@ -10,14 +10,9 @@ namespace Archivist.Helpers
     {
         internal static string PluralSuffix(this int number)
         {
-            if (number == 1)
-            {
-                return "";
-            }
-            else
-            {
-                return "s";
-            }
+            return number == 1
+                ? ""
+                : "s";
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Archivist.Classes;
-using Microsoft.SqlServer.Management.Smo.Agent;
+using Archivist.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,8 +9,47 @@ using System.Text.Json.Serialization;
 
 namespace Archivist.Models
 {
+    /// <summary>
+    /// Properties that relate specifically to a directory
+    /// </summary>
     public class BaseDirectory
     {
+        /// <summary>
+        /// The full path of this directory
+        /// </summary>
+        public string DirectoryPath { get; set; }
+
+        /// <summary>
+        /// Set the creation and last write time of any files created to the same as the source
+        /// </summary>
+        public bool SynchoniseFileTimestamps { get; set; } = true;
+
+        /// <summary>
+        /// Whether to delete the source file after a successful encrypt, this would
+        /// generally be a yes as the whole point is not to leave unencrypted files at 
+        /// rest, but the default is not to, so deleting files is a user decision
+        /// </summary>
+        public bool DeleteSourceAfterEncrypt { get; set; } = false;
+
+        /// <summary>
+        /// A human description of what this directory is, or what drive it's 
+        /// on - eg '128gb USB Key' or 'Where my photos are', this doesn't make anything work or
+        /// break anything if left undefined, it's just a reminder for the human.
+        /// </summary>
+        public string Description { get; set; }
+
+        /// <summary>
+        /// Whether to process this directory in any way
+        /// </summary>
+        public bool IsEnabled { get; set; }
+
+        /// <summary>
+        /// Whether this is on a volume that is removeable, mainly determining whether it should 
+        /// be considered an error if the volume it's on can't be found. If it can't be found it
+        /// won't even be considered as a warning if this is true.
+        /// </summary>
+        public bool IsRemovable { get; set; }
+
         /// <summary>
         /// Process directories in this order, lowest number first (then by directory name alpha)
         /// </summary>
@@ -33,65 +72,27 @@ namespace Archivist.Models
         public bool IsForTesting { get; set; }
 
         /// <summary>
-        /// A human description of what this directory is, or what drive it's 
-        /// on - eg '128gb USB Key' or 'Where my photos are', this doesn't make anything work or
-        /// break anything if left undefined, it's just a reminder for the human.
-        /// </summary>
-        public string Description { get; set; }
-
-        /// <summary>
-        /// Whether to process this directory in any way
-        /// </summary>
-        public bool IsEnabled { get; set; }
-
-        /// <summary>
-        /// Whether this is on a volume that is removeable, mainly determining whether it should 
-        /// be considered an error if the volume it's on can't be found. If it can't be found it
-        /// won't even be considered as a warning if this is true.
-        /// </summary>
-        public bool IsRemovable { get; set; }
-
-        /// <summary>
         /// Whether this is a slow volume, used in conjunction with config WriteToSlowVolumes so
         /// backup jobs that only read from and write to fast drives can be set up by setting job 
         /// setting ProcessSlowVolumes to false.
         /// </summary>
         public bool IsSlowVolume { get; set; }
 
-        /// <summary>
-        /// If a file has a version suffix (created by setting source directory setting AddVersionSuffix 
-        /// to true) we will retain this many of them in this directory, zero means we keep all versions, which
-        /// will eventually fill the volume. One gotcha is that if you set this lower on an archive directory
-        /// than on the source directory the system will keep copying over older versions and then deleting 
-        /// them, watch out for that.
-        /// </summary>
-        public int RetainVersions { get; set; } = 1;
-
-        /// <summary>
-        /// The full path of this directory
-        /// </summary>
-        public string DirectoryPath { get; set; }
-
-        /// <summary>
-        /// A list of file specs, eg "*.txt', 'thing.*', abc???de.jpg' etc, only process files matching these, an
-        /// empty list includes all files
-        /// </summary>
-        public List<string> IncludeSpecifications { get; set; }
-
-        /// <summary>
-        /// A list of file specs, eg "*.txt', 'thing.*', abc???de.jpg' etc, ignore files matching these, an
-        /// empty list doesn't exclude any files
-        /// </summary>
-        public List<string> ExcludeSpecifications { get; set; }
-
-        /// <summary>
-        /// Set the creation and last write time of any files created to the same as the source
-        /// </summary>
-        public bool SynchoniseFileTimestamps { get; set; } = true;
+        [JsonIgnore]
+        public bool IsAvailable
+        {
+            get
+            {
+                return Directory.Exists(DirectoryPath);
+            }
+        }
 
         public bool IsToBeProcessed(JobSpecification jobSpec)
         {
             if (!IsEnabled)
+                return false;
+
+            if (IsRemovable && !IsAvailable)
                 return false;
 
             if (IsSlowVolume && jobSpec.ProcessSlowVolumes == false)
@@ -111,26 +112,52 @@ namespace Archivist.Models
                     return false;
             }
 
-            if (IsRemovable && !IsAvailable)
-                return false;
-
             return true;
-        }
-
-        [JsonIgnore]
-        public bool IsAvailable
-        {
-            get
-            {
-                return Directory.Exists(DirectoryPath);
-            }
         }
     }
 
     /// <summary>
-    /// Directories to be zipped up and optionally encrypted
+    /// Properies that relate to archiving and copying files
     /// </summary>
-    public class SourceDirectory : BaseDirectory
+    public class BaseDirectoryFiles : BaseDirectory
+    {
+        /// <summary>
+        /// If a file has a version suffix (created by setting source directory setting AddVersionSuffix 
+        /// to true) we will retain this many of them in this directory, zero means we keep all versions, which
+        /// will eventually fill the volume. One gotcha is that if you set this lower on an archive directory
+        /// than on the source directory the system will keep copying over older versions and then deleting 
+        /// them, watch out for that.
+        /// </summary>
+        public int RetainVersions { get; set; } = 1;
+
+        /// <summary>
+        /// A list of file specs to include, eg "*.txt', 'thing.*', abc???de.jpg' etc.
+        /// An empty list includes all files
+        /// </summary>
+        public List<string> IncludeSpecifications { get; set; }
+
+        [JsonIgnore]
+        public string IncludeSpecificationsText => IncludeSpecifications.Any()
+            ? IncludeSpecifications.ConcatenateToQuotedList("'", ",")
+            : "all files";
+
+        /// <summary>
+        /// A list of file specs to ignore, eg "*.txt', 'thing.*', abc???de.jpg' etc. 
+        /// An empty list doesn't exclude any files
+        /// </summary>
+        public List<string> ExcludeSpecifications { get; set; }
+
+        [JsonIgnore]
+        public string ExcludeSpecificationsText => ExcludeSpecifications.Any()
+            ? ExcludeSpecifications.ConcatenateToQuotedList("'", ",")
+            : "nothing";
+    }
+
+    /// <summary>
+    /// Directories to be zipped up to the primary archive directory and 
+    /// optionally encrypted
+    /// </summary>
+    public class SourceDirectory : BaseDirectoryFiles
     {
         /// <summary>
         /// Only process this directory if the latest file was updated or created this number of minutes 
@@ -194,24 +221,17 @@ namespace Archivist.Models
     }
 
     /// <summary>
-    /// Directories for archived files to be copied to from 
-    /// the primary archive directory
+    /// Directories where files are to be individually encrypted
     /// </summary>
     public class SecureDirectory : BaseDirectory
     {
-        /// <summary>
-        /// Whether to delete the source file after a successful encrypt, this would
-        /// generally be a yes as the whole point is not to leave unencrypted files at 
-        /// rest, but the default is not to, so deleting files is a user decision
-        /// </summary>
-        public bool DeleteSourceAfterEncrypt { get; set; } = false;
     }
 
     /// <summary>
     /// Directories for archived files to be copied to from 
     /// the primary archive directory
     /// </summary>
-    public class ArchiveDirectory : BaseDirectory
+    public class ArchiveDirectory : BaseDirectoryFiles
     {
     }
 

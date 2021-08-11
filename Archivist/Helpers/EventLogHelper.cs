@@ -3,6 +3,9 @@ using static Archivist.Enumerations;
 
 namespace Archivist.Helpers
 {
+    /// <summary>
+    /// This uses System.Diagnostics so works fine on Windows but isn't truly platform-independent
+    /// </summary>
     internal static class EventLogHelper
     {
         internal static void WriteEntry(string text, enSeverity severity)
