@@ -16,8 +16,16 @@ namespace Archivist.Services
     internal class LogService : IDisposable
     {
         private readonly bool _logToSql = false;
+        private string _logToSqlDatabaseName = null;
+
         private readonly bool _logToFile = false;
         private readonly bool _logToConsole = true; // No way to turn this off at present
+
+        public bool LoggingToSql => _logToSql;
+        public string LoggingToSqlDatabaseName => _logToSqlDatabaseName;
+
+        public bool LoggingToFile => _logToFile;
+        public bool LoggingToConsole => _logToConsole;
 
         private readonly JobDetails _jobDetails = null;
         private readonly string _logFileName = null;
@@ -54,6 +62,12 @@ namespace Archivist.Services
 
             if (!string.IsNullOrEmpty(_jobDetails.LogDirectoryName))
             {
+                if (!_jobDetails.LogDirectoryName.Contains(Path.DirectorySeparatorChar))
+                {
+                    // Just the directory name, we will asume it's under the install directory
+                    _jobDetails.LogDirectoryName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _jobDetails.LogDirectoryName);
+                }
+
                 if (!Directory.Exists(_jobDetails.LogDirectoryName))
                 {
                     try
@@ -181,6 +195,8 @@ namespace Archivist.Services
                 using (SqlConnection conn = new(_jobDetails.SqlConnectionString))
                 {
                     conn.Open();
+
+                    _logToSqlDatabaseName = conn.Database;
 
                     string sql = "Select Case When Exists (Select * From sys.objects Where type = 'P' And OBJECT_ID = OBJECT_ID('dbo.AddLogEntry')) Then 1 Else 0 End";
 

@@ -26,6 +26,7 @@ namespace Archivist.Helpers
             var backupTypeTest = new JobSpecification
             {
                 Name = "TestBackup",
+                OpenLogFile = true,
                 WriteToConsole = true,
                 PauseBeforeExit = true,
                 ProcessTestOnly = true,
@@ -39,6 +40,7 @@ namespace Archivist.Helpers
             var backupTypeQuick = new JobSpecification
             {
                 Name = "QuickBackup",
+                OpenLogFile = true,
                 PauseBeforeExit = true,
                 ProcessSlowVolumes = false,
                 ArchiveFairlyStatic = false,
@@ -50,6 +52,7 @@ namespace Archivist.Helpers
             var backupTypeFull = new JobSpecification
             {
                 Name = "FullBackup",
+                OpenLogFile = true,
                 ProcessTestOnly = false,
                 PauseBeforeExit = true,
                 ProcessSlowVolumes = true,
@@ -62,6 +65,7 @@ namespace Archivist.Helpers
             var backupTypeScheduled = new JobSpecification
             {
                 Name = "ScheduledBackup",
+                OpenLogFile = false,
                 WriteToConsole = false,
                 PauseBeforeExit = false,
                 ProcessSlowVolumes = true,

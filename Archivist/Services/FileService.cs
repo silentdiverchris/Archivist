@@ -205,7 +205,7 @@ namespace Archivist.Services
             {
                 // NOT RECURSIVE
 
-                result.ItemsFound = Directory.GetFiles(sourceDirectoryName, searchPattern: "*.", searchOption: SearchOption.TopDirectoryOnly).Length;
+                result.ItemsFound = Directory.GetFiles(sourceDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length;
 
                 var fileNameList = destination.IncludeSpecifications
                     .SelectMany(_ => Directory.GetFiles(sourceDirectoryName, _, SearchOption.TopDirectoryOnly)) 

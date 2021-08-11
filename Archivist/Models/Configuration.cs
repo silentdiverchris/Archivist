@@ -240,6 +240,12 @@ namespace Archivist.Models
         public string Name { get; set; }
 
         /// <summary>
+        /// If logging to file is enabled, open the new log file in the associated 
+        /// application for a .log file (notepad or whatever)
+        /// </summary>
+        public bool OpenLogFile { get; set; }
+
+        /// <summary>
         /// Whether the process will write progress information to the console
         /// </summary>
         public bool WriteToConsole { get; set; } = true;

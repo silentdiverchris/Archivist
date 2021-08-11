@@ -63,11 +63,6 @@ namespace Archivist.Services
                     if (result.HasErrors)
                         break;
                 }
-
-                if (result.HasNoErrorsOrWarnings)
-                {
-                    result.AddSuccess("Processed source directories OK");
-                }
             }
             else
             {
@@ -143,8 +138,6 @@ namespace Archivist.Services
 
                     if (needToArchive)
                     {
-                        //result.AddDebug($"Decided to archive '{sourceDirectory.DirectoryPath}'");
-
                         if (File.Exists(outputFileName))
                         {
                             if (sourceDirectory.ReplaceExisting)

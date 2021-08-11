@@ -3,6 +3,7 @@ using Archivist.Helpers;
 using Archivist.Models;
 using Archivist.Services;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using static Archivist.Delegates;
@@ -61,12 +62,41 @@ namespace Archivist
         {
             Result result = new("Archivist", true, $"job '{_jobDetails.JobName}'");
             result.AddInfo($"Config file '{_jobDetails.ConfigFilePath}'");
-            result.AddInfo($"Log file '{_logService.LogFileName}'");
+
+            if (_logService.LoggingToFile)
+            {
+                result.AddInfo($"Log file '{_logService.LogFileName}'");
+            }
+            else
+            {
+                result.AddInfo($"Logging to file not enabled");
+            }
+
+            if (_logService.LoggingToSql)
+            {
+                result.AddInfo($"Logging to SQL database '{_logService.LoggingToSqlDatabaseName}'");
+            }
+            else
+            {
+                result.AddInfo($"Logging to SQL not enabled");
+            }
 
             result.SubsumeResult(ValidateJobDetails(_jobDetails));
             result.SubsumeResult(ConfigurationHelpers.ValidateJobSpecification(_jobSpecification));
 
             await _logService.ProcessResult(result);
+
+            if (_jobSpecification.OpenLogFile && _logService.LoggingToFile)
+            {
+                var proc = new Process
+                {
+                    StartInfo = new ProcessStartInfo(_logService.LogFileName)
+                    {
+                        UseShellExecute = true
+                    }
+                };
+                proc.Start();
+            }
 
             if (result.HasNoErrors)
             {
@@ -177,7 +207,7 @@ namespace Archivist
                 result.AddError($"AESEncrypt executable '{jobDetails.AesEncryptExecutable}' does not exist, please download from https://www.aescrypt.com/");
             }
 
-            if (jobDetails.LogDirectoryName is not null && !Directory.Exists(jobDetails.LogDirectoryName))
+            if (!string.IsNullOrEmpty(jobDetails.LogDirectoryName) && !Directory.Exists(jobDetails.LogDirectoryName))
             {
                 result.AddError($"Log directory '{jobDetails.LogDirectoryName}' does not exist");
             }
