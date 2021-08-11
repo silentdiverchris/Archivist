@@ -72,8 +72,6 @@ namespace Archivist.Services
                 {
                     _logFileName = Path.Combine(_jobDetails.LogDirectoryName, $"Archivist-{_jobDetails.JobName}-{DateTime.UtcNow.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)}.log");
                     _logToFile = true;
-
-                    //_consoleDelegate.Invoke(new LogEntry($"Logging to {_logFileName}"));
                 }
             }
         }
@@ -161,16 +159,16 @@ namespace Archivist.Services
             }
         }
 
-        private async Task AddLogAsync(string logText, enSeverity severity = enSeverity.Info)
-        {
-            LogEntry entry = new()
-            {
-                Text = logText,
-                Severity = severity
-            };
+        //private async Task AddLogAsync(string logText, enSeverity severity = enSeverity.Info)
+        //{
+        //    LogEntry entry = new()
+        //    {
+        //        Text = logText,
+        //        Severity = severity
+        //    };
 
-            await AddLogAsync(entry);
-        }
+        //    await AddLogAsync(entry);
+        //}
 
         private Result VerifyAndPrepareDatabase()
         {
@@ -184,13 +182,13 @@ namespace Archivist.Services
                 {
                     conn.Open();
 
-                    string sql = "SELECT CASE WHEN OBJECT_ID('dbo.Log', 'U') IS NOT NULL THEN 1 ELSE 0 END";
+                    string sql = "Select Case When Exists (Select * From sys.objects Where type = 'P' And OBJECT_ID = OBJECT_ID('dbo.AddLogEntry')) Then 1 Else 0 End";
 
                     SqlCommand cmd = new(sql, conn);
 
-                    var logTableExists = cmd.ExecuteScalar().ToString(); 
+                    var storedProcExists = cmd.ExecuteScalar().ToString(); 
 
-                    if (logTableExists == "0")
+                    if (storedProcExists == "0")
                     {
                         string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "InitialiseDatabase.sql");
                         sql = System.IO.File.ReadAllText(path);
