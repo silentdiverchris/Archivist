@@ -269,7 +269,7 @@ Here you define one of these for each job, eg. DailyBackup, WeeklyBackup, Backup
 
 ## Directory settings for source and archive directories
 
-These apply to both types of directory.
+These settings apply to both types of directory.
 
 |Setting|Description|
 |-----|-----|
@@ -290,6 +290,8 @@ These apply to both types of directory.
 
 ## Source directories
 
+These settings apply only to source directories.
+
 Here you define the set of directories you want zipping up into files in the primary archive directory.
 
 |Setting|Description|
@@ -297,7 +299,7 @@ Here you define the set of directories you want zipping up into files in the pri
 |MinutesOldThreshold|Only process this directory if the latest file was updated or created this number of minutes ago, i.e. let files get this stale before archiving, prevents repeatedly archiving a folder if files are updated often and the archiver runs frequently.|
 |CheckTaskNameIsNotRunning|Don't process this source if a task with this name is running, eg. I use Thunderbird for email which holds on to the files email are stored in, so I have this set to 'Thunderbird' for that source directory.<br><br>Any running task found with this string in the name will prevent this directory being processed and generate a warning.|
 |IsFairlyStatic|Indicates whether this source is something that changes a lot, eg source code as opposed to sets of files that are occasionally added to but not often changed like movies and photos.<br><br>This doesn't stop it being archived, but means you can set up archive jobs to choose whether to process this source based on the job ArchiveFairlyStatic setting.|
-|CompressionLevel|What type of compression to use on creating zip files, options are;<ul style='list-style-type:none'><li>Optimal = 0</li><li>Fastest = 1</li><li>NoCompression = 2</li><li>SmallestSize = 3</li></ul>For full details see the [Microsoft documentation](https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.zipfile.createfromdirectory?view=net-5.0).|
+|CompressionLevel|What type of compression to use on creating zip files, options are;<br>0: Optimal<br>1: Fastest<br>2: NoCompression<br>3: SmallestSize<br>For full details see the [Microsoft documentation](https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.zipfile.createfromdirectory?view=net-5.0).|
 |ReplaceExisting|Overwrite any output files with the same name as one being created.|
 |EncryptOutput|Encrypt the output file after zipping, uses AESEncrypt at the moment, see the AESCrypt section above for setup instructions.<br><br>You need to install it manually and put the path to the exe in the AESEncryptPath setting in appsettings.json.<br><br>The reason it doesn't use built-in .Net encryption is because I use the AESEncrypt Explorer extension so want to encrypt files with the same code.|
 |DeleteArchiveAfterEncryption|Delete the unencrypted zip archive after successful encryption.|
@@ -309,7 +311,7 @@ Here you define the set of directories you want zipping up into files in the pri
 
 Settings that just apply to archive directories.
 
-Err, none, archive directories just have the shared settings, above.
+None, archive directories just have the shared settings, above.
 
 ## Configuration.json sample
 
@@ -515,7 +517,7 @@ This is similar to the default file which will be created if the one in appsetti
   "GlobalSecureDirectories": [
     {
       "DeleteSourceAfterEncrypt": false,
-      "Priority": 99,
+      "Priority": 1,
       "EnabledAtHour": 0,
       "DisabledAtHour": 0,
       "IsForTesting": false,
@@ -523,15 +525,12 @@ This is similar to the default file which will be created if the one in appsetti
       "IsEnabled": true,
       "IsRemovable": false,
       "IsSlowVolume": false,
-      "RetainVersions": 0,
       "DirectoryPath": "C:\\Something\\Secure",
-      "IncludeSpecifications": null,
-      "ExcludeSpecifications": null,
       "SynchoniseFileTimestamps": true
     },
     {
       "DeleteSourceAfterEncrypt": false,
-      "Priority": 99,
+      "Priority": 2,
       "EnabledAtHour": 0,
       "DisabledAtHour": 0,
       "IsForTesting": false,
@@ -539,10 +538,7 @@ This is similar to the default file which will be created if the one in appsetti
       "IsEnabled": true,
       "IsRemovable": false,
       "IsSlowVolume": false,
-      "RetainVersions": 0,
       "DirectoryPath": "C:\\SomethingElse\\AlsoSecure",
-      "IncludeSpecifications": null,
-      "ExcludeSpecifications": null,
       "SynchoniseFileTimestamps": true
     }
   ]
