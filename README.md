@@ -259,9 +259,9 @@ Here you define one of these for each job, eg. DailyBackup, WeeklyBackup, Backup
 |Name|The name of the job to run, give this as the first parameter when calling Archiver.exe or specify it in the app settings RunJobName, the parameter will override the appsettings name. Job name cannot contain spaces.|
 |ProcessTestOnly|For development only really, you can mark directories as ForTesting, and setting this to true will only process those.|
 |ProcessSlowVolumes|You can mark directories as IsSlowVolume, setting this to true will make it process those, if false, it'll not process slow volumes.|
-|ArchiveFairlyStatic|You can set directories as IsFairlyStatic and setting this allows you to tell a job whether to process it or not, it's intended to allow you to make a backup that only processes directories containing files that change frequently, eg source code or documents, as opposed to those that don't, eg movies or photos or whatever you don't add to much.|
-|PrimaryArchiveDirectoryName|Here is where the initial zip files of each source directory are created, as such it should ideally be fairly fast and large, and on a different drive to where the source files are. Files are copied from here to the archive directories.|
-|EncryptionPassword|The password to be used for encryption, see the 'Plain-text password alert !' section above. This value is overwritten if a value is provided in EncryptionPasswordFile, this will also generate a warning.|
+|ArchiveFairlyStatic|You can set directories as IsFairlyStatic and setting this allows you to tell a job whether to process it or not, it's intended to allow you to make a backup that only processes directories containing files that change or are added frequently, eg source code or documents, as opposed to those that don't, like a movie library.|
+|PrimaryArchiveDirectoryName|Here is where the initial zip files of each source directory are created, as such it should ideally be fairly fast and large, and on a different drive to where the source files are.<br><br>Files are copied from here to the archive directories.|
+|EncryptionPassword|The password to be used for encryption, see the 'Plain-text password alert !' section above.<br><br>This value is overwritten if a value is provided in EncryptionPasswordFile, this will also generate a warning.|
 |EncryptionPasswordFile|Loads the encryption password from this file, overwrites any value specified in EncryptionPassword. The password should be the only thing in the file.|
 |SourceDirectories|These are the directories containing the files you want to zip to the primary archive directory, you can add any number, see 'Source Directories' below.|
 |ArchiveDirectories|These are the directories that files will be copied to from the primary archive directory, see 'Archive Directories' below.|
@@ -281,8 +281,8 @@ These apply to both types of directory.
 |IsEnabled|Whether to process this directory in any way. If it is false, this directory will be ignored.|
 |IsRemovable|Whether this is on a volume that is removeable, mainly determining whether it should be considered an error if the volume it's on can't be found. If it can't be found it won't even be considered as a warning if this is true.|
 |IsSlowVolume|Whether this is a slow volume, used in conjunction with config WriteToSlowVolumes so backup jobs that only read from and write to fast drives can be set up by setting job setting ProcessSlowVolumes to false.|
-|RetainVersions|If a file has a version suffix (created by setting source directory setting AddVersionSuffix to true) we will retain this many of them in this directory, zero means we keep all versions, which will eventually fill the volume. One gotcha is that if you set this lower on an archive directory than on the source directory the system will keep copying over older versions and then deleting them, if the system finds this on startup it will log a warning but cheerfully copy and delete as instructed.|
-|RetainDaysOld|Specifies the minimum age at which an archive file can be deleted, regardless of any version numbering. The age is determined by the last write time, not the creation time. Zero disables this function and any non-zero value has a minimum of 7 days. This ensures that however many versions of the archive are created, it will not delete any file that is younger than this number of days. This does not cause files to be deleted after that number of days, it just stops younger files being deleted.|
+|RetainVersions|If a file has a version suffix (created by setting source directory setting AddVersionSuffix to true) we will retain this many of them in this directory, zero means we keep all versions, which will eventually fill the volume.<br><br>Something to be aware of is that if you set this lower on an archive directory than on the source directory the system will keep copying over older versions and then deleting them, if the system finds this on startup it will log a warning but cheerfully copy and delete as instructed.<br><br>If RetainVersions is set to zero, no archives will ever be deleted.|
+|RetainDaysOld|Specifies the minimum age at which an archive file can be deleted, regardless of any version numbering. The age is determined by the last write time, not the creation time.<br><br>Zero disables this function and any non-zero value has a minimum of 7 days. This ensures that however many versions of the archive are created, it will not delete any file that is younger than this number of days.<br><br>This does not cause files to be deleted after that number of days, it just stops younger files being deleted.<br><br>If the RetainVersions setting is set to zero, this setting will have no effect and no archives will ever be deleted.|
 |DirectoryPath|The full path of this directory.|
 |IncludeSpecifications|A list of file specs, eg '\*.txt', 'thing.\*', abc???de.jpg' etc, only process files matching these, an empty list includes all files.|
 |ExcludeSpecifications|A list of file specs, eg '\*.txt', 'thing.\*', abc???de.jpg' etc, ignore files matching these, an empty list doesn't exclude any files.|
@@ -295,15 +295,15 @@ Here you define the set of directories you want zipping up into files in the pri
 |Setting|Description|
 |-----|-----|
 |MinutesOldThreshold|Only process this directory if the latest file was updated or created this number of minutes ago, i.e. let files get this stale before archiving, prevents repeatedly archiving a folder if files are updated often and the archiver runs frequently.|
-|CheckTaskNameIsNotRunning|Don't process this source if a task with this name is running, eg. I use Thunderbird for email which holds on to the files email are stored in, so I have this set to 'Thunderbird' for that source directory. Any running task found with this string in the name will prevent this directory being processed and generate a warning.|
-|IsFairlyStatic|Indicates whether this source is something that changes a lot, eg source code as opposed to sets of files that are occasionally added to but not often changed like movies and photos. This doesn't stop it being archived, but means you can set up archive jobs to choose whether to process this source based on the job ArchiveFairlyStatic setting.|
-|CompressionLevel|What type of compression to use on creating zip files, see see Microsoft System.IO.Compression docs at https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.zipfile.createfromdirectory?view=net-5.0 for full details, options are Optimal = 0, Fastest = 1, NoCompression = 2, SmallestSize = 3.|
+|CheckTaskNameIsNotRunning|Don't process this source if a task with this name is running, eg. I use Thunderbird for email which holds on to the files email are stored in, so I have this set to 'Thunderbird' for that source directory.<br><br>Any running task found with this string in the name will prevent this directory being processed and generate a warning.|
+|IsFairlyStatic|Indicates whether this source is something that changes a lot, eg source code as opposed to sets of files that are occasionally added to but not often changed like movies and photos.<br><br>This doesn't stop it being archived, but means you can set up archive jobs to choose whether to process this source based on the job ArchiveFairlyStatic setting.|
+|CompressionLevel|What type of compression to use on creating zip files, options are;<ul style='list-style-type:none'><li>Optimal = 0</li><li>Fastest = 1</li><li>NoCompression = 2</li><li>SmallestSize = 3</li></ul>For full details see the [Microsoft documentation](https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.zipfile.createfromdirectory?view=net-5.0).|
 |ReplaceExisting|Overwrite any output files with the same name as one being created.|
-|EncryptOutput|Encrypt the output file after zipping, uses AESEncrypt at the moment, see the AESCrypt section above for setup instructions. You need to install it manually and put the path to the exe in the AESEncryptPath setting in appsettings.json. The reason it doesn't use built-in .Net encryption is because I use the AESEncrypt Explorer extension so want to encrypt files with the same code.|
+|EncryptOutput|Encrypt the output file after zipping, uses AESEncrypt at the moment, see the AESCrypt section above for setup instructions.<br><br>You need to install it manually and put the path to the exe in the AESEncryptPath setting in appsettings.json.<br><br>The reason it doesn't use built-in .Net encryption is because I use the AESEncrypt Explorer extension so want to encrypt files with the same code.|
 |DeleteArchiveAfterEncryption|Delete the unencrypted zip archive after successful encryption.|
-|OutputFileName|The name of the zipped output file (no path), if not specified it uses the path to generate the name so directory 'C:\AbC\DeF\GhI' will be archived to 'AbC-DeF-GhI.zip'. For ease of use and clarity it's best to default this unless you really want to set the name to something else.|
-|AddVersionSuffix|Adds a suffix to the file name of the form '-nnnn' before the extension, each new file adds 1 to the number. So archiving 'C:\Blah' with the default OutputFileName setting results in files 'Blah-0001.zip', 'Blah-0002.zip' etc. This works alongside RetainVersions to limit the number of these which it keeps.|
-|MinutesOldThreshold|Set this to more than zero to have the system ignore new and altered files until they are this old. This allows you to stop the system making many archives of files that change frequently if you run archiver often. For example, you might set a directory to 60 so it only archives files in there that were created or changed over an hour ago.|
+|OutputFileName|The name of the zipped output file (no path), if not specified it uses the path to generate the name so directory 'C:\AbC\DeF\GhI' will be archived to 'AbC-DeF-GhI.zip'.<br><br>For ease of use and clarity it's best to default this unless you really want to set the name to something else.|
+|AddVersionSuffix|Adds a suffix to the file name of the form '-nnnn' before the extension, each new file adds 1 to the number. Archiving 'C:\Blah' with the default OutputFileName setting results in files 'Blah-0001.zip', 'Blah-0002.zip' etc.<br><br>This works alongside RetainVersions and RetainDaysOld to limit the number of these which it keeps.|
+|MinutesOldThreshold|Set this to more than zero to have the system ignore new and altered files until they are this old. This allows you to stop the system making many archives of files that change frequently if you run archiver often.<br><br>For example, you might set a directory to 60 so it only archives files in there that were created or changed over an hour ago.|
 
 ## Archive directories
 
@@ -367,6 +367,7 @@ This is similar to the default file which will be created if the one in appsetti
       "IsRemovable": false,
       "IsSlowVolume": false,
       "RetainVersions": 2,
+      "RetainDaysOld": 90,
       "DirectoryPath": "C:\\ProbablyDoesntExist",
       "IncludeSpecifications": null,
       "ExcludeSpecifications": null,
@@ -391,6 +392,7 @@ This is similar to the default file which will be created if the one in appsetti
       "IsRemovable": false,
       "IsSlowVolume": false,
       "RetainVersions": 2,
+      "RetainDaysOld": 90,
       "DirectoryPath": "C:\\ProbablyDoesntExistEither",
       "IncludeSpecifications": null,
       "ExcludeSpecifications": null,
@@ -415,6 +417,7 @@ This is similar to the default file which will be created if the one in appsetti
       "IsRemovable": false,
       "IsSlowVolume": false,
       "RetainVersions": 2,
+      "RetainDaysOld": 90,
       "DirectoryPath": "D:\\Temp",
       "IncludeSpecifications": null,
       "ExcludeSpecifications": null,
@@ -455,7 +458,8 @@ This is similar to the default file which will be created if the one in appsetti
       "IsEnabled": true,
       "IsRemovable": true,
       "IsSlowVolume": true,
-      "RetainVersions": 2,
+      "RetainVersions": 5,
+      "RetainDaysOld": 365,
       "DirectoryPath": "S:\\ArchivedFilesBlah",
       "IncludeSpecifications": [
         "*.zip"
@@ -477,6 +481,7 @@ This is similar to the default file which will be created if the one in appsetti
       "IsRemovable": true,
       "IsSlowVolume": true,
       "RetainVersions": 2,
+      "RetainDaysOld": 90,
       "DirectoryPath": "Y:\\ArchivedFilesAgain",
       "IncludeSpecifications": [
         "*.zip"
@@ -497,7 +502,8 @@ This is similar to the default file which will be created if the one in appsetti
       "IsEnabled": true,
       "IsRemovable": true,
       "IsSlowVolume": true,
-      "RetainVersions": 4,
+      "RetainVersions": 20,
+      "RetainDaysOld": 180,
       "DirectoryPath": "Z:\\Archive",
       "IncludeSpecifications": [
         "*.zip"
