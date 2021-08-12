@@ -198,13 +198,15 @@ namespace Archivist.Services
                                     }
                                 }
 
-                                if (sourceDirectory.RetainVersions > 0 && FileService.FileNameMatchesVersionedPattern(fiOutput.FullName))
+                                if (FileService.FileNameMatchesVersionedPattern(fiOutput.FullName))
                                 {
                                     using (var fileService = new FileService(_jobSpec, _logService))
                                     {
-                                        Result deleteResult = await fileService.DeleteOldVersions(outputFileName, sourceDirectory.RetainVersions);
-
-                                        result.SubsumeResult(deleteResult);
+                                        if (sourceDirectory.RetainVersions > 0)
+                                        {
+                                            Result deleteResult = await fileService.DeleteOldVersions(outputFileName, sourceDirectory.RetainVersions, sourceDirectory.RetainDaysOld);
+                                            result.SubsumeResult(deleteResult);
+                                        }
                                     }
                                 }
                             }

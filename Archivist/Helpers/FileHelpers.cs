@@ -50,5 +50,12 @@ namespace Archivist.Helpers
 
             return result;
         }
+
+        internal static bool IsLastWrittenMoreThanDaysAgo(string fileName, int daysAgo)
+        {
+            var fi = new FileInfo(fileName);
+
+            return fi.LastWriteTimeUtc < DateTime.UtcNow.AddDays(-1 * daysAgo);
+        }
     }
 }

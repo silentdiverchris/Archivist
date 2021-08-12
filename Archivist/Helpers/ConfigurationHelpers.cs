@@ -94,6 +94,7 @@ namespace Archivist.Helpers
                         OutputFileName = null,
                         AddVersionSuffix = true,
                         RetainVersions = 2,
+                        RetainDaysOld = 30,
                         MinutesOldThreshold = 60
                     },
                     new SourceDirectory {
@@ -104,6 +105,7 @@ namespace Archivist.Helpers
                         OutputFileName = null,
                         AddVersionSuffix = true,
                         RetainVersions = 5,
+                        RetainDaysOld = 30,
                         MinutesOldThreshold = 30
                     },
                     new SourceDirectory {
@@ -114,7 +116,8 @@ namespace Archivist.Helpers
                         DirectoryPath = @"C:\Users\Chris\AppData\Roaming\Thunderbird",
                         OutputFileName = null,
                         AddVersionSuffix = true,
-                        RetainVersions = 2
+                        RetainVersions = 2,
+                        RetainDaysOld = 30
                     },
                     new SourceDirectory {
                         IsEnabled = true,
@@ -122,6 +125,7 @@ namespace Archivist.Helpers
                         DirectoryPath = @"C:\PowerShell",
                         AddVersionSuffix = true,
                         RetainVersions = 2,
+                        RetainDaysOld = 30,
                         MinutesOldThreshold = 30
                     },
                     new SourceDirectory {
@@ -133,6 +137,7 @@ namespace Archivist.Helpers
                         AddVersionSuffix = true,
                         EncryptOutput = true,
                         RetainVersions = 2,
+                        RetainDaysOld = 30,
                         MinutesOldThreshold = 60
                     },
                     new SourceDirectory {
@@ -141,7 +146,8 @@ namespace Archivist.Helpers
                         IsForTesting = false,
                         DirectoryPath = @"D:\Incoming",
                         AddVersionSuffix = true,
-                        RetainVersions = 2
+                        RetainVersions = 2,
+                        RetainDaysOld = 7
                     },
                     new SourceDirectory {
                         Priority = 1,
@@ -150,6 +156,7 @@ namespace Archivist.Helpers
                         DirectoryPath = @"C:\Dev",
                         AddVersionSuffix = true,
                         RetainVersions = 10,
+                        RetainDaysOld = 30,
                         CompressionLevel = CompressionLevel.Fastest,
                         MinutesOldThreshold = 30
                     },
@@ -160,6 +167,7 @@ namespace Archivist.Helpers
                         DirectoryPath = @"C:\RamDiskImages",
                         AddVersionSuffix = true,
                         RetainVersions = 2,
+                        RetainDaysOld = 30,
                         MinutesOldThreshold = 60
                     },
                     new SourceDirectory {
@@ -260,6 +268,7 @@ namespace Archivist.Helpers
                         CompressionLevel = CompressionLevel.Fastest,
                         AddVersionSuffix = true,
                         RetainVersions = 2,
+                        RetainDaysOld = 30,
                         MinutesOldThreshold = 60
                     },
                     new SourceDirectory {
@@ -269,6 +278,7 @@ namespace Archivist.Helpers
                         CompressionLevel = CompressionLevel.NoCompression,
                         AddVersionSuffix = true,
                         RetainVersions = 2,
+                        RetainDaysOld = 30,
                         MinutesOldThreshold = 0
                     }
                 },
@@ -284,11 +294,26 @@ namespace Archivist.Helpers
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         DirectoryPath = @"S:\Archive",
-                        RetainVersions = 5
+                        RetainVersions = 5,
+                        RetainDaysOld = 90
                     },
                     new ArchiveDirectory {
                         Priority = 1,
-                        Description = "External SSD set, 2 x 476GB, connected alternately on demand",
+                        Description = "External SSD set, 2 x 476GB, connected alternately on demand - sometimes mounts as Y",
+                        IsSlowVolume = true,
+                        IsEnabled = true,
+                        IsForTesting = true,
+                        IsRemovable = true,
+                        SynchoniseFileTimestamps = true,
+                        IncludeSpecifications = new List<string> { "*.zip" },
+                        ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
+                        DirectoryPath = @"E:\Archive",
+                        RetainVersions = 10,
+                        RetainDaysOld = 90
+                    },
+                    new ArchiveDirectory {
+                        Priority = 1,
+                        Description = "External SSD set, 2 x 476GB, connected alternately on demand - sometimes mounts as E",
                         IsSlowVolume = true,
                         IsEnabled = true,
                         IsForTesting = true,
@@ -297,7 +322,8 @@ namespace Archivist.Helpers
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         DirectoryPath = @"Y:\Archive",
-                        RetainVersions = 10
+                        RetainVersions = 10,
+                        RetainDaysOld = 90
                     },
                     new ArchiveDirectory {
                         Priority = 2,
@@ -310,7 +336,8 @@ namespace Archivist.Helpers
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { },
                         DirectoryPath = @"Z:\Archive",
-                        RetainVersions = 10
+                        RetainVersions = 10,
+                        RetainDaysOld = 90
                     }
                 }                
             };
@@ -518,6 +545,11 @@ namespace Archivist.Helpers
                 {
                     result.AddError($"SourceDirectories.RetainVersions = {src.RetainVersions} is invalid for source '{src.DirectoryPath}'");
                 }
+
+                if (src.RetainDaysOld > 0 && src.RetainDaysOld < Constants.RETAIN_DAYS_OLD_MINIMUM)
+                {
+                    result.AddError($"ArchiveDirectories.RetainDaysOld = {src.RetainDaysOld} is invalid for archive '{src.DirectoryPath}', minimum is {Constants.RETAIN_DAYS_OLD_MINIMUM}");
+                }
             }
 
             foreach (var arc in jobSpec.ArchiveDirectories.Where(_ => _.IsToBeProcessed(jobSpec)))
@@ -535,6 +567,11 @@ namespace Archivist.Helpers
                 if (arc.RetainVersions < 0)
                 {
                     result.AddError($"ArchiveDirectories.RetainVersions = {arc.RetainVersions} is invalid for archive '{arc.DirectoryPath}'");
+                }
+
+                if (arc.RetainDaysOld > 0 && arc.RetainDaysOld < Constants.RETAIN_DAYS_OLD_MINIMUM)
+                {
+                    result.AddError($"ArchiveDirectories.RetainDaysOld = {arc.RetainDaysOld} is invalid for archive '{arc.DirectoryPath}', minimum is {Constants.RETAIN_DAYS_OLD_MINIMUM}");
                 }
             }
 

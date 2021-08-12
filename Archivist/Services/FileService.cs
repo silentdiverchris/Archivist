@@ -22,9 +22,17 @@ namespace Archivist.Services
         {
         }
 
-        internal async Task<Result> DeleteOldVersions(string archiveFileName, int retainVersions)
+        internal async Task<Result> DeleteOldVersions(string latestFileName, int retainVersions, int retainDaysOld)
         {
-            Result result = new("DeleteOldVersions", true, $"latest file is '{archiveFileName}', retaining {retainVersions}");
+            string retainVersionsStr = retainVersions > 0
+                ? $", retaining the last {retainVersions} versions"
+                : "";
+
+            string retainDaysStr = retainDaysOld > 0
+                ? $" but retaining all files under {retainDaysOld} days old, regardless of versioning"
+                : "";
+            
+            Result result = new("DeleteOldVersions", true, $"latest file is '{latestFileName}'{retainVersionsStr}{retainDaysStr}");
 
             await _logService.ProcessResult(result);
 
@@ -37,20 +45,20 @@ namespace Archivist.Services
                     throw new Exception($"DeleteOldVersions invalid retainVersions {retainVersions}");
                 }
 
-                FileInfo fiArchive = new(archiveFileName);
+                FileInfo fiArchive = new(latestFileName);
 
                 string fileNamePrefix = fiArchive.Name.Substring(0, fiArchive.Name.Length - 9);
                 string searchPattern = $"{fileNamePrefix}*.zip";
 
                 var existingFiles = Directory.GetFiles(fiArchive.DirectoryName, searchPattern)
-                    .Where(_ => _.Length == archiveFileName.Length)
+                    .Where(_ => _.Length == latestFileName.Length)
                     .OrderBy(_ => _);
 
                 if (existingFiles.Any())
                 {
                     if (existingFiles.Count() > retainVersions)
                     {
-                        if (archiveFileName == existingFiles.Last())
+                        if (latestFileName == existingFiles.Last())
                         {
                             foreach (var fileName in existingFiles)
                             {                                
@@ -71,10 +79,17 @@ namespace Archivist.Services
                                     // Last second paranoia, whatever bug might get introduced above, never
                                     // delete the one we just created !
 
-                                    if (fileName != archiveFileName)
+                                    if (fileName != latestFileName)
                                     {
-                                        result.AddInfo($"Deleting old version '{fileName}'");
-                                        File.Delete(fileName);
+                                        if (FileHelpers.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld))
+                                        {
+                                            result.AddInfo($"Deleting old version '{fileName}'");
+                                            File.Delete(fileName);
+                                        }
+                                        else
+                                        {
+                                            result.AddInfo($"Retaining old version '{fileName}' because it was last written less than {retainDaysOld} days ago");
+                                        }
                                     }
                                 }
                             }
@@ -82,7 +97,7 @@ namespace Archivist.Services
                     }
                     else
                     {
-                        result.AddInfo($"DeleteOldVersions for '{archiveFileName}' found {existingFiles.Count()} version{existingFiles.Count().PluralSuffix()}, which is OK");
+                        result.AddInfo($"DeleteOldVersions for '{latestFileName}' found {existingFiles.Count()} version{existingFiles.Count().PluralSuffix()}, which is OK");
                     }
                 }
 
@@ -307,7 +322,7 @@ namespace Archivist.Services
                                 };
                             }
 
-                            await DeleteOldVersions(destinationFileName, destination.RetainVersions);
+                            await DeleteOldVersions(destinationFileName, destination.RetainVersions, destination.RetainDaysOld);
                         }
                         else
                         {
