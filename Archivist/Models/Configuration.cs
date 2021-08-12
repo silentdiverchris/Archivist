@@ -15,6 +15,16 @@ namespace Archivist.Models
     public class BaseDirectory
     {
         /// <summary>
+        /// If non-null, find a drive with this label and combine with the DirectoryPath 
+        /// to determine the directory to be used. Allows for removable dribes that get 
+        /// mounted with different letters to be identified.
+        /// If the DirectoryPath has a drive designation, eg 'D:\Archive', this property 
+        /// is ignored (specifically characters 2 and 3 are ':\'), so to use this function, set
+        /// this to, say, '4TB External HDD' and the DirectoryPath to 'Archive'
+        /// </summary>
+        public string VolumeLabel { get;  set; }
+
+        /// <summary>
         /// The full path of this directory
         /// </summary>
         public string DirectoryPath { get; set; }
@@ -84,6 +94,30 @@ namespace Archivist.Models
             get
             {
                 return Directory.Exists(DirectoryPath);
+            }
+        }
+
+        public void IdentifyVolume()
+        {
+            if (!string.IsNullOrEmpty(VolumeLabel))
+            {
+                if (!DirectoryPath.Contains(@":\"))
+                {
+                    DriveInfo drive = FileHelpers.GetDriveByLabel(VolumeLabel);
+
+                    if (drive is not null)
+                    {
+                        DirectoryPath = Path.Join(drive.Name, DirectoryPath);
+                    }
+                    else
+                    {
+                        throw new Exception($"IdentifyVolume cannot find volume '{VolumeLabel}'");
+                    }
+                }
+                else 
+                {
+                    throw new Exception($"IdentifyVolume found VolumeLabel '{VolumeLabel}' but DirectoryPath '{DirectoryPath}' has a nominated drive");
+                }
             }
         }
 
@@ -345,6 +379,21 @@ namespace Archivist.Models
                     SelectedJobSpecification.ArchiveDirectories.AddRange(GlobalArchiveDirectories);
                     SelectedJobSpecification.SecureDirectories.AddRange(GlobalSecureDirectories);
 
+                    foreach (var dir in SelectedJobSpecification.SourceDirectories)
+                    {
+                        dir.IdentifyVolume();
+                    }
+
+                    foreach (var dir in SelectedJobSpecification.ArchiveDirectories)
+                    {
+                        dir.IdentifyVolume();
+                    }
+
+                    foreach (var dir in SelectedJobSpecification.SecureDirectories)
+                    {
+                        dir.IdentifyVolume();
+                    }
+
                     if (!string.IsNullOrEmpty(SelectedJobSpecification.EncryptionPasswordFile))
                     {
                         if (!string.IsNullOrEmpty(SelectedJobSpecification.EncryptionPassword))
@@ -377,5 +426,16 @@ namespace Archivist.Models
 
             return result;
         }
+
+        //private void IdentifyDirectoriesByVolumeLabel<T>(List<T> directories)
+        //{
+        //    if (typeof(T).IsSubclassOf(typeof(BaseDirectory)))
+        //    {
+        //        foreach (var dir in (List<BaseDirectory>)directories)
+        //        {
+        //            if (dir.vol)
+        //        }
+        //    }
+        //}
     }
 }

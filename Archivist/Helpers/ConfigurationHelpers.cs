@@ -299,7 +299,7 @@ namespace Archivist.Helpers
                     },
                     new ArchiveDirectory {
                         Priority = 1,
-                        Description = "External SSD set, 2 x 476GB, connected alternately on demand - sometimes mounts as Y",
+                        Description = "External Lexar SSD connected alternately on demand",
                         IsSlowVolume = true,
                         IsEnabled = true,
                         IsForTesting = true,
@@ -307,13 +307,14 @@ namespace Archivist.Helpers
                         SynchoniseFileTimestamps = true,
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
-                        DirectoryPath = @"E:\Archive",
+                        VolumeLabel = "Lexar-Ext-SSD-476GB",
+                        DirectoryPath = "Archive",
                         RetainVersions = 10,
                         RetainDaysOld = 90
                     },
                     new ArchiveDirectory {
                         Priority = 1,
-                        Description = "External SSD set, 2 x 476GB, connected alternately on demand - sometimes mounts as E",
+                        Description = "External SanDisk SSD connected alternately on demand",
                         IsSlowVolume = true,
                         IsEnabled = true,
                         IsForTesting = true,
@@ -321,7 +322,8 @@ namespace Archivist.Helpers
                         SynchoniseFileTimestamps = true,
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
-                        DirectoryPath = @"Y:\Archive",
+                        VolumeLabel = "SanDisk-Ext-SSD-476GB",
+                        DirectoryPath = "Archive",
                         RetainVersions = 10,
                         RetainDaysOld = 90
                     },
@@ -335,7 +337,8 @@ namespace Archivist.Helpers
                         SynchoniseFileTimestamps = true,
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { },
-                        DirectoryPath = @"Z:\Archive",
+                        VolumeLabel = "WD-Ext-HDD-1TB",
+                        DirectoryPath = "Archive",
                         RetainVersions = 10,
                         RetainDaysOld = 90
                     }

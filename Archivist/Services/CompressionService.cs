@@ -113,7 +113,8 @@ namespace Archivist.Services
 
                             var lastWriteThreshold = fiCurrentArchive.LastWriteTimeUtc + new TimeSpan(0, sourceDirectory.MinutesOldThreshold, 0);
 
-                            result.AddDebug($"Archive '{currentOutputFileName}' last written {fiCurrentArchive.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC, looking for files written after {lastWriteThreshold.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
+                            result.AddDebug($"Processing archive '{currentOutputFileName}' last written {fiCurrentArchive.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
+                            result.AddDebug($"Looking for files written after {lastWriteThreshold.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
 
                             using (var fileService = new FileService(_jobSpec, _logService))
                             {
@@ -198,14 +199,14 @@ namespace Archivist.Services
                                     }
                                 }
 
-                                if (FileService.FileNameMatchesVersionedPattern(fiOutput.FullName))
+                                if (sourceDirectory.RetainVersions >= Constants.RETAIN_VERSIONS_MINIMUM)
                                 {
-                                    using (var fileService = new FileService(_jobSpec, _logService))
+                                    if (FileService.FileNameMatchesVersionedPattern(fiOutput.FullName))
                                     {
-                                        if (sourceDirectory.RetainVersions > 0)
+                                        using (var fileService = new FileService(_jobSpec, _logService))
                                         {
-                                            Result deleteResult = await fileService.DeleteOldVersions(outputFileName, sourceDirectory.RetainVersions, sourceDirectory.RetainDaysOld);
-                                            result.SubsumeResult(deleteResult);
+                                            result.SubsumeResult(
+                                                await fileService.DeleteOldVersions(outputFileName, sourceDirectory.RetainVersions, sourceDirectory.RetainDaysOld));
                                         }
                                     }
                                 }

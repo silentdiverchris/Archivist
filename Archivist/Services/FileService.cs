@@ -24,26 +24,27 @@ namespace Archivist.Services
 
         internal async Task<Result> DeleteOldVersions(string latestFileName, int retainVersions, int retainDaysOld)
         {
-            string retainVersionsStr = retainVersions > 0
-                ? $", retaining the last {retainVersions} versions"
+            // We shouldn't even be in here if RetainVersions isn't at least the minimum but just in case...
+            if (retainVersions < Constants.RETAIN_VERSIONS_MINIMUM)
+            {
+                throw new Exception($"DeleteOldVersions invalid retainVersions {retainVersions} for '{latestFileName}'");
+            }
+
+            Result result = new("DeleteOldVersions", true, $"for file '{latestFileName}'");
+
+            string retainStr = retainVersions > 0
+                ? $"Retaining the last {retainVersions} versions" + (retainDaysOld > 0
+                    ? $" but retaining files under {retainDaysOld} days old"
+                    : "")
                 : "";
 
-            string retainDaysStr = retainDaysOld > 0
-                ? $" but retaining all files under {retainDaysOld} days old, regardless of versioning"
-                : "";
-            
-            Result result = new("DeleteOldVersions", true, $"latest file is '{latestFileName}'{retainVersionsStr}{retainDaysStr}");
+            result.AddDebug(retainStr);
 
             await _logService.ProcessResult(result);
 
             try
             {
                 // The suffix is of the form -nnnn.zip, so for file abcde.zip we are looking for abcde-nnnnn.zip
-
-                if (retainVersions < 2)
-                {
-                    throw new Exception($"DeleteOldVersions invalid retainVersions {retainVersions}");
-                }
 
                 FileInfo fiArchive = new(latestFileName);
 
@@ -100,7 +101,6 @@ namespace Archivist.Services
                         result.AddInfo($"DeleteOldVersions for '{latestFileName}' found {existingFiles.Count()} version{existingFiles.Count().PluralSuffix()}, which is OK");
                     }
                 }
-
             }
             catch (Exception ex)
             {
@@ -154,20 +154,6 @@ namespace Archivist.Services
             await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: true, "file");
 
             return result;
-        }
-
-        private Regex GenerateRegexForMask(string fileMask)
-        {
-            Regex mask = new Regex(
-                "^.*" +
-                fileMask
-                    .Replace(".", "[.]")
-                    .Replace("*", ".*")
-                    .Replace("?", ".")
-                + '$',
-                RegexOptions.IgnoreCase);
-
-            return mask;
         }
 
         /// <summary>
@@ -232,7 +218,7 @@ namespace Archivist.Services
 
                 foreach (var excludeSpec in destination.ExcludeSpecifications)
                 {
-                    excludeRegexList.Add(GenerateRegexForMask(excludeSpec));
+                    excludeRegexList.Add(excludeSpec.GenerateRegexForFileMask());
                 }
 
                 // Iterate backwards through the list so we can change it while iterating
@@ -249,7 +235,7 @@ namespace Archivist.Services
                     }
                 }
 
-                result.AddInfo($"Checking {fileNameList.Count} files of {result.ItemsFound}");
+                result.AddDebug($"Checking {fileNameList.Count} files of {result.ItemsFound}");
 
                 var stopwatch = Stopwatch.StartNew();
 
@@ -322,7 +308,11 @@ namespace Archivist.Services
                                 };
                             }
 
-                            await DeleteOldVersions(destinationFileName, destination.RetainVersions, destination.RetainDaysOld);
+                            if (destination.RetainVersions >= Constants.RETAIN_VERSIONS_MINIMUM)
+                            {
+                                result.SubsumeResult(
+                                    await DeleteOldVersions(destinationFileName, destination.RetainVersions, destination.RetainDaysOld));
+                            }
                         }
                         else
                         {
@@ -357,7 +347,8 @@ namespace Archivist.Services
         }
 
         /// <summary>        
-        /// We don't need the latest file, just the first we find that is after the time supplied
+        /// We don't need the latest file, or more than one, just the first we find that is last 
+        /// written after the specified time
         /// </summary>
         /// <param name="directoryName"></param>
         /// <param name="recursive"></param>
@@ -367,7 +358,8 @@ namespace Archivist.Services
         {
             DirectoryInfo root = new(directoryName);
 
-            // Try just the root first even if we're recursive
+            // We're only looking for the first file we find with a later timestamp, let's
+            // try the files in root first, even if we're recursive
 
             var rootFiles = root.GetFiles("*.*", SearchOption.TopDirectoryOnly);
 
@@ -379,12 +371,13 @@ namespace Archivist.Services
             }
             else if (recursive)
             {
-                // Ah well, worth a try, check subdirectories, if any, one by one, best to do it
-                // this way so we don't catalogue all of them, then start looking
+                // Ah well, worth a try, check the subdirectories, if any, one by one. Best to do it
+                // this way rather than GetFiles the whole lot, then start looking; we only need to
+                // find one later file to make a decision
 
                 foreach (var di in root.GetDirectories())
                 {
-                    var allFiles = di.GetFiles("*.*", SearchOption.AllDirectories);
+                    var allFiles = di.GetFiles("*.*", SearchOption.AllDirectories); // Now we're recursive
 
                     later = allFiles.FirstOrDefault(_ => _.LastWriteTimeUtc > laterThanUtc);
 

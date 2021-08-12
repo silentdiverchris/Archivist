@@ -1,10 +1,29 @@
 ﻿using Archivist.Classes;
-using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Archivist.Helpers
 {
     internal static class FileHelpers
     {
+        internal static DriveInfo GetDriveByLabel(string label)
+        {
+            return DriveInfo.GetDrives().SingleOrDefault(_ => _.VolumeLabel == label);
+        }
+
+        internal static Regex GenerateRegexForFileMask(this string fileMask)
+        {
+            Regex mask = new(
+                "^.*" +
+                fileMask
+                    .Replace(".", "[.]")
+                    .Replace("*", ".*")
+                    .Replace("?", ".")
+                + '$',
+                RegexOptions.IgnoreCase);
+
+            return mask;
+        }
+
         internal static string GetByteSizeAsText(double sizeBytes)
         {
             if (sizeBytes > (1024 * 1024 * 1024))
