@@ -1,12 +1,8 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
 using Archivist.Models;
-using System;
 using System.Diagnostics;
-using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Archivist.Services
 {
@@ -114,7 +110,7 @@ namespace Archivist.Services
                             var lastWriteThreshold = fiCurrentArchive.LastWriteTimeUtc + new TimeSpan(0, sourceDirectory.MinutesOldThreshold, 0);
 
                             result.AddDebug($"Processing archive '{currentOutputFileName}' last written {fiCurrentArchive.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
-                            result.AddDebug($"Looking for files written after {lastWriteThreshold.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
+                            result.AddDebug($"Looking for files written after {lastWriteThreshold.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
 
                             using (var fileService = new FileService(_jobSpec, _logService))
                             {
@@ -122,7 +118,7 @@ namespace Archivist.Services
 
                                 if (fiLater is not null)
                                 {
-                                    result.AddDebug($"Found a later file '{fiLater.FullName}' at {fiLater.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} in '{sourceDirectory.DirectoryPath}'");
+                                    result.AddDebug($"Found a later file '{fiLater.FullName}' at {fiLater.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC in '{sourceDirectory.DirectoryPath}'");
                                 }
                                 else
                                 {

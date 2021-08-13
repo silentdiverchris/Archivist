@@ -122,13 +122,17 @@ The RetainVersions setting defines how many versions will be kept, but is limite
 
 The RetainDaysOld setting will not cause older files to be deleted, it only prevents younger files being deleted.
 
-In this way, you can for example retain the last 3 versions and any versions up to 30 days old in the primary archive directory while retaining every copy of these files up to a year old in one archive directory, all files forever in another archive directory and just the very latest of each file in yet another archive directory.
+Setting AddVersionSuffix to true, and both RetainVersions and RetainDaysOld to zero will just keep adding new versions and never delete anything.
+
+In this way, you can for example retain the last 3 versions and any versions up to 30 days old in the primary archive directory while retaining every copy of these files up to a year old in another archive directory, all files forever in another archive directory and just the very latest of each file in yet another archive directory.
+
+The process to review files for deletion only happens after an archive file is created or copied, so if a source directory is not changed, and so no new archive of it is created, no old archives of it will be deleted.
 
 # Performance
 
 It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of the code used RoboCopy, which did the copying more quickly especially with muti-threaded copies. 
 
-I might update it to use RoboCopy again but it's not really a priority, it wasn't all that much faster, and I don't sit waiting for it to finish anyway.
+I might update it to use RoboCopy again but it's not really a priority, it wasn't all that much faster, I don't sit waiting for it to finish anyway and; stable and dependable (and fantastic) as RoboCopy is, it's nice not to have a call out to another external executable.
 
 # Full disk
 
@@ -144,7 +148,7 @@ My backup system involves having several external drives which I mount for vario
 
 If you mark a directory as removable with IsRemovable, the system will try to use it but if it's not there it won't be considered as an error. Any drive that is not found which is not marked as removable will be reported as an error.
 
-This means you don't need to be too bothered about exactly which drives you plug in, it'll just archive to what it finds, but it can distinguish betweeen a drive not having been plugged in and one that should be there but isn't.
+This means you don't need to be too bothered about exactly which drives you plug in, it'll just archive to what it finds, but this setting allows it to distinguish between an external disk not having been plugged in and a internal one that should be available but isn't.
 
 # Scheduling
 

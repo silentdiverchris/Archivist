@@ -2,14 +2,8 @@
 using Archivist.Helpers;
 using Archivist.Models;
 using Microsoft.Data.SqlClient;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Security.AccessControl;
-using System.Security.Principal;
 using System.Text;
-using System.Threading.Tasks;
 using static Archivist.Delegates;
 using static Archivist.Enumerations;
 
@@ -134,7 +128,7 @@ namespace Archivist.Services
                     }
                     else
                     {
-                        result.AddInfo($"{result.ItemsFound} {itemNameSingular.Pluralise(result.ItemsFound, " ")}found, none processed");
+                        result.AddInfo($"{result.ItemsFound} {itemNameSingular.Pluralise(result.ItemsFound, " ")}found, none needed processing");
                     }
                 }
                 else

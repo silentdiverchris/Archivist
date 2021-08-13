@@ -1,13 +1,8 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
 using Archivist.Models;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Archivist.Services
 {
@@ -34,7 +29,7 @@ namespace Archivist.Services
 
             string retainStr = retainVersions > 0
                 ? $"Retaining the last {retainVersions} versions" + (retainDaysOld > 0
-                    ? $" but retaining files under {retainDaysOld} days old"
+                    ? $" and all files under {retainDaysOld} days old"
                     : "")
                 : "";
 
@@ -84,12 +79,12 @@ namespace Archivist.Services
                                     {
                                         if (FileHelpers.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld))
                                         {
-                                            result.AddInfo($"Deleting old version '{fileName}'");
+                                            result.AddInfo($"Deleting version '{fileName}'");
                                             File.Delete(fileName);
                                         }
                                         else
                                         {
-                                            result.AddInfo($"Retaining old version '{fileName}' because it was last written less than {retainDaysOld} days ago");
+                                            result.AddInfo($"Retaining version '{fileName}' because it was last written less than {retainDaysOld} days ago");
                                         }
                                     }
                                 }
@@ -372,8 +367,8 @@ namespace Archivist.Services
             else if (recursive)
             {
                 // Ah well, worth a try, check the subdirectories, if any, one by one. Best to do it
-                // this way rather than GetFiles the whole lot, then start looking; we only need to
-                // find one later file to make a decision
+                // this way rather than GetFiles the whole lot, then start looking; we don't need the
+                // full set, just one later file will do.
 
                 foreach (var di in root.GetDirectories())
                 {

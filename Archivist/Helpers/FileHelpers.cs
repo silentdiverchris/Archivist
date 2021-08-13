@@ -56,7 +56,7 @@ namespace Archivist.Helpers
 
             const double threshold = 50L * 1024 * 1024 * 1024;
 
-            string freeSpaceText = $"Remaining disk space on drive {drive[0]} is {FileHelpers.GetByteSizeAsText(gbFree)}";
+            string freeSpaceText = $"Remaining space on drive {drive[0]} is {FileHelpers.GetByteSizeAsText(gbFree)}";
 
             if (gbFree < (threshold))
             {

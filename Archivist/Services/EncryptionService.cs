@@ -1,8 +1,6 @@
 ﻿using Archivist.Classes;
 using Archivist.Models;
 using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace Archivist.Services
 {
@@ -21,7 +19,6 @@ namespace Archivist.Services
             if (File.Exists(sourceFileName) && sourceFileName.ToLower() != "clue.txt")
             {
                 FileInfo fiSrc = new(sourceFileName);
-                //LogEntry logEntry = new() { FunctionName = "EncryptFileAsync", SourceFileName = sourceFileName, FileSizeBytes = fiSrc.Length };
 
                 if (destinationFileName is null)
                 {
