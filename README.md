@@ -50,7 +50,7 @@ If it finds an unencrypted file with a write time the same as, or earlier than t
 
 The is done in the first step, so the files zipped up in the next step are safe from prying eyes and the files at rest on your local folder are secured again.
 
-To nominate secure directories, add them to the GlobalSecureDirectories or SecureDirectories list in the configuration file, [see below](#ConfigurationFile) for details.
+To nominate secure directories, add them to the GlobalSecureDirectories or SecureDirectories list in the configuration file, see the [configuration file](#ConfigurationFile) section for details.
 
 ## Archiving source directories
 
@@ -60,7 +60,7 @@ This uses the 'ZipFile.CreateFromDirectory' interface in Microsoft's Sytem.IO.Co
 
 The resulting zip files can then optionally be encrypted, creating a file with a '.aes' extension, so 'ArchivedFile.zip' is encrypted to 'ArchivedFile.zip.aes'. Set the EncryptOutput configuration setting on the source directory to enable this. 
 
-See the [AESCrypt](#AESCrypt) section below to set up encryption.
+See the [AESCrypt](#AESCrypt) section for full details on setting up encryption.
 
 ## Copying archives
 
@@ -86,9 +86,13 @@ I mainly archive to external SSDs and HDDs but also to a set of MicroSD cards, w
 
 See IsSlowVolume and ProcessSlowVolumes in the [configuration file](#ConfigurationFile) section below.
 
-# File Versions
+# File timestamps
 
-At two points in the process, namely when a zip archive is created and after copying it to an archive directory, the system can delete older generations of each file and keep a specific number of them. To do this, set the AddVersionSuffix and RetainVersions settings on the directory in question.
+When an archive is copied out to archive directories, the LastWriteTime is set to the same value as the source file.
+
+The system does not use file creation time to make any decisions, the last write time is the one it sets and uses to make decisions.
+
+# File versions
 
 An archive of folder 'Development' would normally create file 'Development.zip', setting AddVersionSuffix would name the first one as 'Development-0001.zip', the next as 'Development-0002.zip' etc. Then setting RetainVersions to 3, for example, would leave those as-is when 'Development-0003.zip' was created, then when 'Development-0004.zip' was created would delete 'Development-0001.zip', retaining the last 3.
 
@@ -107,6 +111,18 @@ If this is the case, the system will warn you in the console/log but will carry 
 If AddVersionSuffix for a directory is false, files will not be versioned and there will only ever be one version of each archive in that directory.
 
 This versioning can start to eat up disk space of course, the system will report the space free on drives it uses to the console/log, and generate a warning if it is below 50Gb, currently.
+
+# Deleting old versions
+
+At two points in the process, namely when a zip archive is created and after copying it to an archive directory, the system can delete older generations of each file and so keep a specific number of them. 
+
+To do this, set the AddVersionSuffix, RetainVersions and RetainDaysOld settings on the directory in question.
+
+The RetainVersions setting defines how many versions will be kept, but is limited by the RetainDaysOld setting, which ensures that no file is deleted if it was last written to less than that number of days ago, regardless of the RetainVersions setting.
+
+The RetainDaysOld setting will not cause older files to be deleted, it only prevents younger files being deleted.
+
+In this way, you can for example retain the last 3 versions and any versions up to 30 days old in the primary archive directory while retaining every copy of these files up to a year old in one archive directory, all files forever in another archive directory and just the very latest of each file in yet another archive directory.
 
 # Performance
 
