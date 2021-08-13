@@ -50,17 +50,17 @@ If it finds an unencrypted file with a write time the same as, or earlier than t
 
 The is done in the first step, so the files zipped up in the next step are safe from prying eyes and the files at rest on your local folder are secured again.
 
-To nominate secure directories, add them to the GlobalSecureDirectories or SecureDirectories list in the configuration file, see below for details.
+To nominate secure directories, add them to the GlobalSecureDirectories or SecureDirectories list in the configuration file, [see below](#ConfigurationFile) for details.
 
 ## Archiving source directories
 
 The second part of the process is to take the list of directories in the GlobalSourceDirectories and SourceDirectories configuration and recursively zip each into a single output file in a nominated directory, known as the primary archive directory,  specified in the configuration as PrimaryArchiveDirectoryName.
 
-This uses the 'ZipFile.CreateFromDirectory' interface in Microsoft's Sytem.IO.Compression library, see https://docs.microsoft.com/en-us/dotnet/api/system.io.compression?view=net-5.0 for details.
+This uses the 'ZipFile.CreateFromDirectory' interface in Microsoft's Sytem.IO.Compression library, see the [Microsoft documentation](https://docs.microsoft.com/en-us/dotnet/api/system.io.compression?view=net-5.0) for details.
 
 The resulting zip files can then optionally be encrypted, creating a file with a '.aes' extension, so 'ArchivedFile.zip' is encrypted to 'ArchivedFile.zip.aes'. Set the EncryptOutput configuration setting on the source directory to enable this. 
 
-See the AESCrypt section below to set up encryption.
+See the [AESCrypt](#AESCrypt) section below to set up encryption.
 
 ## Copying archives
 
@@ -78,13 +78,13 @@ Directories and files can be selected, included and excluded in various ways acc
 
 Include or exclude files to be copied to archives depending on a set of file specifications eg. 'Media*.zip'.
 
-See IncludeSpecifications and ExcludeSpecifications, below.
+See IncludeSpecifications and ExcludeSpecifications in the [configuration file](#ConfigurationFile) section below.
 
 ## Slow volumes
 
 I mainly archive to external SSDs and HDDs but also to a set of MicroSD cards, which are rather slow to write to but cheap for the capacity and fairly indestructable. The system can be set up to only write to these slow volumes on an overnight run, or at the end of the week, say.
 
-See IsSlowVolume and ProcessSlowVolumes, below.
+See IsSlowVolume and ProcessSlowVolumes in the [configuration file](#ConfigurationFile) section below.
 
 # File Versions
 
@@ -190,13 +190,14 @@ Obviously this is a plain-text password in a file of one kind or another so defi
 
 You could end up with a nicely encrypted set of files with the password conveniently provided in plain text nearby.
 
+<a name="AESCrypt"></a>
 # AESCrypt
 
 It uses AESCrypt to do the encryption rather than a built-in library, the reason being that I routinely use AESCrypt's explorer extension to decrypt these files to view and alter my little credential files and want the encryption to be done by the same code I'm expecting to decrypt it with.
 
 To enable encryption you'll need to manually install AESCrypt from https://www.aescrypt.com/. Thanks to Paketizer for this great utility and being happy for me to involve their product in my utility.
 
-Once it's installed, add the path to the executable to the appsettings.json file as AESEncryptPath, see App settings, below.
+Once it's installed, add the path to the executable to the appsettings.json file as AESEncryptPath, see the [app settings](#AppSettings) section below.
 
 Encryption is disabled by default, to enable it, set EncryptOutput to true in the source directories in the configuration file and/or define one or more secure directories.
 
@@ -207,6 +208,7 @@ There is only one parameter to the executable Archivist.exe, which is optional. 
 
 If no parameter is supplied, the system will run the job named in the app settings 'RunJobName'.
 
+<a name="AppSettings"></a>
 # App settings
 
 Standard json configuration file, sample below;
@@ -238,6 +240,7 @@ Here is a fuller version, pointing at different places for the configuration and
 }
 ```
 
+<a name="ConfigurationFile"></a>
 # Configuration file
 
 This is a json file defining the archiving jobs that exist and what they will do. Set the name of your configuration file in app settings ConfigurationFile. If the file does not exist, a default one will be created but obviously the default one won't know your directory names so won't work as-is.
@@ -283,7 +286,7 @@ These settings apply to both types of directory.
 |IsSlowVolume|Whether this is a slow volume, used in conjunction with config WriteToSlowVolumes so backup jobs that only read from and write to fast drives can be set up by setting job setting ProcessSlowVolumes to false.|
 |RetainVersions|If a file has a version suffix (created by setting source directory setting AddVersionSuffix to true) we will retain this many of them in this directory, zero means we keep all versions, which will eventually fill the volume.<br><br>Something to be aware of is that if you set this lower on an archive directory than on the source directory the system will keep copying over older versions and then deleting them, if the system finds this on startup it will log a warning but cheerfully copy and delete as instructed.<br><br>If RetainVersions is set to zero, no archives will ever be deleted.|
 |RetainDaysOld|Specifies the minimum age at which an archive file can be deleted, regardless of any version numbering. The age is determined by the last write time, not the creation time.<br><br>Zero disables this function and any non-zero value has a minimum of 7 days. This ensures that however many versions of the archive are created, it will not delete any file that is younger than this number of days.<br><br>This does not cause files to be deleted after that number of days, it just stops younger files being deleted.<br><br>If the RetainVersions setting is set to zero, this setting will have no effect and no archives will ever be deleted.|
-|VolumeLabel|Allows the directory to be identified by the volume label rather than a drive designation, for removable drives which aren't always F:\ or whatever. Set this to a valid volume label and ensure yhe DirectoryName has no drive designation, eg. VolumeLabel '1TB HDD' and DirectoryName 'Archive' will map to 'F:\Archive', assuming the label of F: matches.|
+|VolumeLabel|Allows the directory to be identified by the volume label rather than a drive designation, for removable drives which aren't always F:\ or whatever. Set this to a valid volume label and ensure yhe DirectoryName has no drive designation, eg. VolumeLabel '1TB HDD' and DirectoryName 'Archive' will map to 'F:\Archive', as long as the label of F: matches the VolumeLabel setting.|
 |DirectoryPath|The path of this directory, either the full path eg. 'H:\Archive', or just 'Archive' if a valid VolumeLabel is supplied.|
 |IncludeSpecifications|A list of file specs, eg '\*.txt', 'thing.\*', abc???de.jpg' etc, only process files matching these, an empty list includes all files.|
 |ExcludeSpecifications|A list of file specs, eg '\*.txt', 'thing.\*', abc???de.jpg' etc, ignore files matching these, an empty list doesn't exclude any files.|
@@ -302,7 +305,7 @@ Here you define the set of directories you want zipping up into files in the pri
 |IsFairlyStatic|Indicates whether this source is something that changes a lot, eg source code as opposed to sets of files that are occasionally added to but not often changed like movies and photos.<br><br>This doesn't stop it being archived, but means you can set up archive jobs to choose whether to process this source based on the job ArchiveFairlyStatic setting.|
 |CompressionLevel|What type of compression to use on creating zip files, options are;<br>0: Optimal<br>1: Fastest<br>2: NoCompression<br>3: SmallestSize<br>For full details see the [Microsoft documentation](https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.zipfile.createfromdirectory?view=net-5.0).|
 |ReplaceExisting|Overwrite any output files with the same name as one being created.|
-|EncryptOutput|Encrypt the output file after zipping, uses AESEncrypt at the moment, see the AESCrypt section above for setup instructions.<br><br>You need to install it manually and put the path to the exe in the AESEncryptPath setting in appsettings.json.<br><br>The reason it doesn't use built-in .Net encryption is because I use the AESEncrypt Explorer extension so want to encrypt files with the same code.|
+|EncryptOutput|Encrypt the output file after zipping, uses AESEncrypt at the moment, see the [AESCrypt](#AESCrypt) section above for setup instructions.<br><br>You need to install it manually and put the path to the exe in the AESEncryptPath setting in appsettings.json.<br><br>The reason it doesn't use built-in .Net encryption is because I use the AESEncrypt Explorer extension so want to encrypt files with the same code.|
 |DeleteArchiveAfterEncryption|Delete the unencrypted zip archive after successful encryption.|
 |OutputFileName|The name of the zipped output file (no path), if not specified it uses the path to generate the name so directory 'C:\AbC\DeF\GhI' will be archived to 'AbC-DeF-GhI.zip'.<br><br>For ease of use and clarity it's best to default this unless you really want to set the name to something else.|
 |AddVersionSuffix|Adds a suffix to the file name of the form '-nnnn' before the extension, each new file adds 1 to the number. Archiving 'C:\Blah' with the default OutputFileName setting results in files 'Blah-0001.zip', 'Blah-0002.zip' etc.<br><br>This works alongside RetainVersions and RetainDaysOld to limit the number of these which it keeps.|

@@ -88,17 +88,21 @@ namespace Archivist.Models
         /// </summary>
         public bool IsSlowVolume { get; set; }
 
+        private bool _isAvailable = false;
+
         [JsonIgnore]
         public bool IsAvailable
         {
             get
             {
-                return Directory.Exists(DirectoryPath);
+                return _isAvailable;
             }
         }
 
-        public void IdentifyVolume()
+        public void VerifyVolume()
         {
+            _isAvailable = false; // That's the default but just in case
+
             if (!string.IsNullOrEmpty(VolumeLabel))
             {
                 if (!DirectoryPath.Contains(@":\"))
@@ -108,16 +112,29 @@ namespace Archivist.Models
                     if (drive is not null)
                     {
                         DirectoryPath = Path.Join(drive.Name, DirectoryPath);
+
+                        _isAvailable = Directory.Exists(DirectoryPath);
                     }
                     else
                     {
-                        throw new Exception($"IdentifyVolume cannot find volume '{VolumeLabel}'");
+                        if (IsRemovable)
+                        {
+                            // That's fine, it's not mounted
+                        }
+                        else
+                        {
+                            throw new Exception($"IdentifyVolume cannot find volume '{VolumeLabel}'");
+                        }
                     }
                 }
                 else 
                 {
                     throw new Exception($"IdentifyVolume found VolumeLabel '{VolumeLabel}' but DirectoryPath '{DirectoryPath}' has a nominated drive");
                 }
+            }
+            else
+            {
+                _isAvailable = Directory.Exists(DirectoryPath);
             }
         }
 
@@ -381,17 +398,17 @@ namespace Archivist.Models
 
                     foreach (var dir in SelectedJobSpecification.SourceDirectories)
                     {
-                        dir.IdentifyVolume();
+                        dir.VerifyVolume();
                     }
 
                     foreach (var dir in SelectedJobSpecification.ArchiveDirectories)
                     {
-                        dir.IdentifyVolume();
+                        dir.VerifyVolume();
                     }
 
                     foreach (var dir in SelectedJobSpecification.SecureDirectories)
                     {
-                        dir.IdentifyVolume();
+                        dir.VerifyVolume();
                     }
 
                     if (!string.IsNullOrEmpty(SelectedJobSpecification.EncryptionPasswordFile))
