@@ -289,7 +289,8 @@ namespace Archivist.Helpers
                         SynchoniseFileTimestamps = true,
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
-                        DirectoryPath = @"S:\Archive",
+                        VolumeLabel = "SanDisk-Ext-MicroSD-500GB",
+                        DirectoryPath = "Archive",
                         RetainVersions = 5,
                         RetainDaysOld = 90
                     },
@@ -305,7 +306,7 @@ namespace Archivist.Helpers
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         VolumeLabel = "Lexar-Ext-SSD-476GB",
                         DirectoryPath = "Archive",
-                        RetainVersions = 10,
+                        RetainVersions = 5,
                         RetainDaysOld = 90
                     },
                     new ArchiveDirectory {
@@ -320,7 +321,7 @@ namespace Archivist.Helpers
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         VolumeLabel = "SanDisk-Ext-SSD-476GB",
                         DirectoryPath = "Archive",
-                        RetainVersions = 10,
+                        RetainVersions = 5,
                         RetainDaysOld = 90
                     },
                     new ArchiveDirectory {
@@ -335,7 +336,7 @@ namespace Archivist.Helpers
                         ExcludeSpecifications = new List<string> { },
                         VolumeLabel = "WD-Ext-HDD-1TB",
                         DirectoryPath = "Archive",
-                        RetainVersions = 10,
+                        RetainVersions = 5,
                         RetainDaysOld = 90
                     }
                 }                
@@ -574,18 +575,19 @@ namespace Archivist.Helpers
                 }
             }
 
-            foreach (var arc in jobSpec.ArchiveDirectories
-                .Where(_ => _.IsToBeProcessed(jobSpec)))
-            {
-                foreach (var src in jobSpec.SourceDirectories
-                    .Where(_ => _.IsToBeProcessed(jobSpec)))
-                {
-                    if (arc.RetainVersions > 0 && arc.RetainVersions < src.RetainVersions)
-                    {
-                        result.AddWarning($"'{src.DirectoryPath}' has RetainVersions {src.RetainVersions} for source '{src.DirectoryPath}' and {arc.RetainVersions} for archive to '{arc.DirectoryPath}', this will mean earlier generations of the archive get copied over from source to archive and immediately deleted, best to always retain the same or more versions in the archives than the sources");
-                    }
-                }
-            }
+            // Not the case any more, so no need tio warn about it
+            //foreach (var arc in jobSpec.ArchiveDirectories
+            //    .Where(_ => _.IsToBeProcessed(jobSpec)))
+            //{
+            //    foreach (var src in jobSpec.SourceDirectories
+            //        .Where(_ => _.IsToBeProcessed(jobSpec)))
+            //    {
+            //        if (arc.RetainVersions > 0 && arc.RetainVersions < src.RetainVersions)
+            //        {
+            //            result.AddWarning($"'{src.DirectoryPath}' has RetainVersions {src.RetainVersions} for source '{src.DirectoryPath}' and {arc.RetainVersions} for archive to '{arc.DirectoryPath}', this will mean earlier generations of the archive get copied over from source to archive and immediately deleted, best to always retain the same or more versions in the archives than the sources");
+            //        }
+            //    }
+            //}
 
             return result;
         }

@@ -76,5 +76,10 @@ namespace Archivist.Helpers
 
             return fi.LastWriteTimeUtc < DateTime.UtcNow.AddDays(-1 * daysAgo);
         }
+
+        internal static bool IsLastWrittenLessThanDaysAgo(string fileName, int daysAgo)
+        {
+            return !IsLastWrittenMoreThanDaysAgo(fileName, daysAgo);
+        }
     }
 }

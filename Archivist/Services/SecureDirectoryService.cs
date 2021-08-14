@@ -27,7 +27,7 @@ namespace Archivist.Services
 
         internal async Task<Result> ProcessSecureDirectoriesAsync()
         {
-            Result result = new("ProcessSecureDirectoriesAsync", true);
+            Result result = new("ProcessSecureDirectoriesAsync", false);
 
             if (_jobSpec.SecureDirectories != null)
             {
@@ -39,7 +39,7 @@ namespace Archivist.Services
                 }
             }
 
-            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: true, itemNameSingular: "file");
+            await _logService.ProcessResult(result, addCompletionItem: false, reportItemCounts: false, itemNameSingular: "file");
 
             return result;
         }

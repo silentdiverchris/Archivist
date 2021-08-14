@@ -77,14 +77,16 @@ namespace Archivist.Services
 
                                     if (fileName != latestFileName)
                                     {
+                                        // Never delete anything that is younger than RetainDaysOld
+
                                         if (FileHelpers.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld))
                                         {
-                                            result.AddInfo($"Deleting version '{fileName}'");
+                                            result.AddWarning($"Deleting file version '{fileName}'");
                                             File.Delete(fileName);
                                         }
                                         else
                                         {
-                                            result.AddInfo($"Retaining version '{fileName}' because it was last written less than {retainDaysOld} days ago");
+                                            result.AddDebug($"Retaining version '{fileName}', last written under {retainDaysOld} days ago");
                                         }
                                     }
                                 }
@@ -93,7 +95,7 @@ namespace Archivist.Services
                     }
                     else
                     {
-                        result.AddInfo($"DeleteOldVersions for '{latestFileName}' found {existingFiles.Count()} version{existingFiles.Count().PluralSuffix()}, which is OK");
+                        result.AddDebug($"DeleteOldVersions for '{latestFileName}' found {existingFiles.Count()} version{existingFiles.Count().PluralSuffix()}, which is OK");
                     }
                 }
             }
@@ -232,6 +234,23 @@ namespace Archivist.Services
 
                 result.AddDebug($"Checking {fileNameList.Count} files of {result.ItemsFound}");
 
+                // OK, we have a bit of a code smell coming up, we want to detect where files will be copied over from the 
+                // source directory to the archive directory then immediately be deleted because the RetainVersions setting for
+                // the source is larger than that for the destiation, assuming the RetainDaysOld setting allows it.
+                
+                // Because we are processing the folder as a whole, we're not looking at them in terms of a bunch of versioned
+                // sets, but as a list of file names, which makes things awkward.
+
+                // Clearly I didn't take this into account when I wrote it but rather than refactor this whole section, we
+                // are going to filter the list of files to copy by scanning through them, deconstructing the names to work
+                // out which are versioned sets and removing the ones that will subsequently be deleted anyway.
+
+                // Not too bad a code smell, but a bit whiffy for sure.
+
+                fileNameList = RemoveFilesThatWouldJustGetDeletedAnyway(fileNameList, destination.RetainVersions, destination.RetainDaysOld);
+
+                // Now that slightly embarrassing process is done, we're ready to copy the list of files over
+
                 var stopwatch = Stopwatch.StartNew();
 
                 foreach (var fileName in fileNameList)
@@ -248,7 +267,7 @@ namespace Archivist.Services
                         if (fiSrc.LastWriteTimeUtc == fiDest.LastWriteTimeUtc && fiSrc.Length == fiDest.Length)
                         {
                             doCopy = false;
-                            //result.AddInfo("Source and destination have identical times and lengths, skipping");
+                            result.AddDebug($"Source and destination for '{fileName}' have identical times and lengths, skipping");
                         }
                     }
 
@@ -339,6 +358,68 @@ namespace Archivist.Services
             await _logService.ProcessResult(result, reportItemCounts: true, addCompletionItem: true, itemNameSingular: "file");
 
             return result;
+        }
+
+        /// <summary>
+        /// This is a cure for the bad bit of design where files get copied to archive, then immediately deleted due 
+        /// to the RetainVersions being larger on the source than the destination. This works just fine but could
+        /// be refactored out at some point
+        /// </summary>
+        /// <param name="fileNameList"></param>
+        /// <param name="retainVersions"></param>
+        /// <returns></returns>
+        private List<string> RemoveFilesThatWouldJustGetDeletedAnyway(List<string> fileNameList, int retainVersions, int retainDaysOld)
+        {
+            // Named sets of file name lists, one for each base file name
+            Dictionary<string, List<string>> versionedFileSets = new();
+
+            // What we will hand back to the caller
+            List<string> filesToProcess = new();
+
+            foreach (var fileName in fileNameList.OrderBy(_ => _))
+            {
+                if (FileNameMatchesVersionedPattern(fileName))
+                {
+                    var idxFileStart = fileName.LastIndexOf(Path.DirectorySeparatorChar) + 1; // Where the file name starts
+                    var idxHyphen = fileName.LastIndexOf("-"); // Where the - of -nnn is
+                    var baseFileName = fileName[idxFileStart..idxHyphen];
+
+                    if (versionedFileSets.ContainsKey(baseFileName))
+                    {
+                        var existingFileSet = versionedFileSets[baseFileName];
+                        existingFileSet.Add(fileName);
+                    }
+                    else
+                    {
+                        versionedFileSets.Add(baseFileName, new List<string> { fileName });
+                    }
+                }
+                else
+                {
+                    // Non-versioned file, we always copy these
+                    filesToProcess.Add(fileName);        
+                }
+            }
+
+            // Each versioned file set now has a list of files in alpha order of name, so
+            // oldest generation first, newest last.
+
+            foreach (var fileSet in versionedFileSets)
+            {
+                int idx = 0;
+
+                foreach (var takeFileName in fileSet.Value.OrderByDescending(_ => _))
+                {
+                    idx++;
+
+                    if (idx <= retainVersions || FileHelpers.IsLastWrittenLessThanDaysAgo(takeFileName, retainDaysOld))
+                    {
+                        filesToProcess.Add(takeFileName);
+                    }
+                }
+            }
+
+            return filesToProcess;
         }
 
         /// <summary>        

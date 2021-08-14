@@ -53,7 +53,7 @@ namespace Archivist.Classes
             FunctionName = functionName;
 
             if (addStartingItem)
-                AddInfo($"Starting {functionName} {appendText}");
+                AddInfo($"Running {functionName} {appendText}");
         }
 
         internal void MarkMessagesWritten()
@@ -146,7 +146,7 @@ namespace Archivist.Classes
         {
             get
             {
-                StringBuilder sb = new(200);
+                StringBuilder sb = new(300);
 
                 foreach (var message in Messages)
                 {

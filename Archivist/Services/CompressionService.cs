@@ -32,6 +32,8 @@ namespace Archivist.Services
         {
             Result result = new("CompressSources", true);
 
+            await _logService.ProcessResult(result);
+
             if (Directory.Exists(_jobSpec.PrimaryArchiveDirectoryName))
             {
                 result.SubsumeResult(FileHelpers.CheckDiskSpace(_jobSpec.PrimaryArchiveDirectoryName));
@@ -47,7 +49,7 @@ namespace Archivist.Services
                 {
                     if (sourceDirectory.IsAvailable)
                     {
-                        Result compressResult = await CompressSourceDirectoryAsync(sourceDirectory, _jobSpec.PrimaryArchiveDirectoryName);
+                        Result compressResult = await CompressSource(sourceDirectory, _jobSpec.PrimaryArchiveDirectoryName);
 
                         result.SubsumeResult(compressResult);
                     }
@@ -70,9 +72,9 @@ namespace Archivist.Services
             return result;
         }
 
-        internal async Task<Result> CompressSourceDirectoryAsync(SourceDirectory sourceDirectory, string archiveDirectoryName)
+        internal async Task<Result> CompressSource(SourceDirectory sourceDirectory, string archiveDirectoryName)
         {
-            Result result = new("CompressSourceDirectoryAsync", true, $"for source '{sourceDirectory.DirectoryPath}', destination '{archiveDirectoryName}'");
+            Result result = new("CompressSource", true, $"to '{archiveDirectoryName}' from '{sourceDirectory.DirectoryPath}'");
 
             if (sourceDirectory.IsAvailable)
             {
