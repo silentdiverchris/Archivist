@@ -38,17 +38,21 @@ Then it copies several files to an archive directory on another drive, the ones 
 
 <img alt="Half way through an archive" title="Half way through an archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole1.png">
 
-Note that deleting an old archive version was reported as a warning but it probably shouldn't be, it's entirely expected behaviour so I'll make it an unremarkable info type log entry at some point but I wanted to know about deleted as I've just changed the code for the new RetainDaysOld setting so want to keep an eye on it.
+Note that deleting an old archive version was reported as a warning but it probably shouldn't be, it's entirely expected behaviour so I'll make it an unremarkable info type log entry at some point but I wanted to know about deletions as I've just changed the code for the new RetainDaysOld setting so want to keep an eye on it.
 
 The rest of the console output after the archive had completed follows;
 
 <img alt="Completed archive" title="Completed archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole2.png">
 
+It is waiting for a keypress before closing the console window because job configuration setting PauseBeforeExit is telling it to. 
+
 # Key question - does it alter or delete any of my files ?
 
-It doesn't write to or delete any of the source files it processes, it purely reads them to zip them up; with one optional exception.
+No, it doesn't write to or delete any of the source files it processes, notr does it add any files to the source directories. It doesn't even set archive flags, though that's an idea for a possible enhancement now I come to think of it. 
 
-If you enable the secure directory function it will delete unencrypted files in the set of secure directories, only if you define secure directories, and only when it's specifically told to with the DeleteSourceAfterEncrypt setting (which defaults to false), only after having checked an encrypted version exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
+It purely reads the source driectories to zip them up; with one optional exception, below.
+
+If you enable the 'secure directories' function by defining some, it will delete unencrypted files in the set of secure directories, only when it's specifically told to with the DeleteSourceAfterEncrypt setting (which defaults to false), only after having checked an encrypted version already exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
 
 # The archiving process
 
@@ -130,6 +134,8 @@ If AddVersionSuffix for a directory is false, files will not be versioned and th
 
 This versioning can start to eat up disk space of course, the system will report the space free on drives it uses to the console/log, and generate a warning if it is below 50Gb, currently.
 
+This behaviour can be limited by specifying RetainDaysOld, which will make sure no files are deleted if they were last written to less than that many days ago, regardless of the number of versions, see below for more details.
+
 # Deleting old versions
 
 At two points in the process, namely when a zip archive is created and after copying it to an archive directory, the system can delete older generations of each file and so keep a specific number of them. 
@@ -173,6 +179,10 @@ This means you don't need to be too bothered about exactly which drives you plug
 There is no built in scheduler, it works just fine with Windows Scheduler and any other decent cron system that can call an executable and ideally specify a parameter. 
 
 Just specify the the job name in the app settings file as 'RunJobName' or, better, as the first parameter to the executable.
+
+Below is a screenshot of Windows Scheduler setting up the call and job name parameter.
+
+<img alt="Windows Scheduler" title="Windows Scheduler" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/SchedulerExample1.png">
 
 # Logging
 
