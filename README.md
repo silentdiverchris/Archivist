@@ -30,35 +30,13 @@ It purely reads the source driectories to zip them up; with one optional excepti
 
 If you enable the 'secure directories' function by defining some, it will delete unencrypted files in the set of secure directories, only when it's specifically told to with the DeleteSourceAfterEncrypt setting (which defaults to false), only after having checked an encrypted version already exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
 
-# Screenshots
-
-## Sample console output
-
-A typical console output is below. 
-
-First it shows the job name, config file name, log file name and the SQL destination for logs.
-
-Next it shows the securing of two text files, encrypting them both and deleting the source files. 
-
-It then goes through most source directories for archiving but finds nothing has changed in most of them so skips those but does find 3 folders worth zipping up to the primary archive directory. 
-
-Then it copies several files to an archive directory on another drive, the ones it just created plus a few more, I had deleted a few to give it more work to do for the screenshot.
-
-<img alt="Half way through an archive" title="Half way through an archive" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/ExampleConsole1.png">
-
-Note that deleting an old archive version was reported as a warning but it probably shouldn't be, it's entirely expected behaviour so I'll make it an unremarkable info type log entry at some point but I wanted to know about deletions as I've just changed the code for the new RetainDaysOld setting so want to keep an eye on it.
-
-The rest of the console output after the archive had completed follows;
-
-<img alt="Completed archive" title="Completed archive" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/ExampleConsole2.png">
-
-It is waiting for a keypress before closing the console window because job configuration setting PauseBeforeExit is telling it to. 
-
 # The archiving process
 
 The diagram below shows a simple layout, essentially source directories are zipped to files in the primary archive directory, then copied to other archive directories.
 
-Note that some files go to one archive directory, some to another, and all of them to the third one; you can set it up to spread the files around as you like, keep the last month of updates to your code in one archive directory and also keep the complete history of it on a different one, and do the opposite for your documents, and keep just the most recent version of everything soemwhere else, or whatever.
+Note that some files go to one archive directory, some to another, and all of them to the third one; you can set it up to spread the files around as you like. 
+
+You could keep the last month of updates to your code in one archive directory and also keep the complete history of it on a different one, and do the opposite for your documents, and keep just the most recent version of everything somewhere else, or whatever.
 
 <img alt="Source and archive directories" title="Source and archive directories" src="https://github.com/silentdiverchris/Archivist/raw/master/Diagrams/Directories.png">
 
@@ -97,6 +75,30 @@ See the [AESCrypt](#AESCrypt) section for full details on setting up encryption.
 ## Copying archives
 
 The final part takes the lists of directories in GlobalArchiveDirectories and ArchiveDirectories defined in the configuration file and copies files from the primary archive directory to those directories depending on all the filters, inclusions and exclusions specified in the configuration ArchiveDirectories settings.
+
+# Screenshots
+
+## Sample console output
+
+A typical console output is below. 
+
+First it shows the job name, config file name, log file name and the SQL destination for logs.
+
+Next it shows the securing of two text files, encrypting them both and deleting the source files. 
+
+It then goes through most source directories for archiving but finds nothing has changed in most of them so skips those but does find 3 folders worth zipping up to the primary archive directory. 
+
+Then it copies several files to an archive directory on another drive, the ones it just created plus a few more, I had deleted a few to give it more work to do for the screenshot.
+
+<img alt="Half way through an archive" title="Half way through an archive" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/ExampleConsole1.png">
+
+Note that deleting an old archive version was reported as a warning but it probably shouldn't be, it's entirely expected behaviour so I'll make it an unremarkable info type log entry at some point but I wanted to know about deletions as I've just changed the code for the new RetainDaysOld setting so want to keep an eye on it.
+
+The rest of the console output after the archive had completed follows;
+
+<img alt="Completed archive" title="Completed archive" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/ExampleConsole2.png">
+
+It is waiting for a keypress before closing the console window because job configuration setting PauseBeforeExit is telling it to. 
 
 # Global and non-global directories
 
