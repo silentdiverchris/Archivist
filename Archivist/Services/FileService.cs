@@ -25,10 +25,10 @@ namespace Archivist.Services
                 throw new Exception($"DeleteOldVersions invalid retainVersions {retainVersions} for '{latestFileName}'");
             }
 
-            Result result = new("DeleteOldVersions", true, $"for file '{latestFileName}'");
+            Result result = new("DeleteOldVersions");
 
             string retainStr = retainVersions > 0
-                ? $"Retaining the last {retainVersions} versions" + (retainDaysOld > 0
+                ? $"DeleteOldVersions for '{latestFileName}' retaining the last {retainVersions} versions" + (retainDaysOld > 0
                     ? $" and all files under {retainDaysOld} days old"
                     : "")
                 : "";
@@ -43,7 +43,7 @@ namespace Archivist.Services
 
                 FileInfo fiArchive = new(latestFileName);
 
-                string fileNamePrefix = fiArchive.Name.Substring(0, fiArchive.Name.Length - 9);
+                string fileNamePrefix = fiArchive.Name[0..^9];
                 string searchPattern = $"{fileNamePrefix}*.zip";
 
                 var existingFiles = Directory.GetFiles(fiArchive.DirectoryName, searchPattern)
@@ -57,7 +57,7 @@ namespace Archivist.Services
                         if (latestFileName == existingFiles.Last())
                         {
                             foreach (var fileName in existingFiles)
-                            {                                
+                            {
                                 if (FileNameMatchesVersionedPattern(fileName) == false)
                                 {
                                     result.AddError($"DeleteOldVersions found {fileName} not matching pattern");
@@ -140,7 +140,7 @@ namespace Archivist.Services
                 .OrderBy(_ => _.Priority)
                 .ThenBy(_ => _.DirectoryPath))
             {
-                Result copyResult = await CopyFilesAsync(_jobSpec.PrimaryArchiveDirectoryName, destination);
+                Result copyResult = await CopyFiles(_jobSpec.PrimaryArchiveDirectoryName, destination);
 
                 result.SubsumeResult(copyResult);
 
@@ -159,10 +159,10 @@ namespace Archivist.Services
         /// <param name="sourceDirectoryName"></param>
         /// <param name="destination"></param>
         /// <returns></returns>
-        internal async Task<Result> CopyFilesAsync(string sourceDirectoryName, ArchiveDirectory destination)
+        internal async Task<Result> CopyFiles(string sourceDirectoryName, ArchiveDirectory destination)
         {
             Result result = new(
-                functionName: "CopyFilesAsync",
+                functionName: "CopyFiles",
                 addStartingItem: true,
                 appendText: $"from '{sourceDirectoryName}' to '{destination.DirectoryPath}' including {destination.IncludeSpecificationsText}, excluding {destination.ExcludeSpecificationsText}");
 
@@ -206,7 +206,7 @@ namespace Archivist.Services
                 result.ItemsFound = Directory.GetFiles(sourceDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length;
 
                 var fileNameList = destination.IncludeSpecifications
-                    .SelectMany(_ => Directory.GetFiles(sourceDirectoryName, _, SearchOption.TopDirectoryOnly)) 
+                    .SelectMany(_ => Directory.GetFiles(sourceDirectoryName, _, SearchOption.TopDirectoryOnly))
                     .ToArray()
                     .OrderBy(_ => _)
                     .ToList();
@@ -237,7 +237,7 @@ namespace Archivist.Services
                 // OK, we have a bit of a code smell coming up, we want to detect where files will be copied over from the 
                 // source directory to the archive directory then immediately be deleted because the RetainVersions setting for
                 // the source is larger than that for the destiation, assuming the RetainDaysOld setting allows it.
-                
+
                 // Because we are processing the folder as a whole, we're not looking at them in terms of a bunch of versioned
                 // sets, but as a list of file names, which makes things awkward.
 
@@ -253,7 +253,7 @@ namespace Archivist.Services
 
                 var stopwatch = Stopwatch.StartNew();
 
-                foreach (var fileName in fileNameList)
+                foreach (var fileName in fileNameList.OrderBy(_ => _))
                 {
                     var fiSrc = new FileInfo(fileName);
                     string destinationFileName = Path.Combine(destination.DirectoryPath, fiSrc.Name);
@@ -275,8 +275,8 @@ namespace Archivist.Services
                     {
                         string tempDestFileName = destinationFileName + ".copying";
 
-                        result.AddInfo($"Copying {fileName} to {destinationFileName} {FileHelpers.GetByteSizeAsText(fiSrc.Length)}");
-
+                        // Don't write this to the console, it gets it's own snazzy progress indicator
+                        result.AddDebug($"Copying {fileName} to {destinationFileName} {FileHelpers.GetByteSizeAsText(fiSrc.Length)}");
                         await _logService.ProcessResult(result);
 
                         try
@@ -286,16 +286,53 @@ namespace Archivist.Services
                                 File.Delete(tempDestFileName);
                             }
 
-                            using (FileStream SourceStream = File.Open(fileName, FileMode.Open))
+                            decimal percentageComplete = 0;
+
+                            var progressReporter = new Progress<KeyValuePair<long, long>>();
+
+                            LogEntry progressLogEntry = new()
                             {
-                                using (FileStream DestinationStream = File.Create(tempDestFileName))
+                                ProgressPrefix = $"Copying {fileName} to {destinationFileName}",
+                                ProgressSuffix = $"of {FileHelpers.GetByteSizeAsText(fiSrc.Length)} complete"
+                            };
+
+                            progressReporter.ProgressChanged += delegate (object obj, KeyValuePair<long, long> progressValue)
+                            {
+                                if (progressValue.Key == 0)
                                 {
-                                    await SourceStream.CopyToAsync(DestinationStream);
+                                    progressLogEntry.PercentComplete = 0;
+                                    _logService.LogToConsole(progressLogEntry);
+                                }
+                                else if (progressValue.Key == progressValue.Value)
+                                {
+                                    progressLogEntry.PercentComplete = 100;
+                                    _logService.LogToConsole(progressLogEntry);
+                                }
+                                else
+                                {
+                                    decimal thisPercentage = ((decimal)progressValue.Key / (decimal)progressValue.Value) * 100;
+
+                                    if (thisPercentage > (percentageComplete + 1))
+                                    {
+                                        percentageComplete = thisPercentage;
+                                        progressLogEntry.PercentComplete = (short)percentageComplete;
+                                        _logService.LogToConsole(progressLogEntry);
+                                    }
+                                }
+                            };
+
+                            using (FileStream sourceStream = File.Open(fileName, FileMode.Open))
+                            {
+                                using (FileStream destinationStream = File.Create(tempDestFileName))
+                                {
+                                    await sourceStream.CopyToAsyncProgress(sourceStream.Length, destinationStream, progressReporter, default);
                                 }
                             }
 
                             if (File.Exists(tempDestFileName))
                             {
+                                result.AddInfo($"Copied {fileName} to {destinationFileName} {FileHelpers.GetByteSizeAsText(fiSrc.Length)}");
+                                await _logService.ProcessResult(result);
                                 File.Move(tempDestFileName, destinationFileName, true);
                             }
 
@@ -397,7 +434,7 @@ namespace Archivist.Services
                 else
                 {
                     // Non-versioned file, we always copy these
-                    filesToProcess.Add(fileName);        
+                    filesToProcess.Add(fileName);
                 }
             }
 

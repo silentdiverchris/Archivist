@@ -25,16 +25,16 @@ namespace Archivist.Services
             _aesEncryptExecutable = aesEncryptExecutable;
         }
 
-        internal async Task<Result> ProcessSecureDirectoriesAsync()
+        internal async Task<Result> ProcessSecureDirectories()
         {
-            Result result = new("ProcessSecureDirectoriesAsync", false);
+            Result result = new("ProcessSecureDirectories", true);
 
             if (_jobSpec.SecureDirectories != null)
             {
                 foreach (var secureDirectory in _jobSpec.SecureDirectories
                     .Where(_ => _.IsToBeProcessed(_jobSpec)))
                 {
-                    Result processResult = await ProcessSecureDirectoryAsync(secureDirectory);
+                    Result processResult = await ProcessSecureDirectory(secureDirectory);
                     result.SubsumeResult(processResult);
                 }
             }
@@ -63,11 +63,13 @@ namespace Archivist.Services
         /// </summary>
         /// <param name="directoryName"></param>
         /// <returns></returns>
-        private async Task<Result> ProcessSecureDirectoryAsync(SecureDirectory secureDirectory)
+        private async Task<Result> ProcessSecureDirectory(SecureDirectory secureDirectory)
         {
-            Result result = new("ProcessSecureDirectoryAsync", true);
+            Result result = new("ProcessSecureDirectory", true);
 
             result.AddInfo($"Securing directory {secureDirectory.DirectoryPath}");
+
+            await _logService.ProcessResult(result);
 
             if (secureDirectory.IsAvailable)
             {
@@ -131,6 +133,8 @@ namespace Archivist.Services
                                 {
                                     // The system is saying we can now delete the source, but
                                     // the config says no, so we will leave the source file as-is
+                                    // even though this goes against the whole point of not leaving
+                                    // clear text versions lying around.
                                     deleteSource = false;
                                 }
 

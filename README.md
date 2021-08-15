@@ -22,6 +22,14 @@ Code and executables provided as-is. This system runs on my machines several tim
 
 This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll gradually move it along as newer versions are released. It's my intention that it remains on this 'bleeding edge' if it can be called that, but with it essentially just zipping and copying files I don't see that would make it in any way dangerous to use.
 
+# Screenshots
+
+## Sample console output
+
+<img alt="Half way through an archive" title="Half way through an archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole1.png">
+
+<img alt="Completed archive" title="Completed archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole2.png">
+
 ## Does it alter or delete any of my files ?
 
 It doesn't write to or delete any of the source files it processes, it purely reads them to zip them up; with one optional exception.
@@ -103,10 +111,6 @@ The system stores no internal record of what it calls files, it goes from what i
 Using the RetainVersions setting you can tell it to keep the last 2, 5 or however many versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision, it judges purely by the digits in the file names.
 
 If it finds any file name that isn't of the form \[base file name]\[hyphen\]\[4 digits\]\[dot]\[extension] it won't touch it. Nor will it touch any file that has a \[base file name] that it isn't actively writing at the time.
-
-If you set the number of versions in a source directory higher than the retain number in an archive directory the system will end up copying files from source to archive and then immediately deleting them, it'd be nice to catch this and not do it but it doesn't at present.
-
-If this is the case, the system will warn you in the console/log but will carry on and do it anyway.
 
 If AddVersionSuffix for a directory is false, files will not be versioned and there will only ever be one version of each archive in that directory.
 

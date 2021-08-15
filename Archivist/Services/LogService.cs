@@ -118,6 +118,15 @@ namespace Archivist.Services
             bool reportItemCounts = false,
             string itemNameSingular = null)
         {
+            foreach (var msg in result.UnprocessedMessages.OrderBy(_ => _.CreatedUtc))
+            {
+                await AddLogAsync(
+                    new LogEntry(
+                        logText: msg.Text,
+                        severity: msg.Severity,
+                        createdUtc: msg.CreatedUtc));
+            }
+
             if (reportItemCounts)
             {
                 if (result.ItemsFound > 0)
@@ -151,15 +160,6 @@ namespace Archivist.Services
                 {
                     result.AddSuccess($"{result.FunctionName} completed OK");
                 }
-            }
-
-            foreach (var msg in result.UnprocessedMessages.OrderBy(_ => _.CreatedUtc))
-            {
-                await AddLogAsync(
-                    new LogEntry(
-                        logText: msg.Text,
-                        severity: msg.Severity,
-                        createdUtc: msg.CreatedUtc));
             }
 
             result.MarkMessagesWritten();
@@ -262,6 +262,14 @@ namespace Archivist.Services
         public void Dispose()
         {
             // We open a connection on demand each time so nothing to do here, though that might change, either way it's nice to be asked.
+        }
+
+        internal void LogToConsole(LogEntry entry)
+        {
+            if (_logToConsole)
+            {
+                _consoleDelegate.Invoke(entry);
+            }
         }
     }
 }

@@ -48,7 +48,7 @@ namespace Archivist.Helpers
             var backupTypeFull = new JobSpecification
             {
                 Name = "FullBackup",
-                OpenLogFile = true,
+                OpenLogFile = false,
                 ProcessTestOnly = false,
                 PauseBeforeExit = true,
                 ProcessSlowVolumes = true,
@@ -84,6 +84,7 @@ namespace Archivist.Helpers
                 },
                 GlobalSourceDirectories = new List<SourceDirectory> {
                     new SourceDirectory {
+                        Priority = 1,
                         IsEnabled = true,
                         IsForTesting = false,
                         DirectoryPath = @"C:\Batch",
@@ -116,6 +117,7 @@ namespace Archivist.Helpers
                         RetainDaysOld = 30
                     },
                     new SourceDirectory {
+                        Priority = 1,
                         IsEnabled = true,
                         IsForTesting = false,
                         DirectoryPath = @"C:\PowerShell",
@@ -138,7 +140,7 @@ namespace Archivist.Helpers
                     },
                     new SourceDirectory {
                         Priority = 10,
-                        IsEnabled = false,
+                        IsEnabled = true,
                         IsForTesting = false,
                         DirectoryPath = @"D:\Incoming",
                         AddVersionSuffix = true,
@@ -146,7 +148,7 @@ namespace Archivist.Helpers
                         RetainDaysOld = 7
                     },
                     new SourceDirectory {
-                        Priority = 1,
+                        Priority = 2,
                         IsEnabled = true,
                         IsForTesting = false,
                         DirectoryPath = @"C:\Dev",
@@ -154,7 +156,7 @@ namespace Archivist.Helpers
                         RetainVersions = 10,
                         RetainDaysOld = 30,
                         CompressionLevel = CompressionLevel.Fastest,
-                        MinutesOldThreshold = 30
+                        MinutesOldThreshold = 60
                     },
                     new SourceDirectory {
                         Priority = 1,
@@ -306,7 +308,7 @@ namespace Archivist.Helpers
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         VolumeLabel = "Lexar-Ext-SSD-476GB",
                         DirectoryPath = "Archive",
-                        RetainVersions = 5,
+                        RetainVersions = 10,
                         RetainDaysOld = 90
                     },
                     new ArchiveDirectory {
@@ -321,7 +323,7 @@ namespace Archivist.Helpers
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         VolumeLabel = "SanDisk-Ext-SSD-476GB",
                         DirectoryPath = "Archive",
-                        RetainVersions = 5,
+                        RetainVersions = 10,
                         RetainDaysOld = 90
                     },
                     new ArchiveDirectory {
@@ -336,7 +338,7 @@ namespace Archivist.Helpers
                         ExcludeSpecifications = new List<string> { },
                         VolumeLabel = "WD-Ext-HDD-1TB",
                         DirectoryPath = "Archive",
-                        RetainVersions = 5,
+                        RetainVersions = 10,
                         RetainDaysOld = 90
                     }
                 }                
@@ -574,20 +576,6 @@ namespace Archivist.Helpers
                     result.AddError($"ArchiveDirectories.RetainDaysOld = {arc.RetainDaysOld} is invalid for archive '{arc.DirectoryPath}', minimum is {Constants.RETAIN_DAYS_OLD_MINIMUM}");
                 }
             }
-
-            // Not the case any more, so no need tio warn about it
-            //foreach (var arc in jobSpec.ArchiveDirectories
-            //    .Where(_ => _.IsToBeProcessed(jobSpec)))
-            //{
-            //    foreach (var src in jobSpec.SourceDirectories
-            //        .Where(_ => _.IsToBeProcessed(jobSpec)))
-            //    {
-            //        if (arc.RetainVersions > 0 && arc.RetainVersions < src.RetainVersions)
-            //        {
-            //            result.AddWarning($"'{src.DirectoryPath}' has RetainVersions {src.RetainVersions} for source '{src.DirectoryPath}' and {arc.RetainVersions} for archive to '{arc.DirectoryPath}', this will mean earlier generations of the archive get copied over from source to archive and immediately deleted, best to always retain the same or more versions in the archives than the sources");
-            //        }
-            //    }
-            //}
 
             return result;
         }

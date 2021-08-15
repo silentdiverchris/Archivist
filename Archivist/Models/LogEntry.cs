@@ -10,6 +10,13 @@ namespace Archivist.Models
             CreatedUtc = DateTime.UtcNow;
         }
 
+        internal LogEntry(short percentComplete, string suffix, string prefix)
+        {
+            ProgressPrefix = prefix;
+            ProgressSuffix = suffix;
+            PercentComplete = percentComplete;
+        }
+
         internal LogEntry(string logText, enSeverity severity = enSeverity.Info, DateTime? createdUtc = null, bool alwaysWriteToEventLog = false)
         {
             Text = logText;
@@ -17,6 +24,10 @@ namespace Archivist.Models
             CreatedUtc = createdUtc ?? DateTime.UtcNow;
             AlwaysWriteToEventLog = alwaysWriteToEventLog;
         }
+
+        internal string ProgressPrefix { get; set; } = null;
+        internal string ProgressSuffix { get; set; } = null;
+        internal short? PercentComplete { get; set; } = null;
 
         internal bool AlwaysWriteToEventLog { get; set; }
         internal DateTime CreatedUtc { get; private set; }

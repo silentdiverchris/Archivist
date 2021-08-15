@@ -2,6 +2,7 @@
 using Archivist.Helpers;
 using Archivist.Models;
 using Archivist.Services;
+using Archivist.Utilities;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -16,6 +17,8 @@ namespace Archivist
         private readonly JobSpecification _jobSpecification;
         private readonly JobDetails _jobDetails;
         private readonly LogService _logService;
+
+        static readonly object _lock = new object();
 
         internal MainProcess(JobDetails jobDetails)
         {
@@ -104,7 +107,7 @@ namespace Archivist
                 {
                     using (var secureDirectoryService = new SecureDirectoryService(_jobSpecification, _logService, _jobDetails.AesEncryptExecutable))
                     {
-                        Result secureDirectoryResult = await secureDirectoryService.ProcessSecureDirectoriesAsync();
+                        Result secureDirectoryResult = await secureDirectoryService.ProcessSecureDirectories();
                         result.SubsumeResult(secureDirectoryResult);
                     }
                 }
@@ -163,23 +166,41 @@ namespace Archivist
         {
             if (_jobSpecification.WriteToConsole)
             {
-                if (entry.Severity == enSeverity.Warning)
+                if (entry.PercentComplete is not null)
                 {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                }
-                else if (entry.Severity == enSeverity.Error)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                }
-                else if (entry.Severity == enSeverity.Success)
-                {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                }
+                    lock (_lock)
+                    {
+                        ConsoleUtilities.WriteProgressBar(
+                            percent: (short)entry.PercentComplete,
+                            prefix: entry.ProgressPrefix,
+                            suffix: entry.ProgressSuffix);
 
-                Console.WriteLine(entry.Text);
+                        //if (!string.IsNullOrEmpty(entry.Text))
+                        //{
+                        //    Console.Write(entry.Text + new string('\b', entry.Text.Length));
+                        //}
+                    }
+                }
+                else
+                {
+                    if (entry.Severity == enSeverity.Warning)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                    }
+                    else if (entry.Severity == enSeverity.Error)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                    }
+                    else if (entry.Severity == enSeverity.Success)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                    }
 
-                if (entry.Severity != enSeverity.Info)
-                    Console.ResetColor();
+                    Console.WriteLine(entry.Text);
+
+                    if (entry.Severity != enSeverity.Info)
+                        Console.ResetColor();
+                }
             }
         }
 

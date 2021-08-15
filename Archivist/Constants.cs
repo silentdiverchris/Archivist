@@ -2,6 +2,8 @@
 {
     class Constants
     {
+        internal const int STREAM_BUFFER_SIZE = 81920;
+
         /// <summary>
         /// The nimimum number of versions to retain
         /// </summary>
