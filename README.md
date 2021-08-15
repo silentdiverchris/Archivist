@@ -28,27 +28,27 @@ This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll 
 
 A typical console output is below. 
 
-First it shows the setup info, job name, config file name, log file name and the SQL destination for logs.
+First it shows the job name, config file name, log file name and the SQL destination for logs.
 
 Next it shows the securing of two text files, encrypting them both and deleting the source files. 
 
-It then skips most source directories for archiving as nothing had changed but found 3 folders worth zipping up to the primary archive directory. 
+It then goes through most source directories for archiving but finds nothing has changed in most of them so skips those but does find 3 folders worth zipping up to the primary archive directory. 
 
-Then it copies several files to an archive directory on another drive, I had deleted a few to give it more work to do for the screenshot.
+Then it copies several files to an archive directory on another drive, the ones it just created plus a few more, I had deleted a few to give it more work to do for the screenshot.
 
 <img alt="Half way through an archive" title="Half way through an archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole1.png">
 
-Note that deleting an old archive version was reported as a warning but it probably shouldn't be, it's entirely expected behaviour so I'll it an unremarkable info type log entry at some point but I wanted to know about it as I'd recently changed the deleting code for the new RetainDaysOld setting so am still keeping an eye on it.
+Note that deleting an old archive version was reported as a warning but it probably shouldn't be, it's entirely expected behaviour so I'll make it an unremarkable info type log entry at some point but I wanted to know about deleted as I've just changed the code for the new RetainDaysOld setting so want to keep an eye on it.
 
-The rest of the console after the archive had completed follows;
+The rest of the console output after the archive had completed follows;
 
 <img alt="Completed archive" title="Completed archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole2.png">
 
-## Does it alter or delete any of my files ?
+# Key question - does it alter or delete any of my files ?
 
 It doesn't write to or delete any of the source files it processes, it purely reads them to zip them up; with one optional exception.
 
-If you enable the secure directory function it will delete unencrypted files in the set of secure directories, if any are defined, but only when it's specifically told to, after having checked an encrypted version exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
+If you enable the secure directory function it will delete unencrypted files in the set of secure directories, only if you define secure directories, and only when it's specifically told to with the DeleteSourceAfterEncrypt setting (which defaults to false), only after having checked an encrypted version exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
 
 # The archiving process
 
