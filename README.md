@@ -26,7 +26,13 @@ This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll 
 
 ## Sample console output
 
+This is typical console output, showing securing of two files, skipping most sources as nothig had changed but zipping 3 folders to the primary arcgive directory, then copying quite a lot of files to archive directories, I had deleted a few to give it more to do so it had some catching up to do.
+
 <img alt="Half way through an archive" title="Half way through an archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole1.png">
+
+Note that deleting an old archive version was reported as a warning but it probably shouldn't be, it's entirely expected behaviour so I'll it an unremarkable info type log entry at some point but I wanted to know about it as I'd recently changed the deleting code for the new RetainDaysOld setting so am still keeping an eye on it.
+
+The rest of the console after the archive had completed follows;
 
 <img alt="Completed archive" title="Completed archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole2.png">
 
