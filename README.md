@@ -36,13 +36,13 @@ It then goes through most source directories for archiving but finds nothing has
 
 Then it copies several files to an archive directory on another drive, the ones it just created plus a few more, I had deleted a few to give it more work to do for the screenshot.
 
-<img alt="Half way through an archive" title="Half way through an archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole1.png">
+<img alt="Half way through an archive" title="Half way through an archive" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/ExampleConsole1.png">
 
 Note that deleting an old archive version was reported as a warning but it probably shouldn't be, it's entirely expected behaviour so I'll make it an unremarkable info type log entry at some point but I wanted to know about deletions as I've just changed the code for the new RetainDaysOld setting so want to keep an eye on it.
 
 The rest of the console output after the archive had completed follows;
 
-<img alt="Completed archive" title="Completed archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole2.png">
+<img alt="Completed archive" title="Completed archive" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/ExampleConsole2.png">
 
 It is waiting for a keypress before closing the console window because job configuration setting PauseBeforeExit is telling it to. 
 
@@ -182,7 +182,7 @@ Just specify the the job name in the app settings file as 'RunJobName' or, bette
 
 Below is a screenshot of Windows Scheduler setting up the call and job name parameter.
 
-<img alt="Windows Scheduler" title="Windows Scheduler" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/SchedulerExample1.png">
+<img alt="Windows Scheduler" title="Windows Scheduler" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/SchedulerExample1.png">
 
 # Logging
 
