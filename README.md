@@ -58,7 +58,7 @@ It is waiting for a keypress before closing the console window because job confi
 
 The diagram below shows a simple layout, essentially source directories are zipped to files in the primary archive directory, then copied to other archive directories.
 
-Note that some files go to one archive directory, some to another, and all of them to the third one; you can set it up to spread the files around as you like, keep the last month of updates to your code in one archive directory and also keep the complete history of it on a different one, and do the opposite for your documents, or whatever.
+Note that some files go to one archive directory, some to another, and all of them to the third one; you can set it up to spread the files around as you like, keep the last month of updates to your code in one archive directory and also keep the complete history of it on a different one, and do the opposite for your documents, and keep just the most recent version of everything soemwhere else, or whatever.
 
 <img alt="Source and archive directories" title="Source and archive directories" src="https://github.com/silentdiverchris/Archivist/raw/master/Diagrams/Directories.png">
 
