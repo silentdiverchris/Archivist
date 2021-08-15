@@ -22,6 +22,14 @@ Code and executables provided as-is. This system runs on my machines several tim
 
 This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll gradually move it along as newer versions are released. It's my intention that it remains on this 'bleeding edge' if it can be called that, but with it essentially just zipping and copying files I don't see that would make it in any way dangerous to use.
 
+# Key question - does it alter or delete any of my files ?
+
+No, it doesn't write to or delete any of the source files it processes, notr does it add any files to the source directories. It doesn't even set archive flags, though that's an idea for a possible enhancement now I come to think of it. 
+
+It purely reads the source driectories to zip them up; with one optional exception, below.
+
+If you enable the 'secure directories' function by defining some, it will delete unencrypted files in the set of secure directories, only when it's specifically told to with the DeleteSourceAfterEncrypt setting (which defaults to false), only after having checked an encrypted version already exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
+
 # Screenshots
 
 ## Sample console output
@@ -46,15 +54,9 @@ The rest of the console output after the archive had completed follows;
 
 It is waiting for a keypress before closing the console window because job configuration setting PauseBeforeExit is telling it to. 
 
-# Key question - does it alter or delete any of my files ?
-
-No, it doesn't write to or delete any of the source files it processes, notr does it add any files to the source directories. It doesn't even set archive flags, though that's an idea for a possible enhancement now I come to think of it. 
-
-It purely reads the source driectories to zip them up; with one optional exception, below.
-
-If you enable the 'secure directories' function by defining some, it will delete unencrypted files in the set of secure directories, only when it's specifically told to with the DeleteSourceAfterEncrypt setting (which defaults to false), only after having checked an encrypted version already exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
-
 # The archiving process
+
+<img alt="Source and archive directories" title="Source and archive directories" src="https://github.com/silentdiverchris/Archivist/raw/master/Diagrams/Directories.png">
 
 There are three main parts to the process, done in the order listed below.
 
