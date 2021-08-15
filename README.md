@@ -26,7 +26,15 @@ This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll 
 
 ## Sample console output
 
-This is typical console output, showing securing of two files, skipping most sources as nothig had changed but zipping 3 folders to the primary arcgive directory, then copying quite a lot of files to archive directories, I had deleted a few to give it more to do so it had some catching up to do.
+A typical console output is below. 
+
+First it shows the setup info, job name, config file name, log file name and the SQL destination for logs.
+
+Next it shows the securing of two text files, encrypting them both and deleting the source files. 
+
+It then skips most source directories for archiving as nothing had changed but found 3 folders worth zipping up to the primary archive directory. 
+
+Then it copies several files to an archive directory on another drive, I had deleted a few to give it more work to do for the screenshot.
 
 <img alt="Half way through an archive" title="Half way through an archive" src="https://github.com/silentdiverchris/Archivist/raw/master/screenshots/ExampleConsole1.png">
 
