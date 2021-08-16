@@ -171,7 +171,7 @@ namespace Archivist
                     lock (_lock)
                     {
                         ConsoleUtilities.WriteProgressBar(
-                            percent: (short)entry.PercentComplete,
+                            percentComplete: (short)entry.PercentComplete,
                             prefix: entry.ProgressPrefix,
                             suffix: entry.ProgressSuffix);
 

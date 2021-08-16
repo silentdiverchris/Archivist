@@ -1,7 +1,9 @@
-﻿namespace Archivist.Helpers
+﻿using System;
+
+namespace Archivist.Helpers
 {
-    // Fairly shamelessly copied from https://www.codeproject.com/Tips/5274597/An-Improved-Stream-CopyToAsync-That-Reports-Progre as per MIT licence.
-    // Thanks to the author 'Honey the code witch' https://www.codeproject.com/script/Membership/View.aspx?mid=11540398
+    // Fairly shamelessly copied and slightly adapted from https://www.codeproject.com/Tips/5274597/An-Improved-Stream-CopyToAsync-That-Reports-Progre as per MIT licence.
+    // Thanks to the curously named author 'Honey the code witch' https://www.codeproject.com/script/Membership/View.aspx?mid=11540398
 
     internal static class StreamHelpers
     {
@@ -25,24 +27,24 @@
         {
             var buffer = new byte[bufferSize];
 
-            if (0 > sourceLength && source.CanSeek)
+            if (sourceLength > 0 && source.CanSeek)
                 sourceLength = source.Length - source.Position;
 
             var totalBytesCopied = 0L;
 
-            if (null != progress)
+            if (progress is not null)
                 progress.Report(new KeyValuePair<long, long>(totalBytesCopied, sourceLength));
 
             var bytesRead = -1;
 
-            while (0 != bytesRead && !cancellationToken.IsCancellationRequested)
+            while (bytesRead != 0 && !cancellationToken.IsCancellationRequested)
             {
-                bytesRead = await source.ReadAsync(buffer, 0, buffer.Length);
+                bytesRead = await source.ReadAsync(buffer);
 
-                if (0 == bytesRead || cancellationToken.IsCancellationRequested)
+                if (bytesRead == 0 || cancellationToken.IsCancellationRequested)
                     break;
 
-                await destination.WriteAsync(buffer, 0, buffer.Length);
+                await destination.WriteAsync(buffer);
 
                 totalBytesCopied += bytesRead;
 
@@ -50,7 +52,7 @@
                     progress.Report(new KeyValuePair<long, long>(totalBytesCopied, sourceLength));
             }
 
-            if (0 < totalBytesCopied)
+            if (totalBytesCopied > 0)
                 progress.Report(new KeyValuePair<long, long>(totalBytesCopied, sourceLength));
 
             cancellationToken.ThrowIfCancellationRequested();

@@ -1,18 +1,28 @@
 # Archivist
 A simple C# Net Core archiving utility that can be made as complicated as you want it to be.
 
-Essentially I got frustrated with built-in and otherwise existing backup systems for Windows and wanted something to do regular backups and archive my media the way I want, which is essentially zipping the contents of numerous directories into individual zip files in a local archive directory, keeping one or more generations of them there, then copying some or all of them from there to numerous other places depending on various criteria and whether those volumes are mounted, keeping one or more generations on each of those.
+Essentially I got frustrated with built-in and otherwise existing backup systems for Windows and wanted something to do regular backups and archive my media the way I want.
+
+I previously wrote a Powershell system that used WinRar and RoboCopy and an increasingly unmanageable set of text files containing the options for each specific type of archive I wanted, but it started to become unmanageable and perhaps went beyond what Powershell is really intended to be doing.
+
+Rather than dump a selection of everything to just one place as per most backup systems, I want the flexibility to back up different sets of files to multiple places, retain a history of them in one place, namely a massive hard disk, and keep just the latest versions in others, such as a set of USB sticks I could plug in at the beginning of each week, know they have the latest and greatest of everything and then store them remotely on a slow rotation.
+
+I want to be able to select what file types to archive but also to be able exclude things like temporary files or .git files, but only where those files weren't wanted. 
+
+I want to be able to be able to define different backup jobs to either back up everything to everywhere on a schedule, or have a small set of desktop shortcuts to just run a backup of specific, frequently changing things like code and documents to fast internal drives, or to a specific external SSD I plug in.
 
 There is no UI other than the console output, it's driven from a json configuration file and reports to the console and optionally to a text log file and/or a SQL table and/or the Windows event log.
 
-This was written to do exactly what I want from a backup/archiving system, it's not intended to be a panacea for everyone but it pretty much covers what one might want from such a thing in as much as it checks for new/altered files, compresses, encrypts, copies files around and retains however many versions of the files you want.
+This was written to do exactly what I personally want from a backup/archiving system, it's not intended to be a panacea for everyone but I hope it pretty much covers what most people might want from such a thing in as much as it checks for new/altered files, compresses, encrypts, copies files around and retains the desired number of and/or duration of versions of those archives.
 
-It uses the LastWriteTime of the zip files it creates to decide whether a new archive should be taken, so won't constantly be zipping up identical sets of files.
+For the purposes of this docuent, an 'archive' is pretty much synonymous with a zip file of a nominated source directory.
 
-The text below is fairly detailed but isn't as full as it could be, please feel free to get in touch or raise an issue to ask for more details, point out mistakes or report bugs, I'll update the below with any corrections, clarifications or expansions.
+It uses the LastWriteTime of the zip files it creates to decide whether a new archive should be taken, checking for any files in the source to see if at least one has a later last write time then the archive file. As such, it doesn't constantly zip up identical sets of files.
+
+The text below is fairly detailed now, please feel free to get in touch or raise an issue to ask for more details, point out mistakes or report bugs, I'll update the below with any corrections, clarifications or expansions.
 
 # Licence
-Feel free to do whatever you like with the code.
+The code is licenced under [The MIT Licence](https://opensource.org/licenses/mit-license.php); essentially feel free to do whatever you like with it, but anything bad which happens isn't my fault.
 
 # Installation
 There is no installer package, currently you need to download the code and build it locally.
@@ -20,7 +30,7 @@ There is no installer package, currently you need to download the code and build
 # Caveats
 Code and executables provided as-is. This system runs on my machines several times a day to process my own precious files and is written with caution very much in mind by somebody who is paranoid about these things.
 
-This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll gradually move it along as newer versions are released. It's my intention that it remains on this 'bleeding edge' if it can be called that, but with it essentially just zipping and copying files I don't see that would make it in any way dangerous to use.
+This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll gradually move it along as newer versions are released. It's my intention that it remains on this 'bleeding edge' if it can be called that as this mini-project is partially about me trying out the new releases as they become available, but with it essentially just zipping and copying files I don't see that would make it in any way dangerous to use.
 
 # Key question - does it alter or delete any of my files ?
 
@@ -34,7 +44,7 @@ If you enable the 'secure directories' function by defining some, it will delete
 
 The diagram below shows a simple layout, essentially source directories are zipped to files in the primary archive directory, then copied to other archive directories.
 
-Note that some files go to one archive directory, some to another, and all of them to the third one; you can set it up to spread the files around as you like. 
+Note that in the example, all code and document archives are copied to one drive, the latrest version of all archives is copied to a second drive, and everything is copied to a third; you can set it up to spread the files around as you like. 
 
 It could be configued to keep the last month of updates to your code in one archive directory and also keep the complete history of it on a different one, keep the last 10 versions of your documents plus all versions for the last 90 days elsewhere, and keep the 3 most recent versions of everything somewhere else, copy the last month of all archives to a removeable drive whenever it is mounted, and just the most recent code and documents to a different removeable drive if it is plugged in.
 

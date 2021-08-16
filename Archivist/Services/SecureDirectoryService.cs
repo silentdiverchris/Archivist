@@ -39,7 +39,7 @@ namespace Archivist.Services
                 }
             }
 
-            await _logService.ProcessResult(result, addCompletionItem: false, reportItemCounts: false, itemNameSingular: "file");
+            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: false, itemNameSingular: "file");
 
             return result;
         }
