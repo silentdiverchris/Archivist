@@ -5,24 +5,30 @@ Essentially I got frustrated with built-in and otherwise existing backup systems
 
 I previously wrote a Powershell system that used WinRar and RoboCopy and an increasingly unmanageable set of text files containing the options for each specific type of archive I wanted, but it started to become unmanageable and perhaps went beyond what Powershell is really intended to be doing.
 
-Rather than dump a selection of everything to just one place as per most backup systems, I want the flexibility to back up different sets of files to multiple places, retain a history of them in one place, namely a massive hard disk, and keep just the latest versions in others, such as a set of USB sticks I could plug in at the beginning of each week, know they have the latest and greatest of everything and then store them remotely on a slow rotation.
+And so it came to pass that Archivist was born, to the sound of celestial trumpets, probably.
 
-I want to be able to select what file types to archive but also to be able exclude things like temporary files or .git files, but only where those files weren't wanted. 
+It's not ideal for non-technical users, it has no GUI and relies on considered tweaking of a potentially large .json file, but for a technical user who can be bothered to put some time into setting it up it can be a powerful and hugely adaptable backup solution.
 
-I want to be able to be able to define different backup jobs to either back up everything to everywhere on a schedule, or have a small set of desktop shortcuts to just run a backup of specific, frequently changing things like code and documents to fast internal drives, or to a specific external SSD I plug in.
+Rather than dump a selection of everything to just one place as per most backup systems, it can back up different sets of files to multiple places, retain a complete history of them in one place, such as a massive local or NAS volume, or just the latest versions or the last X days worth of them in others.
+
+It can archive subsets of files based on 'Something*.whatever' inclusion and exclusions. 
+
+You can define different backup jobs to either back up everything to everywhere on an automated schedule, and set up desktop shortcuts to fire off backups of specific, frequently changing files like code and documents to fast internal drives, or to a specific external drive, or whatever.
 
 There is no UI other than the console output, it's driven from a json configuration file and reports to the console and optionally to a text log file and/or a SQL table and/or the Windows event log.
 
-This was written to do exactly what I personally want from a backup/archiving system, it's not intended to be a panacea for everyone but I hope it pretty much covers what most people might want from such a thing in as much as it checks for new/altered files, compresses, encrypts, copies files around and retains the desired number of and/or duration of versions of those archives.
+This was written to do exactly what I personally want from a backup/archiving system and has only been tested or used on Windows.
 
-For the purposes of this docuent, an 'archive' is pretty much synonymous with a zip file of a nominated source directory.
+It's not intended to be a panacea for everyone but I hope it pretty much covers what most people might want from such a thing in as much as it checks for new/altered files, compresses, optionally encrypts, and copies files around; retaining the desired number of versions of those archives and/or all archives that are less than a specified number of days old.
 
-It uses the LastWriteTime of the zip files it creates to decide whether a new archive should be taken, checking for any files in the source to see if at least one has a later last write time then the archive file. As such, it doesn't constantly zip up identical sets of files.
+For the purposes of this document, an 'archive' is pretty much synonymous with a zip file of a nominated source directory.
 
-The text below is fairly detailed now, please feel free to get in touch or raise an issue to ask for more details, point out mistakes or report bugs, I'll update the below with any corrections, clarifications or expansions.
+It uses the LastWriteTime of the zip files it creates to decide whether a new archive should be created, checking for any files in the source to see if at least one has a later last write time than the archive file. As such, it doesn't constantly zip up identical sets of files.
+
+The text below is fairly detailed, please feel free to get in touch or raise an issue to ask for further detail, point out mistakes or report bugs, I'll update the below with any corrections, clarifications or expansions.
 
 # Licence
-The code is licenced under [The MIT Licence](https://opensource.org/licenses/mit-license.php); essentially feel free to do whatever you like with it, but anything bad which happens isn't my fault.
+The code is licenced under [The MIT Licence](https://opensource.org/licenses/mit-license.php); which essentially means feel free to do whatever you like with it, but any horrific consequences are not my fault.
 
 # Installation
 There is no installer package, currently you need to download the code and build it locally.
@@ -60,7 +66,7 @@ You can nominate a list of 'secure directories' that the system will automatical
 
 The reason for this process being that I like to keep credentials, account details etc. in little text files, screen shots etc. in various directories, decrypting them manually to view and update them, and either immediately (re-)encrypt manually or more likely, leave them for Archivist to process. 
 
-My main development PC runs various Archivist jobs several times a day so nothing stays unsecured for long and will always be secured before any archiving is done so I know no sensitive data is in plain text on any of my backups.
+My main development PC runs various Archivist jobs several times a day so nothing stays unsecured for long and will always be secured before any archiving is done so I know no sensitive data is in plain text in any of my backups.
 
 It will take each file name and append '.aes' to it to determine the encrypted file name, so 'SecretPassword.txt' will be encrypted into 'SecretPassword.txt.aes'.
 
@@ -76,9 +82,7 @@ This setting defaults to false, which isn't the recommended value but works on t
 
 If DeleteArchiveAfterEncryption is set to true, and it finds an unencrypted file with a write time the same as, or earlier than the encrypted version it will assume the file was manually unencrypted to view it, and just delete the file, retaining the encrypted one. 
 
-If the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption.
-
-The is done in the first step of the archive process, so the files zipped up in the next step are encrypted before being zipped up and copied elsewhere
+If the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption and optionally deleting the unencrypted version.
 
 To nominate secure directories, add them to the GlobalSecureDirectories or SecureDirectories list in the configuration file, see the [configuration file](#ConfigurationFile) section for details.
 
