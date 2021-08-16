@@ -1,25 +1,23 @@
 # Archivist
-A simple C# Net Core archiving utility that can be made as complicated as you want it to be.
+A C# Net Core archiving/backup utility.
 
-Essentially I got frustrated with built-in and otherwise existing backup systems for Windows and wanted something to do regular backups and archive my media the way I want.
+I got frustrated with existing backup systems for Windows and wanted something to do sporadic and regular backups, and archive my media the way I want.
 
-I previously wrote a Powershell system that used WinRar and RoboCopy and an increasingly unmanageable set of text files containing the options for each specific type of archive I wanted, but it started to become unmanageable and perhaps went beyond what Powershell is really intended to be doing.
+I previously wrote a Powershell system that used WinRar and RoboCopy and an increasingly numerous set of text files containing the options for each specific type of archive I wanted, but it gradually become unmanageable and perhaps went beyond what Powershell is really intended to be doing.
 
-And so it came to pass that Archivist was born, to the sound of celestial trumpets, probably.
+And so it came to pass that Archivist was born, almost certainly to the sound of celestial trumpets.
 
 It's not ideal for non-technical users, it has no GUI and relies on considered tweaking of a potentially large .json file, but for a technical user who can be bothered to put some time into setting it up it can be a powerful and hugely adaptable backup solution.
 
-Rather than dump a selection of everything to just one place as per most backup systems, it can back up different sets of files to multiple places, retain a complete history of them in one place, such as a massive local or NAS volume, or just the latest versions or the last X days worth of them in others.
+Rather than dump a single subset of everything to one place, it can archive different sets of files in different directories to multiple places depending on inclusion and exclusion file specifications, retaining a complete history of them in one place such as a massive local or NAS volume, and just the latest X versions and/or the last Y days worth of various selections of them on any number of other fixed or removable volumes.
 
-It can archive subsets of files based on 'Something*.whatever' inclusion and exclusions. 
+You can define different backup jobs, perhaps one to back up everything to everywhere on an automated schedule and/or via a shortcut, one to add new photos and movies to an archive every week, set up desktop shortcuts to fire off backups of specific, frequently changing files like code and documents to fast internal drives, or to a specific volume if it's mounted, or whatever happens to be mapped to F: at the time.
 
-You can define different backup jobs to either back up everything to everywhere on an automated schedule, and set up desktop shortcuts to fire off backups of specific, frequently changing files like code and documents to fast internal drives, or to a specific external drive, or whatever.
+There is no UI other than the console output, it's driven from a json configuration file and reports to the console, plus optionally to a text log file and/or a SQL table and/or the Windows event log.
 
-There is no UI other than the console output, it's driven from a json configuration file and reports to the console and optionally to a text log file and/or a SQL table and/or the Windows event log.
+While it can be compiled for use on Linux or Mac or in a Docker container, it has only been tested or used on native Windows 10.
 
-This was written to do exactly what I personally want from a backup/archiving system and has only been tested or used on Windows.
-
-It's not intended to be a panacea for everyone but I hope it pretty much covers what most people might want from such a thing in as much as it checks for new/altered files, compresses, optionally encrypts, and copies files around; retaining the desired number of versions of those archives and/or all archives that are less than a specified number of days old.
+This was written to do exactly what I personally want from an archiving system, it's not intended to be a panacea for everyone but I hope it pretty much covers what most people might want from such a thing. Feel free to ask for a feature to be added, or feel even freer to add it yourself.
 
 For the purposes of this document, an 'archive' is pretty much synonymous with a zip file of a nominated source directory.
 
