@@ -44,7 +44,7 @@ If you enable the 'secure directories' function by defining some, it will delete
 
 The diagram below shows a simple layout, essentially source directories are zipped to files in the primary archive directory, then copied to other archive directories.
 
-Note that in the example, all code and document archives are copied to one drive, the latrest version of all archives is copied to a second drive, and everything is copied to a third; you can set it up to spread the files around as you like. 
+Note that in the example, all code and document archives are copied to one drive, the latest versions of all archives are copied to a second drive, and everything is copied to a third; you can set it up to spread the files around as you like. 
 
 It could be configued to keep the last month of updates to your code in one archive directory and also keep the complete history of it on a different one, keep the last 10 versions of your documents plus all versions for the last 90 days elsewhere, and keep the 3 most recent versions of everything somewhere else, copy the last month of all archives to a removeable drive whenever it is mounted, and just the most recent code and documents to a different removeable drive if it is plugged in.
 
@@ -58,7 +58,9 @@ There are three main parts to the process, done in the order listed below.
 
 You can nominate a list of 'secure directories' that the system will automatically encrypt files found in, each to its own individual '.aes' file, and optionally remove the unencrypted version.
 
-The reason for this process being that I like to keep credentials, account details etc. in little text files, screen shots etc. in various directories, decrypting them manually to view and update them, and either immediately (re-)encrypt manually or more likely, leave them for Archivist to process next time it runs. My main development PC runs Archivist several times a day for different jobs, so they don't stay that way for long.
+The reason for this process being that I like to keep credentials, account details etc. in little text files, screen shots etc. in various directories, decrypting them manually to view and update them, and either immediately (re-)encrypt manually or more likely, leave them for Archivist to process. 
+
+My main development PC runs various Archivist jobs several times a day so nothing stays unsecured for long and will always be secured before any archiving is done so I know no sensitive data is in plain text on any of my backups.
 
 It will take each file name and append '.aes' to it to determine the encrypted file name, so 'SecretPassword.txt' will be encrypted into 'SecretPassword.txt.aes'.
 
@@ -66,11 +68,17 @@ It will ignore any file called 'clue.txt' in upper, lower or mixed case, I use a
 
 When files are encrypted it sets the last write time to that of the source file, and uses the last write times to determine which file is most recent.
 
-When Archivist runs it will encrypt any files that are not of the fom '\*.aes' if the unencrypted version has a later write time. It will optionally delete the unencrypted version if an encrypted version exists once it is sure the encryption happened successfully, depending on configuration setting DeleteArchiveAfterEncryption.
+When Archivist runs it will encrypt any files in secure directories that are not of the form '\*.aes' if the unencrypted version has a later write time. 
 
-If it finds an unencrypted file with a write time the same as, or earlier than the encrypted version it will assume the file was manually unencrypted to view it, and just delete the file, retaining the encrypted one. To restate the previous paragraph, if the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption.
+It will then optionally delete the unencrypted version if an encrypted version exists once it is sure the encryption happened successfully, configuration setting DeleteArchiveAfterEncryption controls whether it deletes of the unencrypted files.
 
-The is done in the first step, so the files zipped up in the next step are safe from prying eyes and the files at rest on your local folder are secured again.
+This setting defaults to false, which isn't the recommended value but works on the basis of "Don't delete stuff unless specifically told to" and allows a new user to verify that it's working how it should before trusting it.
+
+If DeleteArchiveAfterEncryption is set to true, and it finds an unencrypted file with a write time the same as, or earlier than the encrypted version it will assume the file was manually unencrypted to view it, and just delete the file, retaining the encrypted one. 
+
+If the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption.
+
+The is done in the first step of the archive process, so the files zipped up in the next step are encrypted before being zipped up and copied elsewhere
 
 To nominate secure directories, add them to the GlobalSecureDirectories or SecureDirectories list in the configuration file, see the [configuration file](#ConfigurationFile) section for details.
 
