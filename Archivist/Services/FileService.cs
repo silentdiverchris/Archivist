@@ -19,26 +19,25 @@ namespace Archivist.Services
 
         internal async Task<Result> DeleteOldVersions(string latestFileName, int retainVersions, int retainDaysOld)
         {
-            // We shouldn't even be in here if RetainVersions isn't at least the minimum but just in case...
-            if (retainVersions < Constants.RETAIN_VERSIONS_MINIMUM)
-            {
-                throw new Exception($"DeleteOldVersions invalid retainVersions {retainVersions} for '{latestFileName}'");
-            }
-
             Result result = new("DeleteOldVersions");
-
-            string retainStr = retainVersions > 0
-                ? $"DeleteOldVersions for '{latestFileName}' retaining the last {retainVersions} versions" + (retainDaysOld > 0
-                    ? $" and all files under {retainDaysOld} days old"
-                    : "")
-                : "";
-
-            result.AddDebug(retainStr);
-
-            await _logService.ProcessResult(result);
 
             try
             {
+                // We shouldn't even be in here if RetainVersions isn't at least the minimum but just in case...
+                if (retainVersions < Constants.RETAIN_VERSIONS_MINIMUM)
+                {
+                    throw new Exception($"DeleteOldVersions invalid retainVersions {retainVersions} for '{latestFileName}'");
+                }
+
+                // Handy for debugging, a bit excessive otherwise
+                //string retainStr = retainVersions > 0
+                //    ? $"DeleteOldVersions for '{latestFileName}' retaining the last {retainVersions} versions" + (retainDaysOld > 0
+                //        ? $" and all files under {retainDaysOld} days old"
+                //        : "")
+                //    : "";
+                //result.AddDebug(retainStr);
+                //await _logService.ProcessResult(result);
+
                 // The suffix is of the form -nnnn.zip, so for file abcde.zip we are looking for abcde-nnnnn.zip
 
                 FileInfo fiArchive = new(latestFileName);

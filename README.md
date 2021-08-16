@@ -36,9 +36,9 @@ The diagram below shows a simple layout, essentially source directories are zipp
 
 Note that some files go to one archive directory, some to another, and all of them to the third one; you can set it up to spread the files around as you like. 
 
-You could keep the last month of updates to your code in one archive directory and also keep the complete history of it on a different one, keep the last 10 versions of your documents plus all versions for the last 90 days on another, and keep the 3 most recent versions of everything somewhere else, copy the last month of all archives to a removeable drive whenever it is mounted, and just the most recent code and documents to a different removeable drive if it is plugged in.
+It could be configued to keep the last month of updates to your code in one archive directory and also keep the complete history of it on a different one, keep the last 10 versions of your documents plus all versions for the last 90 days elsewhere, and keep the 3 most recent versions of everything somewhere else, copy the last month of all archives to a removeable drive whenever it is mounted, and just the most recent code and documents to a different removeable drive if it is plugged in.
 
-Essentially you can set it up to be as convoluted and excessive as you see fit, and then continually tinker with the configuration as your level of paranoia varies and exciting new backup strategies occur to you.
+You can set it up to be as simple or as excessive as you see fit, and then continually tinker with the configuration as your level of paranoia varies, more volumes become available to fill up and ever more convoluted backup strategies occur to you.
 
 <img alt="Source and archive directories" title="Source and archive directories" src="https://github.com/silentdiverchris/Archivist/raw/master/Diagrams/Directories.png">
 
