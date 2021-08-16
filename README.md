@@ -36,7 +36,9 @@ The diagram below shows a simple layout, essentially source directories are zipp
 
 Note that some files go to one archive directory, some to another, and all of them to the third one; you can set it up to spread the files around as you like. 
 
-You could keep the last month of updates to your code in one archive directory and also keep the complete history of it on a different one, and do the opposite for your documents, and keep just the most recent version of everything somewhere else, or whatever.
+You could keep the last month of updates to your code in one archive directory and also keep the complete history of it on a different one, keep the last 10 versions of your documents plus all versions for the last 90 days on another, and keep the 3 most recent versions of everything somewhere else, copy the last month of all archives to a removeable drive whenever it is mounted, and just the most recent code and documents to a different removeable drive if it is plugged in.
+
+Essentially you can set it up to be as convoluted and excessive as you see fit, and then continually tinker with the configuration as your level of paranoia varies and exciting new backup strategies occur to you.
 
 <img alt="Source and archive directories" title="Source and archive directories" src="https://github.com/silentdiverchris/Archivist/raw/master/Diagrams/Directories.png">
 
@@ -177,6 +179,8 @@ You can define any number of different jobs which can select different sets of d
 # Removable volumes
 
 My backup system involves having several external drives which I mount for various reasons, eg. one for daily backups which is almost always connected, one which I plug in just at the start of each week, one for the start of each month, and a pair of two identical large SSDs which I generally leave one of attached but alternate between them. So sometimes S:\ or Y:\ might exist, sometimes it won't.
+
+If you don't want to rely on mounted drives always having the same drive letter you can identify directories by volume label rather than drive letter by setting the the VolumeLabel configuration and not providing a drive in the DirectoryPath, see these items in the [configuration file](#ConfigurationFile) section below.
 
 If you mark a directory as removable with IsRemovable, the system will try to use it but if it's not there it won't be considered as an error. Any drive that is not found which is not marked as removable will be reported as an error.
 
@@ -342,7 +346,7 @@ These settings apply to both types of directory.
 |IsSlowVolume|Whether this is a slow volume, used in conjunction with config WriteToSlowVolumes so backup jobs that only read from and write to fast drives can be set up by setting job setting ProcessSlowVolumes to false.|
 |RetainVersions|If a file has a version suffix (created by setting source directory setting AddVersionSuffix to true) we will retain this many of them in this directory, zero means we keep all versions, which will eventually fill the volume.<br><br>Something to be aware of is that if you set this lower on an archive directory than on the source directory the system will keep copying over older versions and then deleting them, if the system finds this on startup it will log a warning but cheerfully copy and delete as instructed.<br><br>If RetainVersions is set to zero, no archives will ever be deleted.|
 |RetainDaysOld|Specifies the minimum age at which an archive file can be deleted, regardless of any version numbering. The age is determined by the last write time, not the creation time.<br><br>Zero disables this function and any non-zero value has a minimum of 7 days. This ensures that however many versions of the archive are created, it will not delete any file that is younger than this number of days.<br><br>This does not cause files to be deleted after that number of days, it just stops younger files being deleted.<br><br>If the RetainVersions setting is set to zero, this setting will have no effect and no archives will ever be deleted.|
-|VolumeLabel|Allows the directory to be identified by the volume label rather than a drive designation, for removable drives which aren't always F:\ or whatever. Set this to a valid volume label and ensure yhe DirectoryName has no drive designation, eg. VolumeLabel '1TB HDD' and DirectoryName 'Archive' will map to 'F:\Archive', as long as the label of F: matches the VolumeLabel setting.|
+|VolumeLabel|Allows the directory to be identified by the volume label rather than a drive designation, for removable drives which aren't always F:\ or whatever.<br><br>Set this to a valid volume label and ensure the DirectoryName has no drive designation.<br><br>For example, VolumeLabel '1TB HDD' and DirectoryName 'Archive' will map to 'F:\Archive' when that volume is mounted as drive 'F' and 'E:\Archive' when it is mounted as 'E'.|
 |DirectoryPath|The path of this directory, either the full path eg. 'H:\Archive', or just 'Archive' if a valid VolumeLabel is supplied.|
 |IncludeSpecifications|A list of file specs, eg '\*.txt', 'thing.\*', abc???de.jpg' etc, only process files matching these, an empty list includes all files.|
 |ExcludeSpecifications|A list of file specs, eg '\*.txt', 'thing.\*', abc???de.jpg' etc, ignore files matching these, an empty list doesn't exclude any files.|
