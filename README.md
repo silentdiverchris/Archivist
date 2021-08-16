@@ -526,7 +526,8 @@ This is similar to the default file which will be created if the one in appsetti
       "IsSlowVolume": true,
       "RetainVersions": 5,
       "RetainDaysOld": 365,
-      "DirectoryPath": "S:\\ArchivedFilesBlah",
+      "VolumeLabel": "MicroSD-500GB",
+      "DirectoryPath": "ArchivedFiles",
       "IncludeSpecifications": [
         "*.zip"
       ],
@@ -548,7 +549,8 @@ This is similar to the default file which will be created if the one in appsetti
       "IsSlowVolume": true,
       "RetainVersions": 2,
       "RetainDaysOld": 90,
-      "DirectoryPath": "Y:\\ArchivedFilesAgain",
+      "VolumeLabel": "ExternalSSD-500GB",
+      "DirectoryPath": "Archive",
       "IncludeSpecifications": [
         "*.zip"
       ],
