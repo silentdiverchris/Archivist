@@ -192,11 +192,16 @@ The process to review files for deletion only happens after an archive file is c
 
 It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of the code used RoboCopy, which did the copying more quickly especially with muti-threaded copies. 
 
-I might update it to use RoboCopy again but it's not really a priority, it wasn't all that much faster, I don't sit waiting for it to finish anyway and; stable and dependable (and fantastic) as RoboCopy is, it's nice not to have a call out to another external executable.
+I might update it to use RoboCopy again but it's not really a priority, it wasn't all that much faster, I don't sit waiting for it to finish anyway and; stable and dependable (and fantastic) as RoboCopy is, it's nice not to have a call out to another external executable and it means it can have a natty progress indicator in the console.
 
-# Full disk
+# Priority
+Each source and archive directory has a Priority setting, 1 is the highest priority, 255 is the lowest, default is 99. Directories will be processed in this order and by alpha order of directories within that.
 
-If the destination disk fills up while creating a zip or copying a file it will fail that operation and report an error but continue, so an archive of your music library might fail but the archives of smaller sets of files defined later in the job will still be attempted.
+It might be useful to tell it to do the vital archives of code and documents or whatever is most important to you so it is done quickly and takes what disk space it needs if things are that tight, before grinding through copying a new batch of movies out to a sluggish USB key or the NAS.
+
+# Full volume
+
+If the destination volume fills up while creating or copying an archive it will fail that operation and report an error but continue, so an archive of your music library might fail but the archives of smaller sets of files with lower priorities in the job will still be attempted.
 
 # Jobs
 
@@ -204,35 +209,42 @@ You can define any number of different jobs which can select different sets of d
 
 # Removable volumes
 
-My backup system involves having several external drives which I mount for various reasons, e.g. one for daily backups which is almost always connected, one which I plug in just at the start of each week, one for the start of each month, and a pair of two identical large SSDs which I generally leave one of attached but alternate between them. So sometimes S:\ or Y:\ might exist, sometimes it won't.
+My backup strategy, to be grandiose about it, involves having several external drives which I mount for various reasons, e.g. one for daily backups which is almost always connected, one which I plug in just at the start of each week, one for the start of each month, and a pair of two identical large SSDs which I generally leave one of attached but alternate between them. So sometimes S:\ or Y:\ might exist, sometimes it won't.
+
+I also have a bunch of USB sticks which I rotate through so I can get the latest of everything other than big media files in one place, to put somewhere remote.
 
 If you don't want to rely on mounted drives always having the same drive letter you can identify directories by volume label rather than drive letter by setting the the VolumeLabel configuration and not providing a drive in the DirectoryPath, see these items in the [application settings](#AppSettings) section below.
 
-If you mark a directory as removable with IsRemovable, the system will try to use it but if it's not there it won't be considered as an error. Any drive that is not found which is not marked as removable will be reported as an error.
+If you mark a directory with IsRemovable, the system will try to use it but if it's not there it won't be considered as an error. 
 
-This means you don't need to be too bothered about exactly which drives you plug in, it'll just archive to what it finds, but this setting allows it to distinguish between an external disk not having been plugged in and a internal one that should be available but isn't.
+Any directory that is not found which is not marked as removable will be reported as an error.
+
+This means you don't need to be too bothered about exactly which drives you plug in, it'll just archive to whatever it finds, but this setting allows it to distinguish between an external disk not having been plugged in and a volume that really should be available but isn't.
+
+If you want a job to always be writing to an external disk that you don't want to forget to plug in, fib to it slightly by setting IsRemovable to false and it'll tell you if it's not there.
 
 # Scheduling
 
-There is no built in scheduler, it works just fine with Windows Scheduler and any other decent cron system that can call an executable and ideally specify a parameter. 
+There is no built in scheduler, it works just fine with Windows Scheduler and any other system that can call an executable and specify a parameter. 
 
-Just specify the the job name in the application settings file as 'RunJobName' or, better, as the first parameter to the executable.
+You can have it running the default job name in the settings but obviously better to give it the name as the first parameter to the executable.
 
 Below is a screenshot of Windows Scheduler setting up the call and job name parameter.
 
 <img alt="Windows Scheduler" title="Windows Scheduler" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/SchedulerExample1.png">
 
+<a name="Logging"></a>
 # Logging
 
 ## Console
 
-It will write most or all log messages to the console, with warnings in yellow, errors in red and success/completed messages in green.
+If job setting WriteToConsole is true, it will write a good selection of messages to the console so you can see what it's up to ant any given time, with warnings in yellow, errors in red and success/completed messages in green.
 
-Setting DebugConsole to true in the application settings file makes it write everything to the console. 
+Setting VerboseConsole to true sends all information and debug type messages to the console too. 
 
-Without DebugConsole the console will get a more readable subset of just the important messages and will always let you know what it's doing right now, so it's generally best to leave this turned off for readability and dig into the text/SQL log if you need more detail.
+If PauseBeforeExit is true or if any errors are detected, it will ask for a key to be pressed before closing the console at the end of a run.
 
-Full logging always goes to the file and SQL logs, which includes a lot of verbose stuff about the decisions it made according to settings, file timestamps et..
+Full logging always goes to the file and SQL logs, which includes a lot of stuff about the decisions it made according to settings, file timestamps, volume availability and the like.
 
 ## Text log file
 
@@ -334,16 +346,11 @@ By default, information messages will not be sent to the event log, set applicat
 
 The program is written with Net Core so can be built for platforms other than Windows but the event log writing will currently only work on Windows.
 
-## Console
-
-If job setting WriteToConsole is true, it will write a pretty full account of what it is doing to the console, setting VerboseConsole to true sends a lot more to the console.
-
-If PauseBeforeExit is true or if any errors are detected, it will ask for a key to be pressed before closing the console at the end of a run.
-
-# Code
+# Source code
 
 You can read the source code for fuller descriptions and a better understanding of how it works, most functions and other declarations are decorated with top-level comments, the structure is pretty clear and names of things are nice and descriptive.
 
+<a name="PlainTextPassword"></a>
 # Plain-text password alert !
 
 To make the encryption work you need to either supply a password to the EncryptionPassword job setting or put it in a text file and specify the full path in the EncryptionPasswordFile setting. 
@@ -682,37 +689,39 @@ This is a bare bones configuration to just archive one directory out to one back
       "WriteToConsole": true,
       "PauseBeforeExit": true,
       "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveDirectoryName",
-      "SourceDirectories": [ 
-         {
-		  "ReplaceExisting": true,
-		  "DeleteArchiveAfterEncryption": true,
-		  "AddVersionSuffix": true,
-		  "RetainVersions": 2,
-		  "RetainDaysOld": 7,
-		  "DirectoryPath": "C:\\AllMyStuff",
-		  "SynchoniseFileTimestamps": true,
-		  "IsEnabled": true
-		}
-	  ],
+      "SourceDirectories": [
+        {
+          "ReplaceExisting": true,
+          "DeleteArchiveAfterEncryption": true,
+          "AddVersionSuffix": true,
+          "RetainVersions": 2,
+          "RetainDaysOld": 7,
+          "DirectoryPath": "C:\\AllMyStuff",
+          "SynchoniseFileTimestamps": true,
+          "IsEnabled": true
+        }
+      ],
       "ArchiveDirectories": [
-	  {
-		  "RetainVersions": 2,
-		  "RetainDaysOld": 365,
-		  "IncludeSpecifications": [
-				"*.*"
-		],
-      "ExcludeSpecifications": [ ],
-      "VolumeLabel": "BackupDrive-01",
-      "DirectoryPath": "ArchivedFiles",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": "My only backup drive",
-      "IsEnabled": true,
-      "Priority": 3,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0
+        {
+          "RetainVersions": 2,
+          "RetainDaysOld": 365,
+          "IncludeSpecifications": [
+            "*.*"
+          ],
+          "ExcludeSpecifications": [],
+          "VolumeLabel": "BackupDrive-01",
+          "DirectoryPath": "ArchivedFiles",
+          "SynchoniseFileTimestamps": true,
+          "DeleteSourceAfterEncrypt": false,
+          "Description": "My only backup drive",
+          "IsEnabled": true,
+          "Priority": 3,
+          "EnabledAtHour": 0,
+          "DisabledAtHour": 0
+        }
+      ]
     }
-  ]
+  ]   
 }
 ```
 
@@ -734,7 +743,7 @@ In this section of the settings you can, well, must define at least one job, for
 |ProcessSlowVolumes|You can mark directories as IsSlowVolume, setting this to true will make it process those, if false, it'll not process slow volumes.|
 |ArchiveFairlyStatic|You can set directories as IsFairlyStatic and setting this allows you to tell a job whether to process it or not, it's intended to allow you to make a backup that only processes directories containing files that change or are added frequently, such as source code or documents, as opposed to those that don't, like a movie library.|
 |PrimaryArchiveDirectoryName|Here is where the initial zip files of each source directory are created, as such it should ideally be fairly fast and large, and on a different drive to where the source files are.<br><br>Files are copied from here to the archive directories.|
-|EncryptionPassword|The password to be used for encryption, see the 'Plain-text password alert !' section above.<br><br>This value is overwritten if a value is provided in EncryptionPasswordFile, this will also generate a warning.|
+|EncryptionPassword|The password to be used for encryption, see the [Plain text password](#PlainTextPassword) section above.<br><br>This value is overwritten if a value is provided in EncryptionPasswordFile, this will also generate a warning.|
 |EncryptionPasswordFile|Loads the encryption password from this file, overwrites any value specified in EncryptionPassword. The password should be the only thing in the file.|
 |SourceDirectories|These are the directories containing the files you want to zip to the primary archive directory, you can add any number, see 'Source Directories' below.|
 |ArchiveDirectories|These are the directories that files will be copied to from the primary archive directory, see 'Archive Directories' below.|
