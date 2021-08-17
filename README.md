@@ -33,18 +33,20 @@ There is no installer package, currently you need to download the code and build
 
 I'll generate a proper release/installer soon when it's stabilised a bit.
 
-It was created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, so you'll definitely need at least the former, and will no doubt get a raft of downgrade issues if you don't use the latter.
+It was created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, so if you want to build it locally you'll definitely need at least the former, and will probably get a raft of downgrade issues if you don't use the latter.
 
 # Caveats
-Code and executables provided as-is. This system runs on my machines several times a day to process my own precious files and is written with caution very much in mind by somebody who is paranoid about these things.
+Code and executables provided as-is. This system runs on my machines several times a day to process my own precious files and is written with caution very much in mind.
 
-This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll gradually move it along as newer versions are released. It's my intention that it remains on this 'bleeding edge' if it can be called that as this mini-project is partially about me trying out the new releases as they become available, but with it essentially just zipping and copying files I don't see that would make it in any way dangerous to use.
+This is created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, I'll gradually move it along as newer versions are released. 
 
-# Key question - does it alter or delete any of my files ?
+It's my intention that it remains on this 'bleeding edge' if it can be called that as this mini-project is partially about me trying out the new releases as they become available, but with it essentially just zipping and copying files I don't see that would make it in any way dangerous to use.
+
+# Does it alter or delete any of my files ?
 
 No, it doesn't write to or delete any of the source files it processes, nor does it add any files to the source directories. It doesn't even set archive flags, though that's an idea for a possible enhancement now I come to think of it. 
 
-It purely reads the source directories to zip them up; with one optional exception, below.
+It doesn't address the source files individually in this code at all, it purely reads the source directories to zip them up (see [below](#ArchivingSourceDirectories) for details); with one optional exception, below.
 
 If you enable the 'secure directories' function by defining some, it will delete unencrypted files in the set of secure directories, only when it's specifically told to with the DeleteSourceAfterEncrypt setting (which defaults to false), only after having checked an encrypted version already exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
 
@@ -88,11 +90,14 @@ If the unencrypted file has a later last write time it will re-encrypt it, overw
 
 To nominate secure directories, add them to the GlobalSecureDirectories or SecureDirectories list in the [application settings](#AppSettings) file.
 
+<a name="ArchivingSourceDirectories"></a>
 ## Archiving source directories
 
 The second part of the process is to take the list of directories in the GlobalSourceDirectories and SourceDirectories configuration and recursively zip each into a single output file in a nominated directory, known as the primary archive directory,  specified in the configuration as PrimaryArchiveDirectoryName.
 
 This uses the 'ZipFile.CreateFromDirectory' interface in Microsoft's Sytem.IO.Compression library, see the [Microsoft documentation](https://docs.microsoft.com/en-us/dotnet/api/system.io.compression?view=net-5.0) for details.
+
+Currently there is no way to tell it to only zip a subset of the files in a source directory, it always recursively zips the whole thing.
 
 The resulting zip files can then optionally be encrypted, creating a file with a '.aes' extension, so 'ArchivedFile.zip' is encrypted to 'ArchivedFile.zip.aes'. Set the EncryptOutput configuration setting on the source directory to enable this. 
 
@@ -142,7 +147,7 @@ See IncludeSpecifications and ExcludeSpecifications in the [application settings
 
 ## Slow volumes
 
-I mainly archive to external SSDs and HDDs but also to a set of MicroSD cards, which are rather slow to write to but cheap for the capacity and fairly indestructible. The system can be set up to only write to these slow volumes on an overnight run, or at the end of the week, say.
+I mainly archive to external SSDs and HDDs but also to MicroSD cards and USB sticks, which are rather slow to write to but cheap for the capacity and fairly indestructible. The system can be set up to only write to these slow volumes on an overnight run, or at the end of the week, say.
 
 See IsSlowVolume and ProcessSlowVolumes in the [application settings](#AppSettings) section below.
 
@@ -209,11 +214,11 @@ You can define any number of different jobs which can select different sets of d
 
 # Removable volumes
 
-My backup strategy, to be grandiose about it, involves having several external drives which I mount for various reasons, e.g. one for daily backups which is almost always connected, one which I plug in just at the start of each week, one for the start of each month, and a pair of two identical large SSDs which I generally leave one of attached but alternate between them. So sometimes S:\ or Y:\ might exist, sometimes it won't.
+My backup strategy, to be grandiose about it, involves having multiple external drives which I mount for various reasons, e.g. one for daily backups which is almost always connected, one which I plug in just at the start of each week, one for the start of each month, and a pair of two identical large SSDs which I generally leave one of attached but alternate between them. 
 
 I also have a bunch of USB sticks which I rotate through so I can get the latest of everything other than big media files in one place, to put somewhere remote.
 
-If you don't want to rely on mounted drives always having the same drive letter you can identify directories by volume label rather than drive letter by setting the the VolumeLabel configuration and not providing a drive in the DirectoryPath, see these items in the [application settings](#AppSettings) section below.
+If you don't want to rely on mounted drives always having the same drive letter you can identify directories by volume label rather than drive letter by setting the the VolumeLabel and not providing a drive in the DirectoryPath, see these items in the [application settings](#AppSettings) section below.
 
 If you mark a directory with IsRemovable, the system will try to use it but if it's not there it won't be considered as an error. 
 
@@ -278,7 +283,9 @@ If you want to revert to the default entities, delete the table and stored proce
 
 The script used to create the entities is below, it's a completely vanilla SSMS 'Create Script' output, no funny business.
 
-__There is no 'using' statement in here, so as not to tie the user down to having a database called Archivist. Make sure you target a specific schema in your connection string or it'll probably try to write this lot to master.__
+There is no 'using' statement in here, so as not to tie you down to having a database called Archivist.
+
+__Make sure you target a specific schema in your connection string or it'll probably try to execute this lot under master.__
 
 ```sql
 -- Straight script generation from SQL
