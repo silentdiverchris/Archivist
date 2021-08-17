@@ -234,9 +234,9 @@ Without DebugConsole the console will get a more readable subset of just the imp
 
 Full logging always goes to the file and SQL logs, which includes a lot of verbose stuff about the decisions it made according to settings, file timestamps et..
 
-## Text file
+## Text log file
 
-You can nominate a directory with the LogDirectoryPath item in application settings, this tells it where to create text log files. Log file names are in the form;
+You can nominate a directory for text log files with the LogDirectoryPath item in application settings, it will create files names of the form;
 
 Archiver-\[JobName]-YYYYMMDDHHMMSS.log
 
@@ -256,13 +256,17 @@ If a connection string is not supplied, no SQL logging will happen, which seems 
 
 If one is supplied but the program cannot connect to it, an error will be reported.
 
+__Please make sure your connection string specifies a default schema, or it will try to create the entities wherever it finds itself.__
+
 You can alter the stored procedure and log table as you wish, the system knows nothing about the  table, it just attempts to call AddLogEntry with three parameters, what happens internally is entirely customisable.
 
 If you want to revert to the default entities, delete the table and stored procedure and they will be recreated on the next run.
 
 ## SQL entity creation script
 
-The script used to create the entities is below, it's a vanilla SSMS 'Create Script' output, no funny business, apologies for unpleasant formatting.
+The script used to create the entities is below, it's a completely vanilla SSMS 'Create Script' output, no funny business.
+
+__There is no 'using' statement in here, so as not to tie the user down to having a database called Archivist. Make sure you target a specific schema in your connection string or it'll probably try to write this lot to master.__
 
 ```sql
 -- Straight script generation from SQL
@@ -326,13 +330,13 @@ GO
 
 Errors, warnings and job start and finish messages will always be written to the Windows event log.
 
-By default, information messages will not be sent to the event log, set application settings VerboseEventLog to true to write all progress messages to it.
+By default, information messages will not be sent to the event log, set application settings VerboseEventLog to true to write all progress messages to it, but best not to really.
 
-The program is written with Net Core so can be used on platforms other than Windows but the event log writing will currently only work on Windows.
+The program is written with Net Core so can be built for platforms other than Windows but the event log writing will currently only work on Windows.
 
 ## Console
 
-If job setting WriteToConsole is true, it will write a pretty full account of what it is doing to the console, setting VerboseConsole to true sends a good deal more to the console.
+If job setting WriteToConsole is true, it will write a pretty full account of what it is doing to the console, setting VerboseConsole to true sends a lot more to the console.
 
 If PauseBeforeExit is true or if any errors are detected, it will ask for a key to be pressed before closing the console at the end of a run.
 
@@ -708,7 +712,6 @@ This is a bare bones configuration to just archive one directory out to one back
       "EnabledAtHour": 0,
       "DisabledAtHour": 0
     }
-	]
   ]
 }
 ```
