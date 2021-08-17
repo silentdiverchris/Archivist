@@ -397,6 +397,46 @@ The first run of the program with the default settings file will report a series
 
 If you want to get a full example file at any time, rename or delete the existing one and the deafult file will be created on the next run.
 
+## Minimal appsettings.json file
+This is an example of a bare bones configuration with just one job to archive one directory out to one backup drive, most settings are defaulted, so don't appear.
+
+```json
+{
+  "DefaultJobName": "SimpleJob",
+  "LogDirectoryPath": "Log",
+  "Jobs": [
+    {
+      "Name": "SimpleJob",
+      "Description": "An example of a simple job specification",
+      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveDirectoryName",
+      "SourceDirectories": [
+        {
+          "AddVersionSuffix": true,
+          "RetainVersions": 5,
+          "RetainDaysOld": 90,
+          "DirectoryPath": "C:\\AllMyStuff",
+          "IsEnabled": true
+        }
+      ],
+      "ArchiveDirectories": [
+        {
+          "RetainVersions": 10,
+          "RetainDaysOld": 365,
+          "IncludeSpecifications": [
+            "*.*"
+          ],
+          "ExcludeSpecifications": [],
+          "VolumeLabel": "BackupDrive-01",
+          "DirectoryPath": "ArchivedFiles",
+          "Description": "My only backup drive",
+          "IsEnabled": true
+        }
+      ]
+    }
+  ]   
+}
+```
+
 ## Default appsettings.json file
 
 The default settings file will look something like the example below.
@@ -418,7 +458,7 @@ The first few lines are basic setup details, then it goes into describing two ex
   "Jobs": [
     {
       "Name": "ExampleJob1",
-      "Description": "An example of a job specification, you will need to edit this to point it at a primary archive directory, and any other changes you want to make.",
+      "Description": "An example of a job specification, you will need to edit this",
       "AutoViewLogFile": false,
       "WriteToConsole": true,
       "PauseBeforeExit": true,
@@ -679,56 +719,6 @@ The first few lines are basic setup details, then it goes into describing two ex
       "IsSlowVolume": false
     }
   ]
-}
-```
-
-## Minimal appsettings.json file
-This is a bare bones configuration to just archive one directory out to one backup drive, most settings are defaulted.
-
-```json
-{
-  "DefaultJobName": "SimpleJob",
-  "LogDirectoryPath": "Log",
-  "Jobs": [
-    {
-      "Name": "SimpleJob",
-      "Description": "An example of a simple job specification",
-      "WriteToConsole": true,
-      "PauseBeforeExit": true,
-      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveDirectoryName",
-      "SourceDirectories": [
-        {
-          "ReplaceExisting": true,
-          "DeleteArchiveAfterEncryption": true,
-          "AddVersionSuffix": true,
-          "RetainVersions": 2,
-          "RetainDaysOld": 7,
-          "DirectoryPath": "C:\\AllMyStuff",
-          "SynchoniseFileTimestamps": true,
-          "IsEnabled": true
-        }
-      ],
-      "ArchiveDirectories": [
-        {
-          "RetainVersions": 2,
-          "RetainDaysOld": 365,
-          "IncludeSpecifications": [
-            "*.*"
-          ],
-          "ExcludeSpecifications": [],
-          "VolumeLabel": "BackupDrive-01",
-          "DirectoryPath": "ArchivedFiles",
-          "SynchoniseFileTimestamps": true,
-          "DeleteSourceAfterEncrypt": false,
-          "Description": "My only backup drive",
-          "IsEnabled": true,
-          "Priority": 3,
-          "EnabledAtHour": 0,
-          "DisabledAtHour": 0
-        }
-      ]
-    }
-  ]   
 }
 ```
 

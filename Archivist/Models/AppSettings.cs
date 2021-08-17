@@ -410,7 +410,7 @@ namespace Archivist.Models
         /// If logging to file is enabled, open the new log file in the associated 
         /// application for a .log file (notepad or whatever)
         /// </summary>
-        public bool AutoViewLogFile { get; set; }
+        public bool AutoViewLogFile { get; set; } = false;
 
         /// <summary>
         /// Whether the process will write progress information to the console
