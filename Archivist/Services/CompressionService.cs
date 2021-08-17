@@ -1,6 +1,7 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
 using Archivist.Models;
+using Archivist.Utilities;
 using System.Diagnostics;
 using System.IO.Compression;
 
@@ -14,7 +15,7 @@ namespace Archivist.Services
         private readonly string _aesEncryptExecutable;
 
         internal CompressionService(
-            JobSpecification jobSpec,
+            Job jobSpec,
             LogService logService,
             string aesEncryptExecutable) : base(jobSpec, logService)
         {
@@ -36,7 +37,7 @@ namespace Archivist.Services
 
             if (Directory.Exists(_jobSpec.PrimaryArchiveDirectoryName))
             {
-                result.SubsumeResult(FileHelpers.CheckDiskSpace(_jobSpec.PrimaryArchiveDirectoryName));
+                result.SubsumeResult(FileUtilities.CheckDiskSpace(_jobSpec.PrimaryArchiveDirectoryName));
 
                 var foldersToCompress = _jobSpec.SourceDirectories
                     .Where(_ => _.IsToBeProcessed(_jobSpec))

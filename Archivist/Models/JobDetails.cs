@@ -5,35 +5,26 @@ namespace Archivist.Models
     internal class JobDetails
     {
         internal JobDetails(
-            string jobName, 
-            string configFilePath, 
-            string sqlConnectionString,
-            string logDirectoryName,
-            string aesEncryptExecutable,
-            bool debugConsole = true,
-            bool progressToEventLog = true)
+            string jobNameToRun, 
+            AppSettings appSettings)
         {
             StartedUtc = DateTime.UtcNow;
 
-            JobName = jobName;
-            ConfigFilePath = configFilePath;
-            SqlConnectionString = sqlConnectionString;
-            LogDirectoryName = logDirectoryName;
-            AesEncryptExecutable = aesEncryptExecutable;
-            DebugConsole = debugConsole;
-            ProgressToEventLog = progressToEventLog;
+            JobNameToRun = jobNameToRun;
+            AppSettings = appSettings;
         }
 
-        internal string JobName { get; set; }
-        internal string ConfigFilePath { get; set; }
+        internal string JobNameToRun { get; set; }
+        internal AppSettings AppSettings { get; set; }
 
         internal DateTime? StartedUtc { get; set; } = null;
         internal DateTime? EndedUtc { get; set; } = null;
 
-        internal string SqlConnectionString { get; set; }
-        internal string LogDirectoryName { get; set; }
-        internal string AesEncryptExecutable { get; set; }
-        internal bool DebugConsole { get; set; }
-        internal bool ProgressToEventLog { get; set; }
+        internal string SqlConnectionString => AppSettings?.SqlConnectionString;
+        internal string LogDirectoryPath => AppSettings?.LogDirectoryPath;
+        
+        internal bool WriteToConsole => AppSettings?.SelectedJob?.WriteToConsole ?? true;
+
+        internal Job SelectedJob => AppSettings?.SelectedJob;
     }
 }

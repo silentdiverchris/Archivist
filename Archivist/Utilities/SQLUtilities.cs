@@ -1,10 +1,11 @@
 ﻿using Archivist.Classes;
+using Archivist.Helpers;
 using Microsoft.Data.SqlClient;
 using System.Text;
 
-namespace Archivist.Helpers
+namespace Archivist.Utilities
 {
-    internal static class StoredProcedureHelpers
+    internal static class SQLUtilities
     {
         internal static List<SqlParameter> BuildSQLParameterList(
             string name1 = null, object value1 = null,
@@ -133,7 +134,7 @@ namespace Archivist.Helpers
             }
             catch (Exception ex)
             {
-                string storedProcCall = StoredProcedureHelpers.GenerateStoredProcedureCallText(name, parameters);
+                string storedProcCall = SQLUtilities.GenerateStoredProcedureCallText(name, parameters);
                 result.AddException(ex);
                 result.AddError(storedProcCall);
             }

@@ -13,7 +13,7 @@ Rather than dump a single subset of everything to one place, it can archive diff
 
 You can define different backup jobs, perhaps one to back up everything to everywhere on an automated schedule and/or via a shortcut, one to add new photos and movies to an archive every week, set up desktop shortcuts to fire off backups of specific, frequently changing files like code and documents to fast internal drives, or to a specific volume if it's mounted, or whatever happens to be mapped to F: at the time.
 
-There is no UI other than the console output, it's driven from a json configuration file and reports to the console, plus optionally to a text log file and/or a SQL table and/or the Windows event log.
+There is no UI other than the console output, it's driven from a single json configuration file 'appsettings.json' and reports to the console, plus optionally to a text log file and/or a SQL table and/or the Windows event log.
 
 While it can theoretically be compiled for use on Linux or Mac or in a Docker container, it has only been tested or used on native Windows 10.
 
@@ -29,7 +29,9 @@ The text below is fairly detailed, please feel free to get in touch or raise an 
 The code is licensed under [The MIT Licence](https://opensource.org/licenses/mit-license.php); which essentially means feel free to do whatever you like with it, but any horrific consequences are not my fault.
 
 # Installation
-There is no installer package, currently you need to download the code and build it locally.
+There is no installer package, currently you need to download the code and build it locally. 
+
+I'll generate a proper release/installer soon when it's stabilised a bit.
 
 It was created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, so you'll definitely need at least the former, and will no doubt get a raft of downgrade issues if you don't use the latter.
 
@@ -84,7 +86,7 @@ If DeleteArchiveAfterEncryption is set to true, and it finds an unencrypted file
 
 If the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption and optionally deleting the unencrypted version.
 
-To nominate secure directories, add them to the GlobalSecureDirectories or SecureDirectories list in the configuration file, see the [configuration file](#ConfigurationFile) section for details.
+To nominate secure directories, add them to the GlobalSecureDirectories or SecureDirectories list in the [application settings](#AppSettings) file.
 
 ## Archiving source directories
 
@@ -136,13 +138,13 @@ Directories and files can be selected, included and excluded in various ways acc
 
 Include or exclude files to be copied to archives depending on a set of file specifications e.g. 'Media*.zip'.
 
-See IncludeSpecifications and ExcludeSpecifications in the [configuration file](#ConfigurationFile) section below.
+See IncludeSpecifications and ExcludeSpecifications in the [application settings](#AppSettings) section below.
 
 ## Slow volumes
 
 I mainly archive to external SSDs and HDDs but also to a set of MicroSD cards, which are rather slow to write to but cheap for the capacity and fairly indestructible. The system can be set up to only write to these slow volumes on an overnight run, or at the end of the week, say.
 
-See IsSlowVolume and ProcessSlowVolumes in the [configuration file](#ConfigurationFile) section below.
+See IsSlowVolume and ProcessSlowVolumes in the [application settings](#AppSettings) section below.
 
 # File timestamps
 
@@ -204,7 +206,7 @@ You can define any number of different jobs which can select different sets of d
 
 My backup system involves having several external drives which I mount for various reasons, e.g. one for daily backups which is almost always connected, one which I plug in just at the start of each week, one for the start of each month, and a pair of two identical large SSDs which I generally leave one of attached but alternate between them. So sometimes S:\ or Y:\ might exist, sometimes it won't.
 
-If you don't want to rely on mounted drives always having the same drive letter you can identify directories by volume label rather than drive letter by setting the the VolumeLabel configuration and not providing a drive in the DirectoryPath, see these items in the [configuration file](#ConfigurationFile) section below.
+If you don't want to rely on mounted drives always having the same drive letter you can identify directories by volume label rather than drive letter by setting the the VolumeLabel configuration and not providing a drive in the DirectoryPath, see these items in the [application settings](#AppSettings) section below.
 
 If you mark a directory as removable with IsRemovable, the system will try to use it but if it's not there it won't be considered as an error. Any drive that is not found which is not marked as removable will be reported as an error.
 
@@ -234,33 +236,105 @@ Full logging always goes to the file and SQL logs, which includes a lot of verbo
 
 ## Text file
 
-You can nominate a directory with the LogDirectory item in application settings, this tells it where to create text log files. Log file names are in the form;
+You can nominate a directory with the LogDirectoryPath item in application settings, this tells it where to create text log files. Log file names are in the form;
 
 Archiver-\[JobName]-YYYYMMDDHHMMSS.log
 
-If the log directory is not supplied, no text logging will happen. If it is supplied but doesn't exist, an error will be reported.
+If a log directory path is not supplied, no text logging will happen. 
 
-## SQL
+If a full path is supplied but doesn't exist, the program will try to create it, and an error will be reported if it fails to.
 
-I like my logs in a SQL table for easy filtering and the like. If you give it a valid SQL connection string (DefaultConnection in ConnectionStrings in application settings) it will log to a SQL table, by default called 'Log'. 
+If a partial path is supplied, i.e. one without any directory separator such as 'Log', it will try to create it in the same directory as the executable, which may require the program to be run with raised privileges.
 
-If they don't exist, it will automatically create a 'Log' table and an 'AddToLog' stored procedure in the nominated database and write log messages to it using the stored procedure. 
+## SQL logging
 
-If a connection string is not supplied, no SQL logging will happen, if it is supplied but the system cannot connect to it, an error will be reported.
+I like my logs in a SQL table for easy filtering and having it all in one place. If you give it a valid SQL connection string it will try to call stored procedure 'AddToLog' in that database to write log messages.
 
-You can alter the stored procedure and log table to suit, so as to change the formatting or use another table entirely as long as you don't remove any of the original parameters of the AddLogEntry stored procedure. 
+If the stored procedure doesn't exist, it will automatically attempt to create a 'Log' table and the 'AddToLog' stored procedure in the nominated database (see script below) and will call the stored procedure to write log messages.
 
-The system knows nothing about the SQL table, all it relies on is calling the AddLogEntry with three parameters, what happens internally is entirely customisable.
+If a connection string is not supplied, no SQL logging will happen, which seems fair. 
 
-If you mess things up, delete them and the standard stored procedure and table will be recreated on the next run.
+If one is supplied but the program cannot connect to it, an error will be reported.
+
+You can alter the stored procedure and log table as you wish, the system knows nothing about the  table, it just attempts to call AddLogEntry with three parameters, what happens internally is entirely customisable.
+
+If you want to revert to the default entities, delete the table and stored procedure and they will be recreated on the next run.
+
+## SQL entity creation script
+
+The script used to create the entities is below, it's a vanilla SSMS 'Create Script' output, no funny business, apologies for unpleasant formatting.
+
+```sql
+-- Straight script generation from SQL
+
+/****** Object:  Table [dbo].[Log]    Script Date: 04/08/2021 12:28:53 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Log]') AND type in (N'U'))
+BEGIN
+CREATE TABLE [dbo].[Log](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[CreatedUTC] [datetime2](3) NOT NULL,
+	[LogText] [varchar](8000) NOT NULL,
+	[LogSeverity] [tinyint] NOT NULL,
+	[FunctionName] [varchar](100) NULL,
+ CONSTRAINT [PK_Log] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[DF_Log_CreatedUTC]') AND type = 'D')
+BEGIN
+ALTER TABLE [dbo].[Log] ADD  CONSTRAINT [DF_Log_CreatedUTC]  DEFAULT (getutcdate()) FOR [CreatedUTC]
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[DF_Log_LogSeverity]') AND type = 'D')
+BEGIN
+ALTER TABLE [dbo].[Log] ADD  CONSTRAINT [DF_Log_LogSeverity]  DEFAULT ((1)) FOR [LogSeverity]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AddLogEntry]    Script Date: 04/08/2021 12:28:54 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[AddLogEntry]') AND type in (N'P', N'PC'))
+BEGIN
+EXEC dbo.sp_executesql @statement = N'CREATE PROCEDURE [dbo].[AddLogEntry] AS' 
+END
+GO
+ALTER PROCEDURE [dbo].[AddLogEntry]
+	@FunctionName				varchar(100) = NULL,
+	@LogText					varchar(8000),
+	@LogSeverity				tinyint = 1
+AS
+BEGIN
+
+	Insert Into [Log] (FunctionName, LogText, LogSeverity)
+	Values (@FunctionName, @LogText, @LogSeverity)
+
+END
+GO
+
+```
 
 ## Windows event log
 
 Errors, warnings and job start and finish messages will always be written to the Windows event log.
 
-By default, information messages will not be sent to the event log, set application settings WriteProgressToEventLog to true to write all progress messages to it.
+By default, information messages will not be sent to the event log, set application settings VerboseEventLog to true to write all progress messages to it.
 
 The program is written with Net Core so can be used on platforms other than Windows but the event log writing will currently only work on Windows.
+
+## Console
+
+If job setting WriteToConsole is true, it will write a pretty full account of what it is doing to the console, setting VerboseConsole to true sends a good deal more to the console.
+
+If PauseBeforeExit is true or if any errors are detected, it will ask for a key to be pressed before closing the console at the end of a run.
 
 # Code
 
@@ -268,11 +342,13 @@ You can read the source code for fuller descriptions and a better understanding 
 
 # Plain-text password alert !
 
-To make the encryption work you need to either add the password to use to the EncryptionPassword section of the configuration file, or put it in a text file and specify the full path in the EncryptionPasswordFile setting. 
+To make the encryption work you need to either supply a password to the EncryptionPassword job setting or put it in a text file and specify the full path in the EncryptionPasswordFile setting. 
 
-Obviously this is a plain-text password in a file of one kind or another so definitely to be done with some consideration as to how good an idea that is, especially if the configuration or password files themselves are archived by the system. 
+Obviously this is a plain-text password in a file of one kind or another so should be done with some consideration as to how good an idea that is, especially if the configuration or password files themselves are archived by the system. 
 
 You could end up with a nicely encrypted set of files with the password conveniently provided in plain text nearby.
+
+An option to allow the user to type it into the console at job startup would be a nice enhancement.
 
 <a name="AESCrypt"></a>
 # AESCrypt
@@ -290,46 +366,352 @@ If the path to the executable isn't specified then no encryption will be attempt
 # Parameters
 There is only one parameter to the executable Archivist.exe, which is optional. It defines the name of the job to run e.g. 'DailyBackup' or 'BackupMusic'. Job names cannot contain spaces. 
 
-If no parameter is supplied, the system will run the job named in the application settings 'RunJobName'.
+If no parameter is supplied, the system will run the job named in the application settings 'DefaultJobName'.
 
 <a name="AppSettings"></a>
 # Application settings
 
-Standard json configuration file, sample below;
+This is a json file defining the basic setup for the program plus the archiving jobs that exist and what they will do. It must be in the same directory as the Archivist executable file.
 
-## Sample appsettings.json files
+If the file does not exist, which will be the case on initial installation, a default one will be created but the default one won't know your directory names or what you want it to do, so won't work as-is.
 
-Here is the minimal appsettings.json for it to work, the configuration.json file is assumed to be in the install directory.
+The first run of the program with the default settings file will report a series of errors to the console telling you that the paths in there don't exist and any other problems it finds and then terminate without doing anything, you can then edit the file and set it up from there.
+
+If you want to get a full example file at any time, rename or delete the existing one and the deafult file will be created on the next run.
+
+## Default appsettings.json file
+
+The default settings file will look something like the example below.
+
+It will need to be altered to reflect your directory names and archiving preferences. 
+
+You may well end up deleting most of it, but it seems a good idea to give a full example with all the defaults explicitly shown, to illustrate what options are available... and save me having to manually edit them all out.
+
+The first few lines are basic setup details, then it goes into describing two example jobs and the directories that they will process.
 
 ```json
 {
-  "RunJobName": "AValidJobName"
+  "DefaultJobName": "ExampleJob1",
+  "LogDirectoryPath": "Log",
+  "AESEncryptPath": "",
+  "SqlConnectionString": "",
+  "VerboseConsole": false,
+  "VerboseEventLog": false,
+  "Jobs": [
+    {
+      "Name": "ExampleJob1",
+      "Description": "An example of a job specification, you will need to edit this to point it at a primary archive directory, and any other changes you want to make.",
+      "AutoViewLogFile": false,
+      "WriteToConsole": true,
+      "PauseBeforeExit": true,
+      "ProcessTestOnly": true,
+      "ProcessSlowVolumes": false,
+      "ArchiveFairlyStatic": false,
+      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveDirectoryName",
+      "EncryptionPassword": null,
+      "EncryptionPasswordFile": null,
+      "SourceDirectories": [],
+      "ArchiveDirectories": [],
+      "SecureDirectories": []
+    },
+    {
+      "Name": "ExampleJob2",
+      "Description": "Another example of a job specification",
+      "AutoViewLogFile": false,
+      "WriteToConsole": true,
+      "PauseBeforeExit": true,
+      "ProcessTestOnly": false,
+      "ProcessSlowVolumes": false,
+      "ArchiveFairlyStatic": false,
+      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveDirectoryName",
+      "EncryptionPassword": null,
+      "EncryptionPasswordFile": "C:\\InvalidDirectoryName\\PasswordInTextFile.txt",
+      "SourceDirectories": [],
+      "ArchiveDirectories": [],
+      "SecureDirectories": []
+    }
+  ],
+  "GlobalSourceDirectories": [
+    {
+      "MinutesOldThreshold": 0,
+      "CheckTaskNameIsNotRunning": null,
+      "IsFairlyStatic": false,
+      "CompressionLevel": 0,
+      "ReplaceExisting": true,
+      "EncryptOutput": false,
+      "DeleteArchiveAfterEncryption": true,
+      "AddVersionSuffix": true,
+      "OutputFileName": null,
+      "RetainVersions": 2,
+      "RetainDaysOld": 7,
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "VolumeLabel": null,
+      "DirectoryPath": "C:\\ProbablyDoesntExist",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "IsSlowVolume": false
+    },
+    {
+      "MinutesOldThreshold": 0,
+      "CheckTaskNameIsNotRunning": null,
+      "IsFairlyStatic": false,
+      "CompressionLevel": 0,
+      "ReplaceExisting": true,
+      "EncryptOutput": true,
+      "DeleteArchiveAfterEncryption": true,
+      "AddVersionSuffix": true,
+      "OutputFileName": null,
+      "RetainVersions": 2,
+      "RetainDaysOld": 7,
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "VolumeLabel": null,
+      "DirectoryPath": "C:\\ProbablyDoesntExistEither",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "Priority": 3,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "IsSlowVolume": false
+    },
+    {
+      "MinutesOldThreshold": 60,
+      "CheckTaskNameIsNotRunning": null,
+      "IsFairlyStatic": false,
+      "CompressionLevel": 1,
+      "ReplaceExisting": true,
+      "EncryptOutput": false,
+      "DeleteArchiveAfterEncryption": false,
+      "AddVersionSuffix": true,
+      "OutputFileName": null,
+      "RetainVersions": 2,
+      "RetainDaysOld": 7,
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "VolumeLabel": null,
+      "DirectoryPath": "D:\\Temp",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": true,
+      "IsSlowVolume": false
+    },
+    {
+      "MinutesOldThreshold": 0,
+      "CheckTaskNameIsNotRunning": null,
+      "IsFairlyStatic": true,
+      "CompressionLevel": 2,
+      "ReplaceExisting": true,
+      "EncryptOutput": false,
+      "DeleteArchiveAfterEncryption": false,
+      "AddVersionSuffix": false,
+      "OutputFileName": null,
+      "RetainVersions": 1,
+      "RetainDaysOld": 7,
+      "IncludeSpecifications": null,
+      "ExcludeSpecifications": null,
+      "VolumeLabel": null,
+      "DirectoryPath": "M:\\Media\\Movies",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "IsSlowVolume": false
+    }
+  ],
+  "GlobalArchiveDirectories": [
+    {
+      "RetainVersions": 2,
+      "RetainDaysOld": 90,
+      "IncludeSpecifications": [
+        "*.zip"
+      ],
+      "ExcludeSpecifications": [
+        "Media-*.*",
+        "Temp*.*",
+        "Incoming*.*"
+      ],
+      "VolumeLabel": "BigMicroSD-01",
+      "DirectoryPath": "ArchivedFiles",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": "A very slow but big and cheap MicroSD card",
+      "IsEnabled": true,
+      "IsRemovable": true,
+      "Priority": 3,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "IsSlowVolume": true
+    },
+    {
+      "RetainVersions": 5,
+      "RetainDaysOld": 90,
+      "IncludeSpecifications": [
+        "*.zip"
+      ],
+      "ExcludeSpecifications": [
+        "Media-*.*",
+        "Temp*.*",
+        "Incoming*.*"
+      ],
+      "VolumeLabel": "ExternalSSD-01",
+      "DirectoryPath": "ArchivedFileDirectoryName",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": "External SSD connected on demand",
+      "IsEnabled": true,
+      "IsRemovable": true,
+      "Priority": 1,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": true,
+      "IsSlowVolume": true
+    },
+    {
+      "RetainVersions": 1,
+      "RetainDaysOld": 7,
+      "IncludeSpecifications": [
+        "Media*.*"
+      ],
+      "ExcludeSpecifications": [],
+      "VolumeLabel": "ExternalHDD-01",
+      "DirectoryPath": "ArchivedFileDirectoryName",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": "External HDD connected on demand just for latest versions of all media",
+      "IsEnabled": true,
+      "IsRemovable": true,
+      "Priority": 1,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": true,
+      "IsSlowVolume": true
+    },
+    {
+      "RetainVersions": 10,
+      "RetainDaysOld": 365,
+      "IncludeSpecifications": [
+        "*.zip"
+      ],
+      "ExcludeSpecifications": [],
+      "VolumeLabel": null,
+      "DirectoryPath": "Z:\\Archive",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": "Internal massive HDD",
+      "IsEnabled": true,
+      "IsRemovable": true,
+      "Priority": 2,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": true,
+      "IsSlowVolume": true
+    }
+  ],
+  "GlobalSecureDirectories": [
+    {
+      "VolumeLabel": null,
+      "DirectoryPath": "C:\\Something\\Secure",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "IsSlowVolume": false
+    },
+    {
+      "VolumeLabel": null,
+      "DirectoryPath": "C:\\SomethingElse\\AlsoSecure",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": null,
+      "IsEnabled": true,
+      "IsRemovable": false,
+      "Priority": 99,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0,
+      "IsForTesting": false,
+      "IsSlowVolume": false
+    }
+  ]
 }
 ```
 
-Here is a fuller version, pointing at different places for the configuration and log files, enabling encryption etc..
+## Minimal appsettings.json file
+This is a bare bones configuration to just archive one directory out to one backup drive, most settings are defaulted.
 
 ```json
 {
-  "RunJobName": "FullBackup",
-  "ConfigurationFile": "C:\\Somewhere\\ArchivistConfiguration.json",
-  "LogDirectory": "C:\\SomewhereElse\\Archivist\\Log",
-  "AESEncryptPath": "C:\\Program Files\\AESCrypt_console_v310_x64\\aescrypt.exe",
-  "DebugConsole": "true",
-  "WriteProgressToEventLog": "false",
-
-  "ConnectionStrings": {
-    "DefaultConnection": "Data Source=ServerNameOrAddress;Initial Catalog=Archivist;Integrated Security=true"
-  }
+  "DefaultJobName": "SimpleJob",
+  "LogDirectoryPath": "Log",
+  "Jobs": [
+    {
+      "Name": "SimpleJob",
+      "Description": "An example of a simple job specification",
+      "WriteToConsole": true,
+      "PauseBeforeExit": true,
+      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveDirectoryName",
+      "SourceDirectories": [ 
+         {
+		  "ReplaceExisting": true,
+		  "DeleteArchiveAfterEncryption": true,
+		  "AddVersionSuffix": true,
+		  "RetainVersions": 2,
+		  "RetainDaysOld": 7,
+		  "DirectoryPath": "C:\\AllMyStuff",
+		  "SynchoniseFileTimestamps": true,
+		  "IsEnabled": true
+		}
+	  ],
+      "ArchiveDirectories": [
+	  {
+		  "RetainVersions": 2,
+		  "RetainDaysOld": 365,
+		  "IncludeSpecifications": [
+				"*.*"
+		],
+      "ExcludeSpecifications": [ ],
+      "VolumeLabel": "BackupDrive-01",
+      "DirectoryPath": "ArchivedFiles",
+      "SynchoniseFileTimestamps": true,
+      "DeleteSourceAfterEncrypt": false,
+      "Description": "My only backup drive",
+      "IsEnabled": true,
+      "Priority": 3,
+      "EnabledAtHour": 0,
+      "DisabledAtHour": 0
+    }
+	]
+  ]
 }
 ```
-
-<a name="ConfigurationFile"></a>
-# Configuration file
-
-This is a json file defining the archiving jobs that exist and what they will do. Set the name of your configuration file in application settings ConfigurationFile. If the file does not exist, a default one will be created but obviously the default one won't know your directory names so won't work as-is.
-
-The first run of the program will create the file if it doesn't exist, then report a series of errors telling you that the paths in there don't exist and bomb out without doing anything, you can then edit the file and set it up from there.
 
 ## Running the code in debug mode
 
@@ -337,13 +719,14 @@ Please note if you download the code and run in debug mode from the source, the 
 
 This is to make development smoother, best not run from the code unless you're playing with our own adaptation of it, and have updated the code in ConfigurationHelpers to your actual backup requirements.
 
-## JobSpecifications
+## Jobs
 
-Here you define one of these for each job, e.g. DailyBackup, WeeklyBackup, BackupPhotos etc..
+In this section of the settings you can, well, must define at least one job, for example 'DailyBackup', 'WeeklyBackup', 'ArchivePhotos' or the like.
 
 |Setting|Description|
 |-----|-----|
 |Name|The name of the job to run, give this as the first parameter when calling Archiver.exe or specify it in the application settings RunJobName, the parameter will override the application settings. Job name cannot contain spaces.|
+|Description|A text description of what this job does, not validated, just for human consumption.|
 |ProcessTestOnly|For development only really, you can mark directories as ForTesting, and setting this to true will only process those.|
 |ProcessSlowVolumes|You can mark directories as IsSlowVolume, setting this to true will make it process those, if false, it'll not process slow volumes.|
 |ArchiveFairlyStatic|You can set directories as IsFairlyStatic and setting this allows you to tell a job whether to process it or not, it's intended to allow you to make a backup that only processes directories containing files that change or are added frequently, such as source code or documents, as opposed to those that don't, like a movie library.|
@@ -356,7 +739,7 @@ Here you define one of these for each job, e.g. DailyBackup, WeeklyBackup, Backu
 
 ## Directory settings for source and archive directories
 
-These settings apply to both types of directory.
+These settings apply to both archive and source directories.
 
 |Setting|Description|
 |-----|-----|
@@ -367,7 +750,7 @@ These settings apply to both types of directory.
 |Description|A human description of what this directory is, or what drive it's on - e.g... '128gb USB Key' or 'Where my photos are', this doesn't make anything work or break anything if left undefined, it's just a reminder for the human.|
 |IsEnabled|Whether to process this directory in any way. If it is false, this directory will be ignored.|
 |IsRemovable|Whether this is on a volume that is removable, mainly determining whether it should be considered an error if the volume it's on can't be found. If it can't be found it won't even be considered as a warning if this is true.|
-|IsSlowVolume|Whether this is a slow volume, used in conjunction with config WriteToSlowVolumes so backup jobs that only read from and write to fast drives can be set up by setting job setting ProcessSlowVolumes to false.|
+|IsSlowVolume|Whether this is a slow volume, used in conjunction with configuration WriteToSlowVolumes so backup jobs that only read from and write to fast drives can be set up by setting job setting ProcessSlowVolumes to false.|
 |RetainVersions|If a file has a version suffix (created by setting source directory setting AddVersionSuffix to true) we will retain this many of them in this directory, zero means we keep all versions, which will eventually fill the volume.<br><br>Something to be aware of is that if you set this lower on an archive directory than on the source directory the system will keep copying over older versions and then deleting them, if the system finds this on startup it will log a warning but cheerfully copy and delete as instructed.<br><br>If RetainVersions is set to zero, no archives will ever be deleted.|
 |RetainDaysOld|Specifies the minimum age at which an archive file can be deleted, regardless of any version numbering. The age is determined by the last write time, not the creation time.<br><br>Zero disables this function and any non-zero value has a minimum of 7 days. This ensures that however many versions of the archive are created, it will not delete any file that is younger than this number of days.<br><br>This does not cause files to be deleted after that number of days, it just stops younger files being deleted.<br><br>If the RetainVersions setting is set to zero, this setting will have no effect and no archives will ever be deleted.|
 |VolumeLabel|Allows the directory to be identified by the volume label rather than a drive designation, for removable drives which aren't always F:\ or whatever.<br><br>Set this to a valid volume label and ensure the DirectoryPath has no drive designation.<br><br>For example, VolumeLabel '1TB HDD' and DirectoryPath 'Archive' will map to 'F:\Archive' when that volume is mounted as drive 'F' and 'E:\Archive' when it is mounted as 'E'.|
@@ -397,241 +780,6 @@ Here you define the set of directories you want zipping up into files in the pri
 
 ## Archive directories
 
-Settings that just apply to archive directories.
+Settings that only apply to archive directories.
 
 None, archive directories just have the shared settings, above.
-
-## Configuration.json sample
-
-The sample below is created by serialising a populated class, so has all settings in it. A real one doesn't need to be anywhere this big as most values are the defaults, but good to have in full here to show all the settings that can be specified.
-
-This is similar to the default file which will be created if the one in appsettings.json does not exist, the paths in it are intentionally unlikely to exist so the program will report them as errors and stop without doing anything, you will need to adjust it to suit the setup you want.
-
-```json
-"JobSpecifications": [
-    {
-      "Name": "QuickBackup",
-      "WriteToConsole": true,
-      "PauseBeforeExit": true,
-      "ProcessTestOnly": false,
-      "ProcessSlowVolumes": false,
-      "ArchiveFairlyStatic": false,
-      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveFolderName",
-      "EncryptionPassword": "passwordinplaintext-scary",
-      "SourceDirectories": [],
-      "ArchiveDirectories": [],
-      "SecureDirectories": []
-    },
-    {
-      "Name": "TestBackup",
-      "WriteToConsole": true,
-      "PauseBeforeExit": true,
-      "ProcessTestOnly": true,
-      "ProcessSlowVolumes": false,
-      "ArchiveFairlyStatic": false,
-      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveFolderName",
-      "EncryptionPassword": null,
-      "EncryptionPasswordFile": "C:\\Dev\\Archivist\\EncryptionPassword.txt"
-      "SourceDirectories": [],
-      "ArchiveDirectories": [],
-      "SecureDirectories": []
-    }
-  ],
-  "GlobalSourceDirectories": [
-    {
-      "MinutesOldThreshold": 0,
-      "CheckTaskNameIsNotRunning": null,
-      "IsFairlyStatic": false,
-      "CompressionLevel": 0,
-      "ReplaceExisting": true,
-      "EncryptOutput": false,
-      "DeleteArchiveAfterEncryption": true,
-      "AddVersionSuffix": true,
-      "OutputFileName": null,
-      "Priority": 99,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "IsSlowVolume": false,
-      "RetainVersions": 2,
-      "RetainDaysOld": 90,
-      "DirectoryPath": "C:\\ProbablyDoesntExist",
-      "IncludeSpecifications": null,
-      "ExcludeSpecifications": null,
-      "SynchoniseFileTimestamps": false
-    },
-    {
-      "MinutesOldThreshold": 0,
-      "CheckTaskNameIsNotRunning": null,
-      "IsFairlyStatic": false,
-      "CompressionLevel": 0,
-      "ReplaceExisting": true,
-      "EncryptOutput": true,
-      "DeleteArchiveAfterEncryption": true,
-      "AddVersionSuffix": true,
-      "OutputFileName": null,
-      "Priority": 3,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "IsSlowVolume": false,
-      "RetainVersions": 2,
-      "RetainDaysOld": 90,
-      "DirectoryPath": "C:\\ProbablyDoesntExistEither",
-      "IncludeSpecifications": null,
-      "ExcludeSpecifications": null,
-      "SynchoniseFileTimestamps": false
-    },
-    {
-      "MinutesOldThreshold": 60,
-      "CheckTaskNameIsNotRunning": null,
-      "IsFairlyStatic": false,
-      "CompressionLevel": 1,
-      "ReplaceExisting": true,
-      "EncryptOutput": false,
-      "DeleteArchiveAfterEncryption": false,
-      "AddVersionSuffix": true,
-      "OutputFileName": null,
-      "Priority": 99,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": true,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "IsSlowVolume": false,
-      "RetainVersions": 2,
-      "RetainDaysOld": 90,
-      "DirectoryPath": "D:\\Temp",
-      "IncludeSpecifications": null,
-      "ExcludeSpecifications": null,
-      "SynchoniseFileTimestamps": false
-    },
-    {
-      "MinutesOldThreshold": 0,
-      "CheckTaskNameIsNotRunning": null,
-      "IsFairlyStatic": true,
-      "CompressionLevel": 2,
-      "ReplaceExisting": true,
-      "EncryptOutput": false,
-      "DeleteArchiveAfterEncryption": false,
-      "AddVersionSuffix": false,
-      "OutputFileName": null,
-      "Priority": 99,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "IsSlowVolume": false,
-      "RetainVersions": 0,
-      "DirectoryPath": "M:\\Media\\Movies",
-      "IncludeSpecifications": null,
-      "ExcludeSpecifications": null,
-      "SynchoniseFileTimestamps": false
-    }
-  ],
-  "GlobalArchiveDirectories": [
-    {
-      "Priority": 3,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "Description": "A very slow but big and cheap MicroSD card",
-      "IsEnabled": true,
-      "IsRemovable": true,
-      "IsSlowVolume": true,
-      "RetainVersions": 5,
-      "RetainDaysOld": 365,
-      "VolumeLabel": "MicroSD-500GB",
-      "DirectoryPath": "ArchivedFiles",
-      "IncludeSpecifications": [
-        "*.zip"
-      ],
-      "ExcludeSpecifications": [
-        "Media-*.*",
-        "Temp*.*",
-        "Incoming*.*"
-      ],
-      "SynchoniseFileTimestamps": true
-    },
-    {
-      "Priority": 1,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": true,
-      "Description": "External SSD set, 2 x 476GB, connected alternately on demand",
-      "IsEnabled": true,
-      "IsRemovable": true,
-      "IsSlowVolume": true,
-      "RetainVersions": 2,
-      "RetainDaysOld": 90,
-      "VolumeLabel": "ExternalSSD-500GB",
-      "DirectoryPath": "Archive",
-      "IncludeSpecifications": [
-        "*.zip"
-      ],
-      "ExcludeSpecifications": [
-        "Media-*.*",
-        "Temp*.*",
-        "Incoming*.*"
-      ],
-      "SynchoniseFileTimestamps": true
-    },
-    {
-      "Priority": 2,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": true,
-      "Description": "External massive HDD, connected almost all the time",
-      "IsEnabled": true,
-      "IsRemovable": true,
-      "IsSlowVolume": true,
-      "RetainVersions": 20,
-      "RetainDaysOld": 180,
-      "DirectoryPath": "Z:\\Archive",
-      "IncludeSpecifications": [
-        "*.zip"
-      ],
-      "ExcludeSpecifications": [],
-      "SynchoniseFileTimestamps": true
-    }
-  ],
-  "GlobalSecureDirectories": [
-    {
-      "DeleteSourceAfterEncrypt": false,
-      "Priority": 1,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "IsSlowVolume": false,
-      "DirectoryPath": "C:\\Something\\Secure",
-      "SynchoniseFileTimestamps": true
-    },
-    {
-      "DeleteSourceAfterEncrypt": false,
-      "Priority": 2,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "IsSlowVolume": false,
-      "DirectoryPath": "C:\\SomethingElse\\AlsoSecure",
-      "SynchoniseFileTimestamps": true
-    }
-  ]
-}
-```
-

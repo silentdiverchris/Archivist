@@ -1,7 +1,5 @@
 ﻿-- Straight script generation from SQL
 
-USE [Archivist]
-GO
 /****** Object:  Table [dbo].[Log]    Script Date: 04/08/2021 12:28:53 ******/
 SET ANSI_NULLS ON
 GO

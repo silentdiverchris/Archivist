@@ -1,6 +1,7 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
 using Archivist.Models;
+using Archivist.Utilities;
 using Microsoft.Data.SqlClient;
 using System.Security.AccessControl;
 using System.Text;
@@ -56,23 +57,23 @@ namespace Archivist.Services
                 }
             }
 
-            if (!string.IsNullOrEmpty(_jobDetails.LogDirectoryName))
+            if (!string.IsNullOrEmpty(_jobDetails.LogDirectoryPath))
             {
-                if (!_jobDetails.LogDirectoryName.Contains(Path.DirectorySeparatorChar))
+                if (!_jobDetails.LogDirectoryPath.Contains(Path.DirectorySeparatorChar))
                 {
                     // Just the directory name, we will asume it's under the install directory
-                    _jobDetails.LogDirectoryName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _jobDetails.LogDirectoryName);
+                    _jobDetails.AppSettings.LogDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _jobDetails.LogDirectoryPath);
                 }
 
-                if (!Directory.Exists(_jobDetails.LogDirectoryName))
+                if (!Directory.Exists(_jobDetails.LogDirectoryPath))
                 {
                     try
                     {
-                        Directory.CreateDirectory(_jobDetails.LogDirectoryName);
+                        Directory.CreateDirectory(_jobDetails.LogDirectoryPath);
 
                         // Allow autheticated users to write to the log directory
 
-                        var Info = new DirectoryInfo(_jobDetails.LogDirectoryName);
+                        var Info = new DirectoryInfo(_jobDetails.LogDirectoryPath);
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
@@ -91,15 +92,15 @@ namespace Archivist.Services
                     }
                     catch (Exception ex)
                     {
-                        string msg = $"Log directory '{_jobDetails.LogDirectoryName}' does not exist and cannot be created, remove the setting or ensure it refers to an existing directory or one that can be created.";
-                        EventLogHelper.WriteEntry(msg, enSeverity.Error);
+                        string msg = $"Log directory '{_jobDetails.LogDirectoryPath}' does not exist and cannot be created, remove the setting or ensure it refers to an existing directory or one that can be created.";
+                        EventLogHelpers.WriteEntry(msg, enSeverity.Error);
                         throw new Exception(msg, ex);
                     }
                 }
 
-                if (Directory.Exists(_jobDetails.LogDirectoryName))
+                if (Directory.Exists(_jobDetails.LogDirectoryPath))
                 {
-                    _logFileName = Path.Combine(_jobDetails.LogDirectoryName, $"Archivist-{_jobDetails.JobName}-{DateTime.UtcNow.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)}.log");
+                    _logFileName = Path.Combine(_jobDetails.LogDirectoryPath, $"Archivist-{_jobDetails.JobNameToRun}-{DateTime.UtcNow.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)}.log");
                     _logToFile = true;
                 }
             }
@@ -133,7 +134,7 @@ namespace Archivist.Services
                 {
                     if (result.ItemsProcessed > 0)
                     {
-                        result.AddInfo($"{result.ItemsFound} {itemNameSingular.Pluralise(result.ItemsFound, " ")}found, {result.ItemsProcessed} processed ({FileHelpers.GetByteSizeAsText(result.BytesProcessed)})");                
+                        result.AddInfo($"{result.ItemsFound} {itemNameSingular.Pluralise(result.ItemsFound, " ")}found, {result.ItemsProcessed} processed ({FileUtilities.GetByteSizeAsText(result.BytesProcessed)})");                
                     }
                     else
                     {
@@ -167,12 +168,12 @@ namespace Archivist.Services
 
         private async Task AddLogAsync (LogEntry entry)
         {
-            if (_jobDetails.ProgressToEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
+            if (_jobDetails.AppSettings.VerboseEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
             {
-                EventLogHelper.WriteEntry(entry.Text, severity: entry.Severity);
+                EventLogHelpers.WriteEntry(entry.Text, severity: entry.Severity);
             }
 
-            if (_logToConsole && (_jobDetails.DebugConsole || entry.Severity != enSeverity.Debug))
+            if (_logToConsole && (_jobDetails.AppSettings.VerboseConsole || entry.Severity != enSeverity.Debug))
             {
                 _consoleDelegate.Invoke(entry);
             }
@@ -240,11 +241,11 @@ namespace Archivist.Services
 
         private async Task AddLogToSqlAsync(LogEntry entry)
         {
-            List<SqlParameter> parameters = StoredProcedureHelpers.BuildSQLParameterList(
+            List<SqlParameter> parameters = SQLUtilities.BuildSQLParameterList(
                    "LogText", entry.Text,
                    "LogSeverity", (int)entry.Severity);
 
-            await StoredProcedureHelpers.ExecuteStoredProcedureNonQueryAsync(_jobDetails.SqlConnectionString, "AddLogEntry", parameters);
+            await SQLUtilities.ExecuteStoredProcedureNonQueryAsync(_jobDetails.SqlConnectionString, "AddLogEntry", parameters);
         }
 
         private async Task AddLogToFileAsync(LogEntry entry)

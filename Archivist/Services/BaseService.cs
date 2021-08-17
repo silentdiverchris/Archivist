@@ -4,11 +4,11 @@ namespace Archivist.Services
 {
     internal class BaseService : IDisposable
     {
-        protected readonly JobSpecification _jobSpec;
+        protected readonly Job _jobSpec;
         protected readonly LogService _logService;
 
         internal BaseService(
-            JobSpecification jobSpec,
+            Job jobSpec,
             LogService logService)
         {
             _jobSpec = jobSpec;

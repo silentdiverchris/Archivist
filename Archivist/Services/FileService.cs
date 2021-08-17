@@ -1,6 +1,7 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
 using Archivist.Models;
+using Archivist.Utilities;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
@@ -12,7 +13,7 @@ namespace Archivist.Services
         internal long TotalBytesCopied { get; private set; } = 0;
 
         internal FileService(
-            JobSpecification jobSpec,
+            Job jobSpec,
             LogService logService) : base(jobSpec, logService)
         {
         }
@@ -78,7 +79,7 @@ namespace Archivist.Services
                                     {
                                         // Never delete anything that is younger than RetainDaysOld
 
-                                        if (FileHelpers.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld))
+                                        if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld))
                                         {
                                             result.AddWarning($"Deleting file version '{fileName}'");
                                             File.Delete(fileName);
@@ -275,7 +276,7 @@ namespace Archivist.Services
                         string tempDestFileName = destinationFileName + ".copying";
 
                         // Don't write this to the console, it gets it's own snazzy progress indicator
-                        result.AddDebug($"Copying {fileName} to {destinationFileName} {FileHelpers.GetByteSizeAsText(fiSrc.Length)}");
+                        result.AddDebug($"Copying {fileName} to {destinationFileName} {FileUtilities.GetByteSizeAsText(fiSrc.Length)}");
                         await _logService.ProcessResult(result);
 
                         try
@@ -292,7 +293,7 @@ namespace Archivist.Services
                             LogEntry progressLogEntry = new()
                             {
                                 ProgressPrefix = $"Copying {fileName} to {destinationFileName}",
-                                ProgressSuffix = $"of {FileHelpers.GetByteSizeAsText(fiSrc.Length)} complete"
+                                ProgressSuffix = $"of {FileUtilities.GetByteSizeAsText(fiSrc.Length)} complete"
                             };
 
                             progressReporter.ProgressChanged += delegate (object obj, KeyValuePair<long, long> progressValue)
@@ -330,7 +331,7 @@ namespace Archivist.Services
 
                             if (File.Exists(tempDestFileName))
                             {
-                                result.AddInfo($"Copied {fileName} to {destinationFileName} {FileHelpers.GetByteSizeAsText(fiSrc.Length)}");
+                                result.AddInfo($"Copied {fileName} to {destinationFileName} {FileUtilities.GetByteSizeAsText(fiSrc.Length)}");
                                 await _logService.ProcessResult(result);
                                 File.Move(tempDestFileName, destinationFileName, true);
                             }
@@ -377,9 +378,9 @@ namespace Archivist.Services
 
                     double mbps = result.BytesProcessed / stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
 
-                    result.AddSuccess($"Copied {result.ItemsProcessed} files, total {FileHelpers.GetByteSizeAsText(result.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
+                    result.AddSuccess($"Copied {result.ItemsProcessed} files, total {FileUtilities.GetByteSizeAsText(result.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
 
-                    result.SubsumeResult(FileHelpers.CheckDiskSpace(destination.DirectoryPath));
+                    result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath));
                 }
                 else
                 {
@@ -448,7 +449,7 @@ namespace Archivist.Services
                 {
                     idx++;
 
-                    if (idx <= retainVersions || FileHelpers.IsLastWrittenLessThanDaysAgo(takeFileName, retainDaysOld))
+                    if (idx <= retainVersions || FileUtilities.IsLastWrittenLessThanDaysAgo(takeFileName, retainDaysOld))
                     {
                         filesToProcess.Add(takeFileName);
                     }

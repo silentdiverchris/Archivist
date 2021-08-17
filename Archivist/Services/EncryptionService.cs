@@ -7,7 +7,7 @@ namespace Archivist.Services
     internal class EncryptionService : BaseService
     {       
         internal EncryptionService(
-            JobSpecification jobSpec,
+            Job jobSpec,
             LogService logService) : base(jobSpec, logService)
         {
         }

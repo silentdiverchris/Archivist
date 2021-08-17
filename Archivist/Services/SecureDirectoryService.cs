@@ -8,7 +8,7 @@ namespace Archivist.Services
         private readonly string _aesEncryptExecutable;
 
         internal SecureDirectoryService(
-            JobSpecification jobSpec,
+            Job jobSpec,
             LogService logService,
             string aesEncryptExecutable) : base(jobSpec, logService)
         {
@@ -99,19 +99,19 @@ namespace Archivist.Services
                                 {
                                     // Unencrypted version has been changed, make a new encrypt
                                     doEncryption = true;
-                                    deleteSource = true;
+                                    deleteSource = secureDirectory.DeleteSourceAfterEncrypt;
                                 }
                                 else if (fiSrc.LastWriteTimeUtc == fiEnc.LastWriteTimeUtc)
                                 {
-                                    // Encrypted version exists, unencrypted has same lat write, just remove the unencrypted one
+                                    // Encrypted version exists, unencrypted has same last write time, just remove the unencrypted one
                                     doEncryption = false;
-                                    deleteSource = true;
+                                    deleteSource = secureDirectory.DeleteSourceAfterEncrypt;
                                 }
                                 else if (fiSrc.LastWriteTimeUtc <= fiEnc.LastWriteTimeUtc)
                                 {
-                                    // Odd, encrypted is later, maybe it's been done manually, lets recreate it just to be on the safe side
+                                    // Encrypted version is later, must have been done manually, lets recreate it just to be on the safe side
                                     doEncryption = true;
-                                    deleteSource = true;
+                                    deleteSource = secureDirectory.DeleteSourceAfterEncrypt;
                                 }
                                 else
                                 {
@@ -128,6 +128,9 @@ namespace Archivist.Services
                             {
                                 result.ItemsProcessed++;
                                 result.BytesProcessed += fiSrc.Length;
+
+                                // Double check the DeleteSourceAfterEncrypt setting in
+                                // case a bug above has failed to honour it
 
                                 if (deleteSource && secureDirectory.DeleteSourceAfterEncrypt == false)
                                 {

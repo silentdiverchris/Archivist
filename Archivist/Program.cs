@@ -1,9 +1,7 @@
-﻿using Archivist.Helpers;
+﻿using Archivist.Classes;
+using Archivist.Helpers;
 using Archivist.Models;
-using Microsoft.Extensions.Configuration;
-using System;
-using System.IO;
-using System.Threading.Tasks;
+using Archivist.Utilities;
 using static Archivist.Enumerations;
 
 namespace Archivist
@@ -12,45 +10,49 @@ namespace Archivist
     {
         public static async Task Main(string[] args)
         {
+            Result result = new("Program.Main");
+
             try
             {
-                IConfiguration config = new ConfigurationBuilder()
-                    .AddJsonFile("AppSettings.json", true, true)
-                    .Build();
+                // Create default appsettings.json if it does not exist, this happens at first run, and if the
+                // user deletes or moves it to generate a fresh one that they can customise.
 
-                // Read in and validate the config as much as possible
+                string appSettingsFileName = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
 
-                string configFileName = config["ConfigurationFile"];
+                if (!File.Exists(appSettingsFileName))
+                {
+                    AppSettingsUtilities.CreateDefaultAppSettings(appSettingsFileName);
+                }
 
-                // If not specified, use the default name in the install folder
-                string configFilePath = configFileName.Contains(Path.DirectorySeparatorChar)
-                    ? configFileName
-                    : Path.Join(AppDomain.CurrentDomain.BaseDirectory, string.IsNullOrEmpty(configFileName) ? "configuration.json" : configFileName);
-
-                _ = bool.TryParse(config["DebugConsole"], out bool debugConsole);
-                _ = bool.TryParse(config["WriteProgressToEventLog"], out bool progressToEventlog);
+                AppSettings appSettings = AppSettingsUtilities.LoadAppSettings(appSettingsFileName);
 
                 JobDetails jobDetails = new(
-                    configFilePath: configFilePath,
-                    jobName: args.Length > 0 ? args[0] : config["RunJobName"],
-                    sqlConnectionString: config.GetConnectionString("DefaultConnection"),
-                    logDirectoryName: config["LogDirectory"],
-                    aesEncryptExecutable: config["AESEncryptPath"],
-                    debugConsole: debugConsole,
-                    progressToEventLog: progressToEventlog);
-
-                EventLogHelper.WriteEntry($"Archivist starting job '{jobDetails.JobName}'", enSeverity.Info);
+                    jobNameToRun: args.Length > 0 ? args[0] : appSettings.DefaultJobName,
+                    appSettings: appSettings);
 
                 using (var archivist = new MainProcess(jobDetails))
                 {
-                    await archivist.RunAsync();
+                    result.SubsumeResult(await archivist.Initialise());
+
+                    if (!result.HasErrors)
+                    {
+                        result.SubsumeResult(await archivist.RunAsync());
+                    }
                 }
+
+                // The result has been processed within MainProcess, no need to log or display anything here
             }
             catch (Exception ex)
             {
-                EventLogHelper.WriteEntry($"Exception in Archivist.Main {ex.Message}", enSeverity.Error);
-
+                EventLogHelpers.WriteEntry($"Exception in Archivist.Main {ex.Message}", enSeverity.Error);
                 Console.WriteLine($"{ex.Message}");
+
+                result.AddException(ex);
+            }
+
+            if (result.HasErrors)
+            {
+                Console.WriteLine("Press any key to exit");
                 Console.ReadLine();
             }
         }

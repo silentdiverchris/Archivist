@@ -1,9 +1,9 @@
 ﻿using Archivist.Classes;
 using System.Text.RegularExpressions;
 
-namespace Archivist.Helpers
+namespace Archivist.Utilities
 {
-    internal static class FileHelpers
+    internal static class FileUtilities
     {
         internal static DriveInfo GetDriveByLabel(string label)
         {
@@ -56,7 +56,7 @@ namespace Archivist.Helpers
 
             const double threshold = 50L * 1024 * 1024 * 1024;
 
-            string freeSpaceText = $"Remaining space on drive {drive[0]} is {FileHelpers.GetByteSizeAsText(gbFree)}";
+            string freeSpaceText = $"Remaining space on drive {drive[0]} is {FileUtilities.GetByteSizeAsText(gbFree)}";
 
             if (gbFree < (threshold))
             {
