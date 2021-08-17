@@ -105,7 +105,7 @@ See the [AESCrypt](#AESCrypt) section for full details on setting up encryption.
 
 ## Copying archives
 
-The final part takes the lists of directories in GlobalArchiveDirectories and ArchiveDirectories defined in the configuration file and copies files from the primary archive directory to those directories depending on all the filters, inclusions and exclusions specified in the configuration ArchiveDirectories settings.
+The final part takes the lists of directories in GlobalArchiveDirectories and ArchiveDirectories and copies files from the primary archive directory to each of those directories depending on all the filters, inclusions and exclusions specified in the ArchiveDirectories settings.
 
 # Screenshots
 
@@ -195,9 +195,13 @@ The process to review files for deletion only happens after an archive file is c
 
 # Performance
 
-It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of the code used RoboCopy, which did the copying more quickly especially with muti-threaded copies. 
+It could be faster, the 7-Zip library seems to be faster than the .Net compression, and a previous version of the code used RoboCopy, which did the copying more quickly with it's spiffy muti-threaded feature. 
 
-I might update it to use RoboCopy again but it's not really a priority, it wasn't all that much faster, I don't sit waiting for it to finish anyway and; stable and dependable (and fantastic) as RoboCopy is, it's nice not to have a call out to another external executable and it means it can have a natty progress indicator in the console.
+I might add an option to use 7-zip at some point.
+
+I could also update it to use RoboCopy, again as an optional thing but it's not really a priority, my data footprint isn't big enough for the performance benefit to make too much of a difference and I don't generally sit waiting for it to finish anyway. 
+
+Dependable and fantastic as RoboCopy is, it's nice not to have a call out to another external executable and it means it can have a natty progress indicator in the console.
 
 # Priority
 Each source and archive directory has a Priority setting, 1 is the highest priority, 255 is the lowest, default is 99. Directories will be processed in this order and by alpha order of directories within that.
@@ -389,13 +393,15 @@ If no parameter is supplied, the system will run the job named in the applicatio
 <a name="AppSettings"></a>
 # Application settings
 
-This is a json file defining the basic setup for the program plus the archiving jobs that exist and what they will do. It must be in the same directory as the Archivist executable file.
+A json file defining the setup for the program plus the archiving jobs that exist and what they will do. 
+
+It must be in the same directory as the Archivist executable file.
 
 If the file does not exist, which will be the case on initial installation, a default one will be created but the default one won't know your directory names or what you want it to do, so won't work as-is.
 
-The first run of the program with the default settings file will report a series of errors to the console telling you that the paths in there don't exist and any other problems it finds and then terminate without doing anything, you can then edit the file and set it up from there.
+The first run of the program with the default settings file will report a series of errors to the console telling you that the paths in there don't exist and any other problems it finds and then terminate without doing anything, you can then edit the file and go from there.
 
-If you want to get a full example file at any time, rename or delete the existing one and the deafult file will be created on the next run.
+If you want to get a full example file at any time, rename or delete the existing one and the default file will be created on the next run.
 
 ## Minimal appsettings.json file
 This is an example of a bare bones configuration with just one job to archive one directory out to one backup drive, most settings are defaulted, so don't appear.
@@ -414,8 +420,7 @@ This is an example of a bare bones configuration with just one job to archive on
           "AddVersionSuffix": true,
           "RetainVersions": 5,
           "RetainDaysOld": 90,
-          "DirectoryPath": "C:\\AllMyStuff",
-          "IsEnabled": true
+          "DirectoryPath": "C:\\AllMyStuff"
         }
       ],
       "ArchiveDirectories": [
@@ -425,11 +430,9 @@ This is an example of a bare bones configuration with just one job to archive on
           "IncludeSpecifications": [
             "*.*"
           ],
-          "ExcludeSpecifications": [],
           "VolumeLabel": "BackupDrive-01",
           "DirectoryPath": "ArchivedFiles",
-          "Description": "My only backup drive",
-          "IsEnabled": true
+          "Description": "My only backup drive"
         }
       ]
     }

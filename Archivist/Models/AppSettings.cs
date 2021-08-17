@@ -154,42 +154,42 @@ namespace Archivist.Models
         /// <summary>
         /// Whether to process this directory in any way
         /// </summary>
-        public bool IsEnabled { get; set; }
+        public bool IsEnabled { get; set; } = true;
 
         /// <summary>
         /// Whether this is on a volume that is removeable, mainly determining whether it should 
         /// be considered an error if the volume it's on can't be found. If it can't be found it
         /// won't even be considered as a warning if this is true.
         /// </summary>
-        public bool IsRemovable { get; set; }
+        public bool IsRemovable { get; set; } = false;
 
         /// <summary>
         /// Process directories in this order, lowest number first (then by directory name alpha)
         /// </summary>
-        public int Priority { get; set; } = 99;
+        public short Priority { get; set; } = 99;
 
         /// <summary>
         /// Only process this directory after this hour starts, zero disables
         /// </summary>
-        public int EnabledAtHour { get; set; } = 0;
+        public short EnabledAtHour { get; set; } = 0;
 
         /// <summary>
         /// Only process this directory before this hour starts, zero disables
         /// </summary>
-        public int DisabledAtHour { get; set; } = 0;
+        public short DisabledAtHour { get; set; } = 0;
 
         /// <summary>
         /// Marks this directory as one to process when the backup type has ProcessTestOnly set, this
         /// is just used for developing the code
         /// </summary>
-        public bool IsForTesting { get; set; }
+        public bool IsForTesting { get; set; } = false;
 
         /// <summary>
         /// Whether this is a slow volume, used in conjunction with config WriteToSlowVolumes so
         /// backup jobs that only read from and write to fast drives can be set up by setting job 
         /// setting ProcessSlowVolumes to false.
         /// </summary>
-        public bool IsSlowVolume { get; set; }
+        public bool IsSlowVolume { get; set; } = false;
 
         private bool _isAvailable = false;
 
