@@ -7,7 +7,7 @@ I previously wrote a PowerShell system that used WinRar and RoboCopy and an incr
 
 And so it came to pass that Archivist was born, almost certainly to the sound of celestial trumpets.
 
-It's not ideal for non-technical users, it has no GUI and relies on considered tweaking of a potentially large .json file, but for a technical user who can be bothered to put some time into setting it up it can be a powerful and hugely adaptable backup solution.
+It's not ideal for non-technical users, it has no GUI and relies on considered tweaking of a potentially large .json file, but for a technical user who can be bothered to put some time into setting it up it can be a relatively mighty backup solution.
 
 Rather than dump a single subset of everything to one place, it can archive different sets of files in different directories to multiple places depending on inclusion and exclusion file specifications, retaining a complete history of them in one place such as a massive local or NAS volume, and just the latest X versions and/or the last Y days worth of various selections of them on any number of other fixed or removable volumes.
 
@@ -26,7 +26,7 @@ It uses the LastWriteTime of the zip files it creates to decide whether a new ar
 The text below is fairly detailed, please feel free to get in touch or raise an issue to ask for further detail, point out mistakes or report bugs, I'll update the below with any corrections, clarifications or expansions.
 
 # Licence
-The code is licensed under [The MIT Licence](https://opensource.org/licenses/mit-license.php); which essentially means feel free to do whatever you like with it, but any horrific consequences are not my fault.
+The code is licensed under [The MIT Licence](https://opensource.org/licenses/mit-license.php) - essentially feel free to do whatever you like with it, but any horrific consequences are not my fault.
 
 # Installation
 There is no installer package, currently you need to download the code and build it locally. 
@@ -286,6 +286,8 @@ If you want to revert to the default entities, delete the table and stored proce
 ## SQL entity creation script
 
 The script used to create the entities is below, it's a completely vanilla SSMS 'Create Script' output, no funny business.
+
+The .sql file is in the install directory so you can adjust it as you wish, whatever is in there will be used to recreate the SQL entities if it cannot find the stored procedure on startup.
 
 There is no 'using' statement in here, so as not to tie you down to having a database called Archivist.
 

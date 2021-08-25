@@ -177,7 +177,7 @@ namespace Archivist.Utilities
 
         internal static Result SelectAndValidateJob(JobDetails jobDetails)
         {
-            Result result = new("ValidateAppSettings", false);
+            Result result = new("SelectAndValidateJob", false);
 
             if (!string.IsNullOrEmpty(jobDetails.AppSettings.AESEncryptPath) && !File.Exists(jobDetails.AppSettings.AESEncryptPath))
             {

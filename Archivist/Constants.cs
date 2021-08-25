@@ -1,6 +1,6 @@
 ﻿namespace Archivist
 {
-    class Constants
+    internal class Constants
     {
         internal const int STREAM_BUFFER_SIZE = 81920;
 
@@ -13,7 +13,7 @@
         /// Minimum number of days to retain archives, regardless of versioning. 
         /// This overrides the number of versions to retain.
         /// </summary>
-        internal const int RETAIN_DAYS_OLD_MINIMUM = 7;
+        internal const int RETAIN_DAYS_OLD_MINIMUM = 2;
 
         internal const int DB_TIMEOUT_SECONDS = 10;
 

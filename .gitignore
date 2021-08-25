@@ -366,3 +366,5 @@ MigrationBackup/
 FodyWeavers.xsd
 /EncryptionPassword.txt
 /README.md.backup
+/Notes.md.backup
+/Notes.md
