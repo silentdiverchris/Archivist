@@ -18,6 +18,34 @@ namespace Archivist.Services
         {
         }
 
+        internal async Task<Result> DeleteTemporaryFiles(string directoryPath, bool zeroLengthOnly)
+        {
+            Result result = new("DeleteTemporaryFiles");
+
+            try
+            {
+                var temporaryFiles = Directory.GetFiles(directoryPath, "*.*", searchOption: SearchOption.TopDirectoryOnly)
+                    .Where(_ => _.EndsWith(".copying") || _.EndsWith(".temporary"));
+
+                foreach (var fileName in temporaryFiles)
+                {
+                    if (zeroLengthOnly == false || new FileInfo(fileName).Length == 0)
+                    {
+                        result.AddWarning($"Deleting old temporary file '{fileName}'");
+                        File.Delete(fileName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result.AddException(ex);
+            }
+
+            await _logService.ProcessResult(result);
+
+            return result;
+        }
+
         internal async Task<Result> DeleteOldVersions(string latestFileName, int retainMinimumVersions, int retainMaximumVersions, int retainDaysOld)
         {
             Result result = new("DeleteOldVersions");
@@ -142,12 +170,16 @@ namespace Archivist.Services
                 .OrderBy(_ => _.Priority)
                 .ThenBy(_ => _.DirectoryPath))
             {
+                result.SubsumeResult(await DeleteTemporaryFiles(destination.DirectoryPath, true));
+
                 Result copyResult = await CopyFiles(_jobSpec.PrimaryArchiveDirectoryName, destination);
 
                 result.SubsumeResult(copyResult);
 
                 if (result.HasErrors)
                     break;
+
+                //result.SubsumeResult(await DeleteTemporaryFiles(_jobSpec.PrimaryArchiveDirectoryName, true));
             }
 
             await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: true, "file");
