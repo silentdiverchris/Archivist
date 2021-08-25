@@ -31,7 +31,7 @@ namespace Archivist.Services
                     Arguments = $"-e -p{password} -o\"{destinationFileName}\" \"{sourceFileName}\""
                 };
 
-                result.AddInfo($"AESCrypt encrypting '{sourceFileName}' to '{destinationFileName}'");
+                result.AddInfo($"AESCrypt encrypting '{fiSrc.Name}'"); // to '{destinationFileName}'");
 
                 Process process = Process.Start(procInfo);
 

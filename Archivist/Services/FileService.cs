@@ -294,8 +294,8 @@ namespace Archivist.Services
 
                             LogEntry progressLogEntry = new()
                             {
-                                ProgressPrefix = $"Copying {fileName} to {destinationFileName}",
-                                ProgressSuffix = $"of {FileUtilities.GetByteSizeAsText(fiSrc.Length)} complete"
+                                ProgressPrefix = $"Copying {fiSrc.Name}", // {fileName} to {destination.DirectoryPath}",
+                                ProgressSuffix = $"of {FileUtilities.GetByteSizeAsText(fiSrc.Length)}" // complete"
                             };
 
                             progressReporter.ProgressChanged += delegate (object obj, KeyValuePair<long, long> progressValue)
@@ -333,7 +333,7 @@ namespace Archivist.Services
 
                             if (File.Exists(tempDestFileName))
                             {
-                                result.AddInfo($"Copied {fileName} to {destinationFileName} {FileUtilities.GetByteSizeAsText(fiSrc.Length)}");
+                                result.AddInfo($"Copied {fiSrc.Name} to {destination.DirectoryPath} ({FileUtilities.GetByteSizeAsText(fiSrc.Length)}) OK");
                                 await _logService.ProcessResult(result);
                                 File.Move(tempDestFileName, destinationFileName, true);
                             }

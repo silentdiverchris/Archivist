@@ -282,7 +282,7 @@ namespace Archivist.Models
         /// than on the source directory the system will keep copying over older versions and then deleting 
         /// them, watch out for that.
         /// </summary>
-        public int RetainMinimumVersions { get; set; } = 1;
+        public int RetainMinimumVersions { get; set; } = Constants.RETAIN_VERSIONS_MINIMUM;
 
         /// <summary>
         /// If a file has a version suffix (created by setting source directory setting AddVersionSuffix 
