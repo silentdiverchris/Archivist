@@ -277,19 +277,28 @@ namespace Archivist.Models
     {
         /// <summary>
         /// If a file has a version suffix (created by setting source directory setting AddVersionSuffix 
-        /// to true) it will will retain this many of them in this directory, zero means we keep all versions, which
+        /// to true) it will retain at least this many of them in this directory, zero means we keep all versions, which
         /// will eventually fill the volume. One gotcha is that if you set this lower on an archive directory
         /// than on the source directory the system will keep copying over older versions and then deleting 
         /// them, watch out for that.
         /// </summary>
-        public int RetainVersions { get; set; } = 1;
+        public int RetainMinimumVersions { get; set; } = 1;
+
+        /// <summary>
+        /// If a file has a version suffix (created by setting source directory setting AddVersionSuffix 
+        /// to true) it will retain a maximum this many of them in this directory, zero means we keep all versions, which
+        /// will eventually fill the volume. One gotcha is that if you set this lower on an archive directory
+        /// than on the source directory the system will keep copying over older versions and then deleting 
+        /// them, watch out for that.
+        /// </summary>
+        public int RetainMaximumVersions { get; set; } = 3;
 
         /// <summary>
         /// If a file has a version suffix (created by setting source directory setting AddVersionSuffix 
         /// to true) it will retain files that were written less than this many days ago, this overrides
         /// the retainVersions setting. Zero disables this function.
         /// </summary>
-        public int RetainDaysOld { get; set; } = Constants.RETAIN_DAYS_OLD_MINIMUM;
+        public int RetainYoungerThanDays { get; set; } = Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM;
 
         /// <summary>
         /// A list of file specs to include, eg "*.txt', 'thing.*', abc???de.jpg' etc.

@@ -123,7 +123,7 @@ Then it copies several files to an archive directory on another drive, the ones 
 
 <img alt="Half way through an archive" title="Half way through an archive" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/ExampleConsole1.png">
 
-Note that deleting an old archive version was reported as a warning but it probably shouldn't be, it's entirely expected behaviour so I'll make it an unremarkable info type log entry at some point but I wanted to know about deletions as I've just changed the code for the new RetainDaysOld setting so want to keep an eye on it.
+Note that deleting an old archive version was reported as a warning but it probably shouldn't be, it's entirely expected behaviour so I'll make it an unremarkable info type log entry at some point but I wanted to know about deletions as I've just changed the code for the new RetainYoungerThanDays setting so want to keep an eye on it.
 
 The rest of the console output after the archive had completed follows;
 
@@ -161,13 +161,13 @@ The system does not use file creation time to make any decisions, the last write
 
 An archive of folder 'Development' would normally create file 'Development.zip', setting AddVersionSuffix would name the first one as 'Development-0001.zip', the next as 'Development-0002.zip' and so on. 
 
-Setting RetainVersions to 3, for example, would leave those as-is when 'Development-0003.zip' was created, then when 'Development-0004.zip' was created would delete 'Development-0001.zip', retaining the last 3.
+Setting RetainMaximumVersions to 3, for example, would leave those as-is when 'Development-0003.zip' was created, then when 'Development-0004.zip' was created would delete 'Development-0001.zip', retaining the last 3.
 
 When it gets to 9900 it will start generating warnings, and at 9999 it will generate an error and not create the next version of that file. Currently you need to renumber the files, e.g. back to 0001, 0002 etc. to get it working again. 
 
 The system stores no internal record of what it calls files, it goes from what it finds at the time.
 
-Using the RetainVersions setting you can tell it to keep the last 2, 5 or however many versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision, it judges purely by the digits in the file names.
+Using the Retain\[Minimim/Maximum]Versions settings you can tell it to keep the number of versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision, it judges purely by the digits in the file names.
 
 If it finds any file name that isn't of the form \[base file name]\[hyphen\]\[4 digits\]\[dot]\[extension] it won't touch it. Nor will it touch any file that has a \[base file name] that it isn't actively writing at the time.
 
@@ -175,19 +175,17 @@ If AddVersionSuffix for a directory is false, files will not be versioned and th
 
 This versioning can start to eat up disk space of course, the system will report the space free on drives it uses to the console/log, and generate a warning if it is below 50Gb, currently.
 
-This behaviour can be limited by specifying RetainDaysOld, which will make sure no files are deleted if they were last written to less than that many days ago, regardless of the number of versions, see below for more details.
+This behaviour can be limited by specifying RetainYoungerThanDays, which will make sure no files are deleted if they were last written to less than that many days ago, regardless of the number of versions, see below for more details.
 
 # Deleting old versions
 
 At two points in the process, namely when a zip archive is created and after copying it to an archive directory, the system can delete older generations of each file and so keep a specific number of them. 
 
-To do this, set the AddVersionSuffix, RetainVersions and RetainDaysOld settings on the directory in question.
+To do this, set the AddVersionSuffix, RetainMinimumVersions, RetainMaximumVersions and RetainYoungerThanDays settings on the directory in question.
 
-The RetainVersions setting defines how many versions will be kept, but is limited by the RetainDaysOld setting, which ensures that no file is deleted if it was last written to less than that number of days ago, regardless of the RetainVersions setting.
+The RetainMinimumVersions and RetainMaximumVersions settings define how many versions will be kept, limited by the RetainYoungerThanDays setting, which ensures that no file is deleted if it was last written to less than that number of days ago, regardless of the RetainMaximumVersions setting.
 
-The RetainDaysOld setting will not cause older files to be deleted, it only prevents younger files being deleted.
-
-Setting AddVersionSuffix to true, and both RetainVersions and RetainDaysOld to zero will just keep adding new versions and never delete anything.
+The RetainYoungerThanDays setting will not cause older files to be deleted, it only prevents younger files being deleted.
 
 In this way, you can for example retain the last 3 versions and any versions up to 30 days old in the primary archive directory while retaining every copy of these files up to a year old in another archive directory, all files forever in another archive directory and just the very latest of each file in yet another archive directory.
 
@@ -420,15 +418,15 @@ This is an example of a bare bones configuration with just one job to archive on
       "SourceDirectories": [
         {
           "AddVersionSuffix": true,
-          "RetainVersions": 5,
-          "RetainDaysOld": 90,
+          "RetainMaximumVersions": 5,
+          "RetainYoungerThanDays": 90,
           "DirectoryPath": "C:\\AllMyStuff"
         }
       ],
       "ArchiveDirectories": [
         {
-          "RetainVersions": 10,
-          "RetainDaysOld": 365,
+          "RetainMaximumVersions": 10,
+          "RetainYoungerThanDays": 365,
           "IncludeSpecifications": [
             "*.*"
           ],
@@ -505,8 +503,8 @@ The first few lines are basic setup details, then it goes into describing two ex
       "DeleteArchiveAfterEncryption": true,
       "AddVersionSuffix": true,
       "OutputFileName": null,
-      "RetainVersions": 2,
-      "RetainDaysOld": 7,
+      "RetainMaximumVersions": 2,
+      "RetainYoungerThanDays": 7,
       "IncludeSpecifications": null,
       "ExcludeSpecifications": null,
       "VolumeLabel": null,
@@ -532,8 +530,8 @@ The first few lines are basic setup details, then it goes into describing two ex
       "DeleteArchiveAfterEncryption": true,
       "AddVersionSuffix": true,
       "OutputFileName": null,
-      "RetainVersions": 2,
-      "RetainDaysOld": 7,
+      "RetainMaximumVersions": 2,
+      "RetainYoungerThanDays": 7,
       "IncludeSpecifications": null,
       "ExcludeSpecifications": null,
       "VolumeLabel": null,
@@ -559,8 +557,8 @@ The first few lines are basic setup details, then it goes into describing two ex
       "DeleteArchiveAfterEncryption": false,
       "AddVersionSuffix": true,
       "OutputFileName": null,
-      "RetainVersions": 2,
-      "RetainDaysOld": 7,
+      "RetainMaximumVersions": 2,
+      "RetainYoungerThanDays": 7,
       "IncludeSpecifications": null,
       "ExcludeSpecifications": null,
       "VolumeLabel": null,
@@ -586,8 +584,8 @@ The first few lines are basic setup details, then it goes into describing two ex
       "DeleteArchiveAfterEncryption": false,
       "AddVersionSuffix": false,
       "OutputFileName": null,
-      "RetainVersions": 1,
-      "RetainDaysOld": 7,
+      "RetainMaximumVersions": 1,
+      "RetainYoungerThanDays": 7,
       "IncludeSpecifications": null,
       "ExcludeSpecifications": null,
       "VolumeLabel": null,
@@ -606,8 +604,8 @@ The first few lines are basic setup details, then it goes into describing two ex
   ],
   "GlobalArchiveDirectories": [
     {
-      "RetainVersions": 2,
-      "RetainDaysOld": 90,
+      "RetainMaximumVersions": 2,
+      "RetainYoungerThanDays": 90,
       "IncludeSpecifications": [
         "*.zip"
       ],
@@ -630,8 +628,8 @@ The first few lines are basic setup details, then it goes into describing two ex
       "IsSlowVolume": true
     },
     {
-      "RetainVersions": 5,
-      "RetainDaysOld": 90,
+      "RetainMaximumVersions": 5,
+      "RetainYoungerThanDays": 90,
       "IncludeSpecifications": [
         "*.zip"
       ],
@@ -654,8 +652,8 @@ The first few lines are basic setup details, then it goes into describing two ex
       "IsSlowVolume": true
     },
     {
-      "RetainVersions": 1,
-      "RetainDaysOld": 7,
+      "RetainMaximumVersions": 1,
+      "RetainYoungerThanDays": 7,
       "IncludeSpecifications": [
         "Media*.*"
       ],
@@ -674,8 +672,8 @@ The first few lines are basic setup details, then it goes into describing two ex
       "IsSlowVolume": true
     },
     {
-      "RetainVersions": 10,
-      "RetainDaysOld": 365,
+      "RetainMaximumVersions": 10,
+      "RetainYoungerThanDays": 365,
       "IncludeSpecifications": [
         "*.zip"
       ],
@@ -765,8 +763,9 @@ These settings apply to both archive and source directories.
 |IsEnabled|Whether to process this directory in any way. If it is false, this directory will be ignored.|
 |IsRemovable|Whether this is on a volume that is removable, mainly determining whether it should be considered an error if the volume it's on can't be found. If it can't be found it won't even be considered as a warning if this is true.|
 |IsSlowVolume|Whether this is a slow volume, used in conjunction with configuration WriteToSlowVolumes so backup jobs that only read from and write to fast drives can be set up by setting job setting ProcessSlowVolumes to false.|
-|RetainVersions|If a file has a version suffix (created by setting source directory setting AddVersionSuffix to true) we will retain this many of them in this directory, zero means we keep all versions, which will eventually fill the volume.<br><br>Something to be aware of is that if you set this lower on an archive directory than on the source directory the system will keep copying over older versions and then deleting them, if the system finds this on startup it will log a warning but cheerfully copy and delete as instructed.<br><br>If RetainVersions is set to zero, no archives will ever be deleted.|
-|RetainDaysOld|Specifies the minimum age at which an archive file can be deleted, regardless of any version numbering. The age is determined by the last write time, not the creation time.<br><br>Zero disables this function and any non-zero value has a minimum of 7 days. This ensures that however many versions of the archive are created, it will not delete any file that is younger than this number of days.<br><br>This does not cause files to be deleted after that number of days, it just stops younger files being deleted.<br><br>If the RetainVersions setting is set to zero, this setting will have no effect and no archives will ever be deleted.|
+|RetainMinimumVersions|If a file has a version suffix (created by setting source directory setting AddVersionSuffix to true) it will always retain this many of them in this directory.|
+|RetainMaximumVersions|Only this number of versions will be retained, this is overridden by the RetainYoungerThanDays setting.|
+|RetainYoungerThanDays|Specifies the minimum age at which an archive file can be deleted, regardless of any version numbering. The age is determined by the last write time, not the creation time.<br><br>Zero disables this function and any non-zero value has a minimum of 7 days. This ensures that however many versions of the archive are created, it will not delete any file that is younger than this number of days.<br><br>This does not cause files to be deleted after that number of days, it just stops younger files being deleted.|
 |VolumeLabel|Allows the directory to be identified by the volume label rather than a drive designation, for removable drives which aren't always F:\ or whatever.<br><br>Set this to a valid volume label and ensure the DirectoryPath has no drive designation.<br><br>For example, VolumeLabel '1TB HDD' and DirectoryPath 'Archive' will map to 'F:\Archive' when that volume is mounted as drive 'F' and 'E:\Archive' when it is mounted as 'E'.|
 |DirectoryPath|The path of this directory, either the full path e.g. 'H:\Archive', or just 'Archive' if a valid VolumeLabel is supplied.|
 |IncludeSpecifications|A list of file specifications, e.g... '\*.txt', 'thing.\*', abc???de.jpg' etc., only process files matching these, an empty list includes all files.|
@@ -789,7 +788,7 @@ Here you define the set of directories you want zipping up into files in the pri
 |EncryptOutput|Encrypt the output file after zipping, uses AESEncrypt at the moment, see the [AESCrypt](#AESCrypt) section above for setup instructions.<br><br>You need to install it manually and put the path to the exe in the AESEncryptPath setting in appsettings.json.<br><br>The reason it doesn't use built-in .Net encryption is because I use the AESEncrypt Explorer extension so want to encrypt files with the same code.|
 |DeleteArchiveAfterEncryption|Delete the unencrypted zip archive after successful encryption.|
 |OutputFileName|The name of the zipped output file (no path), if not specified it uses the path to generate the name so directory 'C:\AbC\DeF\GhI' will be archived to 'AbC-DeF-GhI.zip'.<br><br>For ease of use and clarity it's best to default this unless you really want to set the name to something else.|
-|AddVersionSuffix|Adds a suffix to the file name of the form '-nnnn' before the extension, each new file adds 1 to the number. Archiving 'C:\Blah' with the default OutputFileName setting results in files 'Blah-0001.zip', 'Blah-0002.zip' etc..<br><br>This works alongside RetainVersions and RetainDaysOld to limit the number of these which it keeps.|
+|AddVersionSuffix|Adds a suffix to the file name of the form '-nnnn' before the extension, each new file adds 1 to the number. Archiving 'C:\Blah' with the default OutputFileName setting results in files 'Blah-0001.zip', 'Blah-0002.zip' etc..<br><br>This works alongside RetainMinimumVersions, RetainMaximumVersions and RetainYoungerThanDays to control the number of versions that are retained.|
 |MinutesOldThreshold|Set this to more than zero to have the system ignore new and altered files until they are this old. This allows you to stop the system making many archives of files that change frequently if you run archiver often.<br><br>For example, you might set a directory to 60 so it only archives files in there that were created or changed over an hour ago.|
 
 ## Archive directories

@@ -198,14 +198,14 @@ namespace Archivist.Services
                                     }
                                 }
 
-                                if (sourceDirectory.RetainVersions >= Constants.RETAIN_VERSIONS_MINIMUM)
+                                if (sourceDirectory.RetainMinimumVersions >= Constants.RETAIN_VERSIONS_MINIMUM)
                                 {
                                     if (FileService.FileNameMatchesVersionedPattern(fiOutput.FullName))
                                     {
                                         using (var fileService = new FileService(_jobSpec, _logService))
                                         {
                                             result.SubsumeResult(
-                                                await fileService.DeleteOldVersions(outputFileName, sourceDirectory.RetainVersions, sourceDirectory.RetainDaysOld));
+                                                await fileService.DeleteOldVersions(outputFileName, sourceDirectory.RetainMinimumVersions, sourceDirectory.RetainMaximumVersions, sourceDirectory.RetainYoungerThanDays));
                                         }
                                     }
                                 }

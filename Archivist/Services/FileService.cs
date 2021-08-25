@@ -18,16 +18,16 @@ namespace Archivist.Services
         {
         }
 
-        internal async Task<Result> DeleteOldVersions(string latestFileName, int retainVersions, int retainDaysOld)
+        internal async Task<Result> DeleteOldVersions(string latestFileName, int retainMinimumVersions, int retainMaximumVersions, int retainDaysOld)
         {
             Result result = new("DeleteOldVersions");
 
             try
             {
-                // We shouldn't even be in here if RetainVersions isn't at least the minimum but just in case...
-                if (retainVersions < Constants.RETAIN_VERSIONS_MINIMUM)
+                // We shouldn't even be in here if RetainVersions isn't at least the minimum, but just in case...
+                if (retainMinimumVersions < Constants.RETAIN_VERSIONS_MINIMUM)
                 {
-                    throw new Exception($"DeleteOldVersions invalid retainVersions {retainVersions} for '{latestFileName}'");
+                    throw new Exception($"DeleteOldVersions invalid retainMinimumVersions {retainMinimumVersions} for '{latestFileName}'");
                 }
 
                 // Handy for debugging, a bit excessive otherwise
@@ -52,7 +52,7 @@ namespace Archivist.Services
 
                 if (existingFiles.Any())
                 {
-                    if (existingFiles.Count() > retainVersions)
+                    if (existingFiles.Count() > retainMaximumVersions)
                     {
                         if (latestFileName == existingFiles.Last())
                         {
@@ -66,9 +66,11 @@ namespace Archivist.Services
 
                             if (result.HasNoErrorsOrWarnings)
                             {
-                                // OK, it's safe, all the files look right, delete the excess....
+                                // OK, it's safe, all the files look right, delete the excess
 
-                                var filesToDelete = existingFiles.Take(existingFiles.Count() - retainVersions);
+                                // They should already be ordered by ascending file name, but just in case...
+
+                                var filesToDelete = existingFiles.OrderBy(_ => _).Take(existingFiles.Count() - retainMaximumVersions);
 
                                 foreach (var fileName in filesToDelete)
                                 {
@@ -247,7 +249,7 @@ namespace Archivist.Services
 
                 // Not too bad a code smell, but a bit whiffy for sure.
 
-                fileNameList = RemoveFilesThatWouldJustGetDeletedAnyway(fileNameList, destination.RetainVersions, destination.RetainDaysOld);
+                fileNameList = RemoveFilesThatWouldJustGetDeletedAnyway(fileNameList, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays);
 
                 // Now that slightly embarrassing process is done, we're ready to copy the list of files over
 
@@ -359,10 +361,10 @@ namespace Archivist.Services
                                 };
                             }
 
-                            if (destination.RetainVersions >= Constants.RETAIN_VERSIONS_MINIMUM)
+                            if (destination.RetainMinimumVersions >= Constants.RETAIN_VERSIONS_MINIMUM)
                             {
                                 result.SubsumeResult(
-                                    await DeleteOldVersions(destinationFileName, destination.RetainVersions, destination.RetainDaysOld));
+                                    await DeleteOldVersions(destinationFileName, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays));
                             }
                         }
                         else
@@ -405,7 +407,7 @@ namespace Archivist.Services
         /// <param name="fileNameList"></param>
         /// <param name="retainVersions"></param>
         /// <returns></returns>
-        private List<string> RemoveFilesThatWouldJustGetDeletedAnyway(List<string> fileNameList, int retainVersions, int retainDaysOld)
+        private List<string> RemoveFilesThatWouldJustGetDeletedAnyway(List<string> fileNameList, int retainMinimumVersions, int retainMaximumVersions, int retainDaysOld)
         {
             // Named sets of file name lists, one for each base file name
             Dictionary<string, List<string>> versionedFileSets = new();
@@ -449,7 +451,7 @@ namespace Archivist.Services
                 {
                     idx++;
 
-                    if (idx <= retainVersions || FileUtilities.IsLastWrittenLessThanDaysAgo(takeFileName, retainDaysOld))
+                    if (idx <= retainMaximumVersions || FileUtilities.IsLastWrittenLessThanDaysAgo(takeFileName, retainDaysOld))
                     {
                         filesToProcess.Add(takeFileName);
                     }
