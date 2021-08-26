@@ -91,7 +91,7 @@ namespace Archivist.Classes
 
         internal void AddException(Exception ex)
         {
-            Messages.Add(new ResultMessage(ex.Message, severity: enSeverity.Error, ex: ex, functionName: FunctionName));
+            Messages.Add(new ResultMessage($"{FunctionName} {ex.Message}", severity: enSeverity.Error, ex: ex, functionName: FunctionName));
         }
 
         internal bool HasNoErrors

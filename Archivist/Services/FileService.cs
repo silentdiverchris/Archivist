@@ -208,7 +208,7 @@ namespace Archivist.Services
 
             result.AddInfo($"Including {destination.IncludeSpecificationsText}, excluding { destination.ExcludeSpecificationsText}");
 
-            result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath));
+            result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath, destination.VolumeLabel));
 
             var diSrc = new DirectoryInfo(sourceDirectoryName);
             var diDest = new DirectoryInfo(destination.DirectoryPath);
@@ -306,9 +306,10 @@ namespace Archivist.Services
 
                     bool doCopy = true;
 
+
                     if (fiDest.Exists)
                     {
-                        if (fiSrc.LastWriteTimeUtc == fiDest.LastWriteTimeUtc) 
+                        if (fiSrc.LastWriteTimeUtc == fiDest.LastWriteTimeUtc)
                         {
                             doCopy = false;
                             result.AddDebug($"Source and destination for '{fileName}' have identical last write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
@@ -316,6 +317,17 @@ namespace Archivist.Services
                         else
                         {
                             result.AddDebug($"Source and destination for '{fileName}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
+                        }
+                    }
+
+                    if (doCopy)
+                    {
+                        double spaceAvailable = FileUtilities.GetAvailableDiskSpace(destination.DirectoryPath);
+
+                        if (spaceAvailable < fiSrc.Length)
+                        {
+                            doCopy = false;
+                            result.AddWarning($"Insufficient space to copy {fiSrc.Name} to {destination.DirectoryPath}");
                         }
                     }
 
@@ -428,7 +440,7 @@ namespace Archivist.Services
 
                     result.AddSuccess($"Copied {result.ItemsProcessed} files from '{sourceDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
 
-                    result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath));
+                    result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath, destination.VolumeLabel));
                 }
                 else
                 {

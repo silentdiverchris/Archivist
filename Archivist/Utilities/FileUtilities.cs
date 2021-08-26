@@ -44,27 +44,56 @@ namespace Archivist.Utilities
             }
         }
 
-        internal static Result CheckDiskSpace(string directoryName)
+        internal static double GetAvailableDiskSpace(string directoryPath)
         {
-            Result result = new("CheckDiskSpace", false);
-
-            string drive = Path.GetPathRoot(directoryName);
-
-            DriveInfo di = new(drive);
-
-            double gbFree = di.TotalFreeSpace;
-
-            const double threshold = 50L * 1024 * 1024 * 1024;
-
-            string freeSpaceText = $"Remaining space on drive {drive[0]} is {FileUtilities.GetByteSizeAsText(gbFree)}";
-
-            if (gbFree < (threshold))
+            if (Directory.Exists(directoryPath))
             {
-                result.AddWarning(freeSpaceText);
+                string drive = Path.GetPathRoot(directoryPath);
+
+                DriveInfo di = new(drive);
+
+                double free = di.TotalFreeSpace;
+
+                return free;
             }
             else
             {
-                result.AddInfo(freeSpaceText);
+                return -1;
+            }
+        }
+
+        internal static Result CheckDiskSpace(string directoryPath, string volumeLabel = null)
+        {
+            Result result = new("CheckDiskSpace", false);
+
+            if (Directory.Exists(directoryPath))
+            {
+                string drive = Path.GetPathRoot(directoryPath);
+
+                DriveInfo di = new(drive);
+
+                double gbFree = di.TotalFreeSpace;
+
+                const double threshold = 50L * 1024 * 1024 * 1024;
+
+                string volLabStr = volumeLabel is null
+                    ? null
+                    : $", volume '{volumeLabel}'";
+
+                string freeSpaceText = $"Remaining space on drive {drive[0]}{volLabStr} is {FileUtilities.GetByteSizeAsText(gbFree)}";
+
+                if (gbFree < (threshold))
+                {
+                    result.AddWarning(freeSpaceText);
+                }
+                else
+                {
+                    result.AddInfo(freeSpaceText);
+                }
+            }
+            else
+            {
+                result.AddError($"Directory {directoryPath} does not exist");
             }
 
             return result;
