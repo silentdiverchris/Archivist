@@ -189,17 +189,6 @@ namespace Archivist.Services
             }
         }
 
-        //private async Task AddLogAsync(string logText, enSeverity severity = enSeverity.Info)
-        //{
-        //    LogEntry entry = new()
-        //    {
-        //        Text = logText,
-        //        Severity = severity
-        //    };
-
-        //    await AddLogAsync(entry);
-        //}
-
         private Result VerifyAndPrepareDatabase()
         {
             // test database can be got at and initialise it if the log table doesn't exist

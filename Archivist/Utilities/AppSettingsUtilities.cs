@@ -259,12 +259,12 @@ namespace Archivist.Utilities
 
                 if (src.RetainMinimumVersions > 1 && !src.AddVersionSuffix)
                 {
-                    result.AddWarning($"SourceDirectories.RetainMinimumVersions = {src.RetainMinimumVersions} is ignored with AddversionSuffix false for source '{src.DirectoryPath}'");
+                    result.AddWarning($"SourceDirectories.RetainMinimumVersions = {src.RetainMinimumVersions} is ignored with AddVersionSuffix false for source '{src.DirectoryPath}'");
                 }
 
                 if (src.RetainMaximumVersions > 1 && !src.AddVersionSuffix)
                 {
-                    result.AddWarning($"SourceDirectories.RetainMaximumVersions = {src.RetainMaximumVersions} is ignored with AddversionSuffix false for source '{src.DirectoryPath}'");
+                    result.AddWarning($"SourceDirectories.RetainMaximumVersions = {src.RetainMaximumVersions} is ignored with AddVersionSuffix false for source '{src.DirectoryPath}'");
                 }
 
                 if (src.RetainMinimumVersions > src.RetainMaximumVersions)

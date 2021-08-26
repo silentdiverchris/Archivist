@@ -72,7 +72,7 @@ namespace Archivist.Utilities
 
                 DriveInfo di = new(drive);
 
-                double gbFree = di.TotalFreeSpace;
+                double bytesFree = di.TotalFreeSpace;
 
                 const double threshold = 50L * 1024 * 1024 * 1024;
 
@@ -80,9 +80,9 @@ namespace Archivist.Utilities
                     ? null
                     : $", volume '{volumeLabel}'";
 
-                string freeSpaceText = $"Remaining space on drive {drive[0]}{volLabStr} is {FileUtilities.GetByteSizeAsText(gbFree)}";
+                string freeSpaceText = $"Remaining space on drive {drive[0]}{volLabStr} is {FileUtilities.GetByteSizeAsText(bytesFree)}";
 
-                if (gbFree < (threshold))
+                if (bytesFree < threshold)
                 {
                     result.AddWarning(freeSpaceText);
                 }
@@ -99,16 +99,25 @@ namespace Archivist.Utilities
             return result;
         }
 
-        internal static bool IsLastWrittenMoreThanDaysAgo(string fileName, int daysAgo)
+        internal static bool IsLastWrittenMoreThanDaysAgo(string filePath, int daysAgo, out DateTime lastWriteTimeUtc)
         {
-            var fi = new FileInfo(fileName);
+            if (File.Exists(filePath))
+            {
+                var fi = new FileInfo(filePath);
 
-            return fi.LastWriteTimeUtc < DateTime.UtcNow.AddDays(-1 * daysAgo);
+                lastWriteTimeUtc = fi.LastWriteTimeUtc;
+
+                return fi.LastWriteTimeUtc < DateTime.UtcNow.AddDays(-1 * daysAgo);
+            }
+            else
+            {
+                throw new Exception($"IsLastWrittenMoreThanDaysAgo given non-existant file {filePath}");
+            }
         }
 
-        internal static bool IsLastWrittenLessThanDaysAgo(string fileName, int daysAgo)
+        internal static bool IsLastWrittenLessThanDaysAgo(string fileName, int daysAgo, out DateTime lastWriteTimeUtc)
         {
-            return !IsLastWrittenMoreThanDaysAgo(fileName, daysAgo);
+            return !IsLastWrittenMoreThanDaysAgo(fileName, daysAgo, out lastWriteTimeUtc);
         }
     }
 }

@@ -107,16 +107,16 @@ namespace Archivist.Services
 
                                     if (fileName != latestFileName)
                                     {
-                                        // Never delete anything that is younger than RetainDaysOld
+                                        // Never delete anything that is younger than RetainDaysOld regardless of other settings
 
-                                        if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld))
+                                        if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld, out DateTime lastWriteTimeUtc))
                                         {
-                                            result.AddWarning($"Deleting file version '{fileName}'");
+                                            result.AddWarning($"Deleting file version '{fileName}' (last write {lastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
                                             File.Delete(fileName);
                                         }
                                         else
                                         {
-                                            result.AddWarning($"Retaining version '{fileName}', last written under {retainDaysOld} days ago");
+                                            result.AddDebug($"Retaining version '{fileName}', last written under {retainDaysOld} days ago ({lastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
                                         }
                                     }
                                 }
@@ -170,7 +170,7 @@ namespace Archivist.Services
                 .OrderBy(_ => _.Priority)
                 .ThenBy(_ => _.DirectoryPath))
             {
-                result.SubsumeResult(await DeleteTemporaryFiles(destination.DirectoryPath, true));
+                result.SubsumeResult(await DeleteTemporaryFiles(destination.DirectoryPath, false));
 
                 Result copyResult = await CopyFiles(_jobSpec.PrimaryArchiveDirectoryName, destination);
 
@@ -512,7 +512,7 @@ namespace Archivist.Services
 
                     // Regardless of other criteria, always retain files under X days old
 
-                    if (idx >= keepVersionFromIdx || FileUtilities.IsLastWrittenLessThanDaysAgo(takeFileName, retainDaysOld))
+                    if (idx >= keepVersionFromIdx || FileUtilities.IsLastWrittenLessThanDaysAgo(takeFileName, retainDaysOld, out _))
                     {
                         filesToProcess.Add(takeFileName);
                     }
