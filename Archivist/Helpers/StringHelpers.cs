@@ -4,7 +4,7 @@ namespace Archivist.Helpers
 {
     internal static class StringHelpers
     {
-        internal static string ConcatenateToDelimitedList(this IEnumerable<string> strings, string delimiter = ",", string quote = "'")
+        internal static string ConcatenateToDelimitedList(this IEnumerable<string> strings, string delimiter = ";", string quote = "'")
         {
             return quote + string.Join(delimiter, strings) + quote;
         }

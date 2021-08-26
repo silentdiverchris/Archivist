@@ -116,7 +116,7 @@ namespace Archivist.Services
                                         }
                                         else
                                         {
-                                            result.AddDebug($"Retaining version '{fileName}', last written under {retainDaysOld} days ago");
+                                            result.AddWarning($"Retaining version '{fileName}', last written under {retainDaysOld} days ago");
                                         }
                                     }
                                 }
@@ -195,10 +195,18 @@ namespace Archivist.Services
         /// <returns></returns>
         internal async Task<Result> CopyFiles(string sourceDirectoryName, ArchiveDirectory destination)
         {
+            string destName = string.IsNullOrEmpty(destination.VolumeLabel)
+                ? $"'{destination.DirectoryPath}'"
+                : $"volume '{destination.VolumeLabel}', path '{destination.DirectoryPath}'";
+
             Result result = new(
                 functionName: "CopyFiles",
                 addStartingItem: true,
-                appendText: $"from '{sourceDirectoryName}' to '{destination.DirectoryPath}' including {destination.IncludeSpecificationsText}, excluding {destination.ExcludeSpecificationsText}");
+                appendText: $"from '{sourceDirectoryName}' to {destName}");
+
+            result.AddInfo($"Including {destination.IncludeSpecificationsText}, excluding { destination.ExcludeSpecificationsText}");
+
+            result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath));
 
             var diSrc = new DirectoryInfo(sourceDirectoryName);
             var diDest = new DirectoryInfo(destination.DirectoryPath);
