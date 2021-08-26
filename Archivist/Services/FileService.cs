@@ -176,13 +176,15 @@ namespace Archivist.Services
 
                 result.SubsumeResult(copyResult);
 
+                await _logService.ProcessResult(result);
+
                 if (result.HasErrors)
                     break;
-
-                //result.SubsumeResult(await DeleteTemporaryFiles(_jobSpec.PrimaryArchiveDirectoryName, true));
             }
 
             await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: true, "file");
+
+            await _logService.ProcessResult(result);
 
             return result;
         }
@@ -306,10 +308,14 @@ namespace Archivist.Services
 
                     if (fiDest.Exists)
                     {
-                        if (fiSrc.LastWriteTimeUtc == fiDest.LastWriteTimeUtc && fiSrc.Length == fiDest.Length)
+                        if (fiSrc.LastWriteTimeUtc == fiDest.LastWriteTimeUtc) 
                         {
                             doCopy = false;
-                            result.AddDebug($"Source and destination for '{fileName}' have identical times and lengths, skipping");
+                            result.AddDebug($"Source and destination for '{fileName}' have identical last write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                        }
+                        else
+                        {
+                            result.AddDebug($"Source and destination for '{fileName}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
                         }
                     }
 
@@ -420,13 +426,13 @@ namespace Archivist.Services
 
                     double mbps = result.BytesProcessed / stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
 
-                    result.AddSuccess($"Copied {result.ItemsProcessed} files, total {FileUtilities.GetByteSizeAsText(result.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
+                    result.AddSuccess($"Copied {result.ItemsProcessed} files from '{sourceDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
 
                     result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath));
                 }
                 else
                 {
-                    result.AddInfo($"No files needed copying");
+                    result.AddInfo($"No files needed copying from '{sourceDirectoryName}' to {destName}");
                 }
             }
             else
@@ -486,12 +492,15 @@ namespace Archivist.Services
             foreach (var fileSet in versionedFileSets)
             {
                 int idx = 0;
+                int keepVersionFromIdx = fileSet.Value.Count - retainMaximumVersions;
 
                 foreach (var takeFileName in fileSet.Value.OrderByDescending(_ => _))
                 {
                     idx++;
 
-                    if (idx <= retainMaximumVersions || FileUtilities.IsLastWrittenLessThanDaysAgo(takeFileName, retainDaysOld))
+                    // Regardless of other criteria, always retain files under X days old
+
+                    if (idx >= keepVersionFromIdx || FileUtilities.IsLastWrittenLessThanDaysAgo(takeFileName, retainDaysOld))
                     {
                         filesToProcess.Add(takeFileName);
                     }

@@ -115,6 +115,7 @@ namespace Archivist
                 }
             }
 
+            await _logService.ProcessResult(result);
 
             _jobDetails.EndedUtc = DateTime.UtcNow;
 
