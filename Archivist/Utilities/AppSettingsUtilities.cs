@@ -279,7 +279,7 @@ namespace Archivist.Utilities
 
                 if (src.RetainYoungerThanDays > 0 && src.RetainYoungerThanDays < Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM)
                 {
-                    result.AddError($"ArchiveDirectories.RetainDaysOld = {src.RetainYoungerThanDays} is invalid for archive '{src.DirectoryPath}', minimum is {Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM}");
+                    result.AddError($"ArchiveDirectories.RetainYoungerThanDays = {src.RetainYoungerThanDays} is invalid for archive '{src.DirectoryPath}', minimum is {Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM}");
                 }
             }
 
@@ -307,7 +307,7 @@ namespace Archivist.Utilities
 
                 if (arc.RetainYoungerThanDays > 0 && arc.RetainYoungerThanDays < Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM)
                 {
-                    result.AddError($"ArchiveDirectories.RetainDaysOld = {arc.RetainYoungerThanDays} is invalid for archive '{arc.DirectoryPath}', minimum is {Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM}");
+                    result.AddError($"ArchiveDirectories.RetainYoungerThanDays = {arc.RetainYoungerThanDays} is invalid for archive '{arc.DirectoryPath}', minimum is {Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM}");
                 }
             }
 

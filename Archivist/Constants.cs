@@ -13,7 +13,7 @@
         /// Minimum number of days to retain archives, regardless of versioning. 
         /// This overrides the number of versions to retain.
         /// </summary>
-        internal const int RETAIN_YOUNGER_THAN_DAYS_MINIMUM = 2;
+        internal const int RETAIN_YOUNGER_THAN_DAYS_MINIMUM = 1;
 
         internal const int DB_TIMEOUT_SECONDS = 10;
 
