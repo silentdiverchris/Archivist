@@ -146,18 +146,27 @@ namespace Archivist.Services
         /// <returns></returns>
         internal static bool FileNameMatchesVersionedPattern(string fileName)
         {
-            if (fileName.Length > 10)
+            try
             {
-                // Replace with a regex? TODO
-                string hyphen = fileName.Substring(fileName.Length - 9, 1);
-                string numbers = fileName.Substring(fileName.Length - 8, 4);
-                string dot = fileName.Substring(fileName.Length - 4, 1);
+                // Any versioned file name will be over 10 characters long
 
-                return hyphen == "-" && dot == "." && StringHelpers.IsDigits(numbers);
+                if (fileName.Length > 10)
+                {
+                    // Replace with a regex? TODO
+                    string hyphen = fileName.Substring(fileName.Length - 9, 1);
+                    string numbers = fileName.Substring(fileName.Length - 8, 4);
+                    string dot = fileName.Substring(fileName.Length - 4, 1);
+
+                    return hyphen == "-" && dot == "." && StringHelpers.IsDigits(numbers);
+                }
+                else
+                {
+                    return false;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return false;
+                throw new Exception($"FileNameMatchesVersionedPattern file '{fileName}' exception {ex.Message}", ex);
             }
         }
 
