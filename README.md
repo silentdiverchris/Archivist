@@ -796,3 +796,9 @@ Here you define the set of directories you want zipping up into files in the pri
 Settings that only apply to archive directories.
 
 None, archive directories just have the shared settings, above.
+
+## Jiminy items
+
+=ctx-project:Archivist-p:low=
+=b:next-enh= Use local time in log files
+=b:next-enh= Log message change - 'Running CompressSource...' to 'Compressing [source] to [dest]'
