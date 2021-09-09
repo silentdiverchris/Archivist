@@ -128,7 +128,7 @@ namespace Archivist.Models
         public string VolumeLabel { get; set; }
 
         /// <summary>
-        /// The full path of this directory
+        /// The path of this directory
         /// </summary>
         public string DirectoryPath { get; set; }
 
@@ -230,10 +230,10 @@ namespace Archivist.Models
                         }
                     }
                 }
-                else
-                {
-                    throw new Exception($"IdentifyVolume found VolumeLabel '{VolumeLabel}' but DirectoryPath '{DirectoryPath}' has a nominated drive");
-                }
+                //else
+                //{
+                //    throw new Exception($"IdentifyVolume found VolumeLabel '{VolumeLabel}' but DirectoryPath '{DirectoryPath}' has a nominated drive");
+                //}
             }
             else
             {
@@ -403,10 +403,14 @@ namespace Archivist.Models
     /// </summary>
     public class ArchiveDirectory : BaseDirectoryFiles
     {
+        [JsonIgnore]
+        public DirectoryStatistics Statistics { get; set; } = new();
     }
 
     public class Job
     {
+        public DirectoryStatistics PrimaryArchiveStatistics { get; set; } = new();
+
         /// <summary>
         /// The name of this job, cannot contain spaces
         /// </summary>

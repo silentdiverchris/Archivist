@@ -59,13 +59,10 @@ namespace Archivist.Services
                 }
 
                 // Handy for debugging, a bit excessive otherwise
-                //string retainStr = retainVersions > 0
-                //    ? $"DeleteOldVersions for '{latestFileName}' retaining the last {retainVersions} versions" + (retainDaysOld > 0
-                //        ? $" and all files under {retainDaysOld} days old"
-                //        : "")
-                //    : "";
-                //result.AddDebug(retainStr);
-                //await _logService.ProcessResult(result);
+                string retainStr = $"DeleteOldVersions for '{latestFileName}' retaining min/max {retainMinimumVersions}/{retainMaximumVersions} versions and all files under {retainDaysOld} days old";
+
+                result.AddInfo(retainStr);
+                await _logService.ProcessResult(result);
 
                 // The suffix is of the form -nnnn.zip, so for file abcde.zip we are looking for abcde-nnnnn.zip
 
@@ -111,8 +108,13 @@ namespace Archivist.Services
 
                                         if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld, out DateTime lastWriteTimeUtc))
                                         {
+                                            double fileLength = new FileInfo(fileName).Length;
+
                                             result.AddWarning($"Deleting file version '{fileName}' (last write {lastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
                                             File.Delete(fileName);
+
+                                            result.Statistics.FilesDeleted++;
+                                            result.Statistics.BytesDeleted += fileLength;
                                         }
                                         else
                                         {
@@ -191,7 +193,7 @@ namespace Archivist.Services
                     break;
             }
 
-            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: true, "file");
+            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: true);
 
             await _logService.ProcessResult(result);
 
@@ -256,7 +258,7 @@ namespace Archivist.Services
             {
                 // NOT RECURSIVE
 
-                result.ItemsFound = Directory.GetFiles(sourceDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length;
+                result.Statistics.ItemsFound = Directory.GetFiles(sourceDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length;
 
                 var fileNameList = destination.IncludeSpecifications
                     .SelectMany(_ => Directory.GetFiles(sourceDirectoryName, _, SearchOption.TopDirectoryOnly))
@@ -277,6 +279,8 @@ namespace Archivist.Services
                 {
                     foreach (var excludeRegex in excludeRegexList.ToList())
                     {
+                        // If we specifically exclude this file name
+
                         if (excludeRegex.IsMatch(fileNameList[i]))
                         {
                             fileNameList.RemoveAt(i);
@@ -285,7 +289,7 @@ namespace Archivist.Services
                     }
                 }
 
-                result.AddDebug($"Checking {fileNameList.Count} files of {result.ItemsFound}");
+                result.AddDebug($"Checking {fileNameList.Count} files of {result.Statistics.ItemsFound}");
 
                 // OK, we have a bit of a code smell coming up, we want to detect where files will be copied over from the 
                 // source directory to the archive directory then immediately be deleted because the RetainVersions setting for
@@ -315,18 +319,32 @@ namespace Archivist.Services
 
                     bool doCopy = true;
 
-
                     if (fiDest.Exists)
                     {
-                        if (fiSrc.LastWriteTimeUtc == fiDest.LastWriteTimeUtc)
+                        if (fiSrc.LastWriteTimeUtc.CompareTo(fiDest.LastWriteTimeUtc) == 0)
                         {
                             doCopy = false;
-                            result.AddDebug($"Source and destination for '{fileName}' have identical last write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                            result.AddInfo($"Source and destination for '{fileName}' have identical last write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
                         }
                         else
                         {
-                            result.AddDebug($"Source and destination for '{fileName}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
+                            var howStale = fiSrc.LastWriteTimeUtc - fiDest.LastWriteTimeUtc;
+
+                            if (howStale.TotalMinutes < 5)
+                            {
+                                doCopy = false;
+                                result.AddInfo($"Source and destination for '{fileName}' have close enough write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                            }
                         }
+
+                        if (doCopy)
+                        {
+                            result.AddInfo($"Source and destination for '{fileName}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
+                        }
+                    }
+                    else
+                    {
+                        result.AddInfo($"Destination '{destinationFileName}' does not exist");
                     }
 
                     if (doCopy)
@@ -405,8 +423,11 @@ namespace Archivist.Services
                                 File.Move(tempDestFileName, destinationFileName, true);
                             }
 
-                            result.ItemsProcessed++;
-                            result.BytesProcessed += fiSrc.Length;
+                            result.Statistics.ItemsProcessed++;
+                            result.Statistics.BytesProcessed += fiSrc.Length;
+
+                            destination.Statistics.FilesAdded += 1;
+                            destination.Statistics.BytesAdded += fiSrc.Length;
                         }
                         catch (Exception fileException)
                         {
@@ -441,13 +462,13 @@ namespace Archivist.Services
                     }
                 }
 
-                if (result.ItemsProcessed > 0)
+                if (result.Statistics.ItemsProcessed > 0)
                 {
                     stopwatch.Stop();
 
-                    double mbps = result.BytesProcessed / stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
+                    double mbps = result.Statistics.BytesProcessed / stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
 
-                    result.AddSuccess($"Copied {result.ItemsProcessed} files from '{sourceDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
+                    result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{sourceDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
 
                     result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath, destination.VolumeLabel));
                 }
@@ -461,7 +482,7 @@ namespace Archivist.Services
                 result.AddError($"Source directory does not exist");
             }
 
-            await _logService.ProcessResult(result, reportItemCounts: true, addCompletionItem: true, itemNameSingular: "file");
+            await _logService.ProcessResult(result, reportItemCounts: true, addCompletionItem: true);
 
             return result;
         }
@@ -514,6 +535,11 @@ namespace Archivist.Services
             {
                 int idx = 0;
                 int keepVersionFromIdx = fileSet.Value.Count - retainMaximumVersions;
+
+                if (fileSet.Key == "Dev")
+                {
+                    var a = 1;
+                }
 
                 foreach (var takeFileName in fileSet.Value.OrderByDescending(_ => _))
                 {

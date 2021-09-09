@@ -88,6 +88,8 @@ namespace Archivist
                 proc.Start();
             }
 
+            RecordStatistics(true);
+
             if (_jobDetails.AppSettings.AESEncryptPath is not null)
             {
                 using (var secureDirectoryService = new SecureDirectoryService(_jobDetails.SelectedJob, _logService, _jobDetails.AppSettings.AESEncryptPath))
@@ -115,7 +117,9 @@ namespace Archivist
                 }
             }
 
-            await _logService.ProcessResult(result);
+            RecordStatistics(false);
+
+            await _logService.ProcessResult(result, reportAllStatistics: true);
 
             _jobDetails.EndedUtc = DateTime.UtcNow;
 
@@ -135,6 +139,8 @@ namespace Archivist
                 result.AddSuccess($"Job {_jobDetails.JobNameToRun} completed successfully");
             }
 
+            await ReportAllDiskSpaceRemaining();
+
             await _logService.ProcessResult(result);
 
             if (_jobDetails.SelectedJob.PauseBeforeExit)
@@ -144,6 +150,52 @@ namespace Archivist
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Report the space remaining on all disks we used
+        /// </summary>
+        internal async Task ReportAllDiskSpaceRemaining()
+        {
+            Result result = new("ReportAllDiskSpaceRemaining");
+
+            result.SubsumeResult(FileUtilities.CheckDiskSpace(_jobDetails.SelectedJob.PrimaryArchiveDirectoryName));
+
+            foreach (var dir in _jobDetails.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable))
+            {
+                dir.VerifyVolume(); 
+                result.SubsumeResult(FileUtilities.CheckDiskSpace(dir.DirectoryPath, dir.VolumeLabel));
+            }
+
+            await _logService.ProcessResult(result);
+        }
+
+        internal void RecordStatistics(bool initial)
+        {
+            Result result = new("RecordDiskStatistics");
+
+            if (initial)
+            {
+                _jobDetails.SelectedJob.PrimaryArchiveStatistics.BytesFreeInitial = FileUtilities.GetAvailableDiskSpace(_jobDetails.SelectedJob.PrimaryArchiveDirectoryName);
+            }
+            else
+            {
+                _jobDetails.SelectedJob.PrimaryArchiveStatistics.BytesFreeFinal = FileUtilities.GetAvailableDiskSpace(_jobDetails.SelectedJob.PrimaryArchiveDirectoryName);
+            }
+
+            foreach (var dir in _jobDetails.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable))
+            {
+                //dir.VerifyVolume();
+
+                if (initial)
+                {
+                    dir.Statistics.BytesFreeInitial = FileUtilities.GetAvailableDiskSpace(dir.DirectoryPath);
+                }
+                else
+                {
+                    dir.Statistics.BytesFreeFinal = FileUtilities.GetAvailableDiskSpace(dir.DirectoryPath);
+                }
+            }
         }
 
         internal void WriteToConsole(LogEntry entry)

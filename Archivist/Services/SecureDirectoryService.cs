@@ -39,7 +39,7 @@ namespace Archivist.Services
                 }
             }
 
-            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: false, itemNameSingular: "file");
+            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: false);
 
             return result;
         }
@@ -79,7 +79,7 @@ namespace Archivist.Services
 
                 if (filesToProcess.Any())
                 {
-                    result.ItemsFound = filesToProcess.Count();
+                    result.Statistics.ItemsFound = filesToProcess.Count();
 
                     using (var encryptionService = new EncryptionService(_jobSpec, _logService))
                     {
@@ -126,8 +126,8 @@ namespace Archivist.Services
 
                             if (doEncryption)
                             {
-                                result.ItemsProcessed++;
-                                result.BytesProcessed += fiSrc.Length;
+                                result.Statistics.ItemsProcessed++;
+                                result.Statistics.BytesProcessed += fiSrc.Length;
 
                                 // Double check the DeleteSourceAfterEncrypt setting in
                                 // case a bug above has failed to honour it
@@ -160,8 +160,8 @@ namespace Archivist.Services
                             }
                             else if (deleteSource)
                             {
-                                result.ItemsProcessed++;
-                                result.BytesProcessed += fiSrc.Length;
+                                result.Statistics.ItemsProcessed++;
+                                result.Statistics.BytesProcessed += fiSrc.Length;
 
                                 result.AddInfo($"Deleting unencrypted source {fullFileName}");
                                 File.Delete(fullFileName);
@@ -179,7 +179,7 @@ namespace Archivist.Services
                 result.AddWarning($"ProcessSecureDirectoryAsync found secure directory {secureDirectory.DirectoryPath} does not exist");
             }
 
-            await _logService.ProcessResult(result, reportItemCounts: true, addCompletionItem: true, itemNameSingular: "file");
+            await _logService.ProcessResult(result, reportItemCounts: true, addCompletionItem: true);
 
             return result;
         }

@@ -29,6 +29,8 @@ namespace Archivist.Classes
 
     internal class Result
     {
+        internal DirectoryStatistics Statistics { get; set; } = new();
+
         internal DateTime CreatedUtc { get; private set; } = DateTime.UtcNow;
 
         internal List<ResultMessage> Messages { get; set; } = new();
@@ -38,10 +40,6 @@ namespace Archivist.Classes
 
         internal int ReturnedInt { get; set; }
         internal string ReturnedString { get; set; }
-
-        internal int ItemsFound { get; set; }
-        internal int ItemsProcessed { get; set; }
-        internal long BytesProcessed { get; set; }
 
         internal enSeverity HighestSeverity => Messages.OrderBy(_ => _.Severity).First().Severity;
 
@@ -115,7 +113,7 @@ namespace Archivist.Classes
         /// </summary>
         /// <param name="result"></param>
         /// <param name="AddItemCounts">Whether to add the ItemsFound, ItemsProcessed and BytesProcessed to the ones in the caller</param>
-        internal void SubsumeResult(Result result, bool AddItemCounts = true)
+        internal void SubsumeResult(Result result, bool addStatistics = true)
         {
             if (result == this)
             {
@@ -127,19 +125,15 @@ namespace Archivist.Classes
                 Messages.Add(message);
             }
 
-            if (AddItemCounts)
+            if (addStatistics)
             {
-                ItemsFound += result.ItemsFound;
-                ItemsProcessed += result.ItemsProcessed;
-                BytesProcessed += result.BytesProcessed;
+                Statistics.SubsumeStatistics(result.Statistics);
             }
         }
 
-        internal void ClearItemCounts()
+        internal void ClearStatistics()
         {
-            ItemsFound += 0;
-            ItemsProcessed += 0;
-            BytesProcessed += 0;
+            Statistics = new DirectoryStatistics();
         }
 
         internal string TextSummary

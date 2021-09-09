@@ -44,7 +44,7 @@ namespace Archivist.Services
                     .OrderBy(_ => _.Priority)
                     .ThenBy(_ => _.DirectoryPath);
 
-                result.ItemsFound = foldersToCompress.Count();
+                result.Statistics.ItemsFound = foldersToCompress.Count();
 
                 foreach (var sourceDirectory in foldersToCompress)
                 {
@@ -68,7 +68,7 @@ namespace Archivist.Services
                 result.AddError($"CompressSources found primary archive directory {_jobSpec.PrimaryArchiveDirectoryName} does not exist");
             }
 
-            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: true, "file");
+            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: true);
 
             return result;
         }
@@ -170,8 +170,6 @@ namespace Archivist.Services
 
                             if (fiOutput.Exists)
                             {
-                                result.ItemsProcessed++;
-                                result.BytesProcessed += fiOutput.Length;
 
                                 if (movedFileName is not null)
                                 {
@@ -182,6 +180,12 @@ namespace Archivist.Services
 
                                 TotalBytesArchived += fiOutput.Length;
                                 TotalArchivesCreated++;
+
+                                result.Statistics.ItemsProcessed++;
+                                result.Statistics.BytesProcessed += fiOutput.Length;
+
+                                _jobSpec.PrimaryArchiveStatistics.FilesAdded += 1;
+                                _jobSpec.PrimaryArchiveStatistics.BytesAdded += fiOutput.Length;
 
                                 if (sourceDirectory.EncryptOutput)
                                 {

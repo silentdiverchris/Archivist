@@ -117,7 +117,7 @@ namespace Archivist.Services
             Result result, 
             bool addCompletionItem = false, 
             bool reportItemCounts = false,
-            string itemNameSingular = null)
+            bool reportAllStatistics = false)
         {
             foreach (var msg in result.UnprocessedMessages.OrderBy(_ => _.CreatedUtc))
             {
@@ -148,21 +148,26 @@ namespace Archivist.Services
 
             if (reportItemCounts)
             {
-                if (result.ItemsFound > 0)
+                if (result.Statistics.ItemsFound > 0)
                 {
-                    if (result.ItemsProcessed > 0)
+                    if (result.Statistics.ItemsProcessed > 0)
                     {
-                        result.AddInfo($"{result.ItemsFound} {itemNameSingular.Pluralise(result.ItemsFound, " ")}found, {result.ItemsProcessed} processed ({FileUtilities.GetByteSizeAsText(result.BytesProcessed)})");                
+                        result.AddInfo($"{result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, {result.Statistics.ItemsProcessed} processed ({FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)})");                
                     }
                     else
                     {
-                        result.AddInfo($"{result.ItemsFound} {itemNameSingular.Pluralise(result.ItemsFound, " ")}found, none needed processing");
+                        result.AddInfo($"{result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, none needed processing");
                     }
                 }
                 else
                 {
-                    result.AddInfo($"No {itemNameSingular.Pluralise(result.ItemsFound)} found to process");
+                    result.AddInfo($"No {"file".Pluralise(result.Statistics.ItemsFound)} found to process");
                 }
+            }
+
+            if (reportAllStatistics)
+            {
+                result.AddInfo($"Added {result.Statistics.FilesAdded:N0} files {result.Statistics.BytesAdded:N0} bytes, deleted {result.Statistics.FilesDeleted:N0} files {result.Statistics.BytesDeleted:N0} bytes");
             }
 
             if (addCompletionItem)
