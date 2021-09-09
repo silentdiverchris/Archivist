@@ -536,11 +536,6 @@ namespace Archivist.Services
                 int idx = 0;
                 int keepVersionFromIdx = fileSet.Value.Count - retainMaximumVersions;
 
-                if (fileSet.Key == "Dev")
-                {
-                    var a = 1;
-                }
-
                 foreach (var takeFileName in fileSet.Value.OrderByDescending(_ => _))
                 {
                     idx++;
