@@ -180,7 +180,7 @@ namespace Archivist
             }
             else
             {
-                _jobDetails.SelectedJob.PrimaryArchiveStatistics.BytesFreeFinal = FileUtilities.GetAvailableDiskSpace(_jobDetails.SelectedJob.PrimaryArchiveDirectoryName);
+                _jobDetails.SelectedJob.PrimaryArchiveStatistics.BytesFreeFinal += FileUtilities.GetAvailableDiskSpace(_jobDetails.SelectedJob.PrimaryArchiveDirectoryName);
             }
 
             foreach (var dir in _jobDetails.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable))
@@ -193,7 +193,7 @@ namespace Archivist
                 }
                 else
                 {
-                    dir.Statistics.BytesFreeFinal = FileUtilities.GetAvailableDiskSpace(dir.DirectoryPath);
+                    dir.Statistics.BytesFreeFinal += FileUtilities.GetAvailableDiskSpace(dir.DirectoryPath);
                 }
             }
         }

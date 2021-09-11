@@ -140,7 +140,23 @@ namespace Archivist.Services
 
             if (reportAllStatistics)
             {
-                result.AddInfo($"Added {result.Statistics.FilesAdded:N0} files {result.Statistics.BytesAdded:N0} bytes, deleted {result.Statistics.FilesDeleted:N0} files {result.Statistics.BytesDeleted:N0} bytes");
+                if (result.Statistics.FilesAdded > 0)
+                {
+                    result.AddInfo($"Added {result.Statistics.BytesAdded:N0} bytes to {result.Statistics.FilesAdded:N0} files");
+                }
+                else
+                {
+                    result.AddInfo($"No files were added");
+                }
+
+                if (result.Statistics.FilesDeleted > 0)
+                {
+                    result.AddInfo($"Deleted {result.Statistics.BytesDeleted:N0} bytes from {result.Statistics.FilesDeleted:N0} files");
+                }
+                else
+                {
+                    result.AddInfo($"No files were deleted");
+                }
             }
 
             foreach (var msg in result.UnprocessedMessages.OrderBy(_ => _.CreatedUtc))
