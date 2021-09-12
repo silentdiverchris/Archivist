@@ -14,10 +14,11 @@ namespace Archivist.Classes
         {
             bool fuzzyMatch = false;
 
-            // This will not match when files are on disks with different allocation sizes, there will be a difference in the lengths
-            var item = Items.SingleOrDefault(_ => 
-                _.Name == fi.Name && 
-                _.LastWriteUtc == fi.LastWriteTimeUtc && 
+            // File sizes will not match when files are on disks with different allocation sizes
+
+            var item = Items.SingleOrDefault(_ =>
+                _.Name == fi.Name &&
+                _.LastWriteUtc == fi.LastWriteTimeUtc &&
                 _.Length == fi.Length);
 
             if (item is null)
@@ -25,17 +26,15 @@ namespace Archivist.Classes
                 // OK, is it almost like one we already have...
                 fuzzyMatch = true;
 
-                long minLength = fi.Length - (fi.Length / 20);
-                long maxLength = fi.Length + (fi.Length / 20);
-                DateTime minDate = fi.LastWriteTimeUtc.AddMinutes(-5);
-                DateTime maxDate = fi.LastWriteTimeUtc.AddMinutes(5);
+                // If they are within 1 minute then they're the same;
 
-                item = Items.SingleOrDefault(_ => 
-                    _.Name == fi.Name && 
+                DateTime minDate = fi.LastWriteTimeUtc.AddMinutes(-1);
+                DateTime maxDate = fi.LastWriteTimeUtc.AddMinutes(1);
+
+                item = Items.SingleOrDefault(_ =>
+                    _.Name == fi.Name &&
                     _.LastWriteUtc >= minDate &&
-                    _.LastWriteUtc <= maxDate &&                    
-                    _.Length >= minLength &&
-                    _.Length <= maxLength);
+                    _.LastWriteUtc <= maxDate);
             }
 
             if (item is null)
