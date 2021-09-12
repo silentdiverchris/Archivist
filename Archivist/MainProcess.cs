@@ -164,7 +164,7 @@ namespace Archivist
 
             result.SubsumeResult(FileUtilities.CheckDiskSpace(_jobDetails.SelectedJob.PrimaryArchiveDirectoryName));
 
-            foreach (var dir in _jobDetails.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable))
+            foreach (var dir in _jobDetails.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable).OrderBy(_ => _.DirectoryPath))
             {
                 dir.VerifyVolume(); 
                 result.SubsumeResult(FileUtilities.CheckDiskSpace(dir.DirectoryPath, dir.VolumeLabel));

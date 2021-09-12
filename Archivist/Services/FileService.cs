@@ -176,7 +176,22 @@ namespace Archivist.Services
                     result.AddInfo($" {inst.Path} ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write UTC {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
                 }
             }
-            
+
+            // Names and numbers table
+
+            result.AddInfo("File version counts and date ranges;");
+
+            int fnLen = fileReport.Items.Max(_ => _.Name.Length);
+
+            result.AddInfo("File" + new string(' ', fnLen - 2) + "#  Date & time");
+            foreach (var item in fileReport.Items.OrderBy(_ => _.Name))
+            {
+                var minDate = item.Instances.Min(_ => _.LastWriteUtc);
+                result.AddInfo($"{item.Name} {new string(' ', fnLen - item.Name.Length)} {item.Instances.Count, -2} {minDate.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}");
+            }
+
+            // Duplicates report
+
             var duplicateNames = fileReport.Items.GroupBy(_ => _.Name).Where(g => g.Count() > 1).Select(y => y).ToList();
 
             if (duplicateNames.Any())

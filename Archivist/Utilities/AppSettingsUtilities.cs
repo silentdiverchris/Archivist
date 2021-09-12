@@ -257,12 +257,12 @@ namespace Archivist.Utilities
                     result.AddError($"SourceDirectories.DirectoryPath '{src.DirectoryPath}' does not exist");
                 }
 
-                if (src.RetainMinimumVersions > 1 && !src.AddVersionSuffix)
+                if (src.RetainMinimumVersions > 0 && !src.AddVersionSuffix)
                 {
                     result.AddWarning($"SourceDirectories.RetainMinimumVersions = {src.RetainMinimumVersions} is ignored with AddVersionSuffix false for source '{src.DirectoryPath}'");
                 }
 
-                if (src.RetainMaximumVersions > 1 && !src.AddVersionSuffix)
+                if (src.RetainMaximumVersions > 0 && !src.AddVersionSuffix)
                 {
                     result.AddWarning($"SourceDirectories.RetainMaximumVersions = {src.RetainMaximumVersions} is ignored with AddVersionSuffix false for source '{src.DirectoryPath}'");
                 }
@@ -277,9 +277,9 @@ namespace Archivist.Utilities
                     result.AddError($"ArchiveDirectories.RetainMinimumVersions = {src.RetainMinimumVersions} is invalid for archive '{src.DirectoryPath}'");
                 }
 
-                if (src.RetainYoungerThanDays > 0 && src.RetainYoungerThanDays < Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM)
+                if (src.RetainYoungerThanDays < 0)
                 {
-                    result.AddError($"ArchiveDirectories.RetainYoungerThanDays = {src.RetainYoungerThanDays} is invalid for archive '{src.DirectoryPath}', minimum is {Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM}");
+                    result.AddError($"ArchiveDirectories.RetainYoungerThanDays = {src.RetainYoungerThanDays} is invalid for archive '{src.DirectoryPath}'");
                 }
             }
 
@@ -305,9 +305,9 @@ namespace Archivist.Utilities
                     result.AddError($"ArchiveDirectories.RetainMinimumVersions = {arc.RetainMinimumVersions} is invalid for archive '{arc.DirectoryPath}'");
                 }
 
-                if (arc.RetainYoungerThanDays > 0 && arc.RetainYoungerThanDays < Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM)
+                if (arc.RetainYoungerThanDays < 0)
                 {
-                    result.AddError($"ArchiveDirectories.RetainYoungerThanDays = {arc.RetainYoungerThanDays} is invalid for archive '{arc.DirectoryPath}', minimum is {Constants.RETAIN_YOUNGER_THAN_DAYS_MINIMUM}");
+                    result.AddError($"ArchiveDirectories.RetainYoungerThanDays = {arc.RetainYoungerThanDays} is invalid for archive '{arc.DirectoryPath}'");
                 }
             }
 
