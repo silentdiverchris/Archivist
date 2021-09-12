@@ -54,15 +54,15 @@ namespace Archivist.Utilities
         {
             if (sizeBytes > (1024 * 1024 * 1024))
             {
-                return $"{(sizeBytes / 1024 / 1024 / 1024):N2} GB";
+                return $"{(sizeBytes / 1024 / 1024 / 1024):N2}GB";
             }
             else if (sizeBytes > (1024 * 1024))
             {
-                return $"{(sizeBytes / 1024 / 1024):N2} MB";
+                return $"{(sizeBytes / 1024 / 1024):N1}MB";
             }
             else if (sizeBytes > 1024)
             {
-                return $"{(sizeBytes / 1024):N2} KB";
+                return $"{(sizeBytes / 1024):N0}KB";
             }
             else
             {
@@ -104,7 +104,7 @@ namespace Archivist.Utilities
 
                 string volLabStr = volumeLabel is null
                     ? null
-                    : $", volume '{volumeLabel}'";
+                    : $", '{volumeLabel}'";
 
                 string freeSpaceText = $"Remaining space on drive {drive[0]}{volLabStr} is {FileUtilities.GetByteSizeAsText(bytesFree)}";
 

@@ -68,7 +68,7 @@ namespace Archivist.Services
                 result.AddError($"CompressSources found primary archive directory {_jobSpec.PrimaryArchiveDirectoryName} does not exist");
             }
 
-            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: true);
+            await _logService.ProcessResult(result, reportCompletion: true, reportItemCounts: true);
 
             return result;
         }
@@ -184,6 +184,9 @@ namespace Archivist.Services
                                 result.Statistics.ItemsProcessed++;
                                 result.Statistics.BytesProcessed += fiOutput.Length;
 
+                                result.Statistics.FilesAdded += 1;
+                                result.Statistics.BytesAdded += fiOutput.Length;
+
                                 _jobSpec.PrimaryArchiveStatistics.FilesAdded += 1;
                                 _jobSpec.PrimaryArchiveStatistics.BytesAdded += fiOutput.Length;
 
@@ -243,7 +246,7 @@ namespace Archivist.Services
                 result.AddError($"CompressSourceDirectoryAsync found directory '{sourceDirectory.DirectoryPath}' does not exist");
             }
 
-            await _logService.ProcessResult(result);
+            await _logService.ProcessResult(result, reportItemCounts: false, reportAllStatistics: true);
 
             return result;
         }

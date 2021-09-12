@@ -20,7 +20,7 @@ namespace Archivist.Services
 
         internal async Task<Result> DeleteTemporaryFiles(string directoryPath, bool zeroLengthOnly)
         {
-            Result result = new("DeleteTemporaryFiles");
+            Result result = new("DeleteTemporaryFiles", functionQualifier: directoryPath);
 
             try
             {
@@ -61,7 +61,7 @@ namespace Archivist.Services
                 // Handy for debugging, a bit excessive otherwise
                 string retainStr = $"DeleteOldVersions for '{latestFileName}' retaining min/max {retainMinimumVersions}/{retainMaximumVersions} versions and all files under {retainDaysOld} days old";
 
-                result.AddInfo(retainStr);
+                result.AddDebug(retainStr);
                 await _logService.ProcessResult(result);
 
                 // The suffix is of the form -nnnn.zip, so for file abcde.zip we are looking for abcde-nnnnn.zip
@@ -183,7 +183,7 @@ namespace Archivist.Services
             {
                 result.SubsumeResult(await DeleteTemporaryFiles(destination.DirectoryPath, false));
 
-                Result copyResult = await CopyFiles(_jobSpec.PrimaryArchiveDirectoryName, destination);
+                Result copyResult = await CopyArchives(_jobSpec.PrimaryArchiveDirectoryName, destination);
 
                 result.SubsumeResult(copyResult);
 
@@ -193,7 +193,7 @@ namespace Archivist.Services
                     break;
             }
 
-            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: true);
+            await _logService.ProcessResult(result, reportCompletion: true);
 
             await _logService.ProcessResult(result);
 
@@ -206,16 +206,16 @@ namespace Archivist.Services
         /// <param name="sourceDirectoryName"></param>
         /// <param name="destination"></param>
         /// <returns></returns>
-        internal async Task<Result> CopyFiles(string sourceDirectoryName, ArchiveDirectory destination)
+        internal async Task<Result> CopyArchives(string sourceDirectoryName, ArchiveDirectory destination)
         {
             string destName = string.IsNullOrEmpty(destination.VolumeLabel)
                 ? $"'{destination.DirectoryPath}'"
                 : $"volume '{destination.VolumeLabel}', path '{destination.DirectoryPath}'";
 
             Result result = new(
-                functionName: "CopyFiles",
+                functionName: "CopyArchives",
                 addStartingItem: true,
-                appendText: $"from '{sourceDirectoryName}' to {destName}");
+                functionQualifier: $"from '{sourceDirectoryName}' to {destName}");
 
             result.AddInfo($"Including {destination.IncludeSpecificationsText}, excluding { destination.ExcludeSpecificationsText}");
 
@@ -319,14 +319,14 @@ namespace Archivist.Services
 
                     bool doCopy = true;
 
-                    result.AddInfo($"Processing source {fileName}, destination {destinationFileName}");
+                    result.AddDebug($"Processing source {fileName}, destination {destinationFileName}");
 
                     if (fiDest.Exists)
                     {
                         if (fiSrc.LastWriteTimeUtc.CompareTo(fiDest.LastWriteTimeUtc) == 0)
                         {
                             doCopy = false;
-                            result.AddInfo($"Source and destination for '{fiSrc.Name}' have identical last write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                            result.AddDebug($"Source and destination for '{fiSrc.Name}' have identical last write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
                         }
                         else
                         {
@@ -335,18 +335,18 @@ namespace Archivist.Services
                             if (howStale.TotalMinutes < 5)
                             {
                                 doCopy = false;
-                                result.AddInfo($"Source and destination for '{fiSrc.Name}' have close enough write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                                result.AddDebug($"Source and destination for '{fiSrc.Name}' have close enough write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
                             }
                         }
 
                         if (doCopy)
                         {
-                            result.AddInfo($"Source and destination for '{fiSrc.Name}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
+                            result.AddDebug($"Source and destination for '{fiSrc.Name}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
                         }
                     }
                     else
                     {
-                        result.AddInfo($"Destination '{destinationFileName}' does not exist");
+                        result.AddDebug($"Destination '{destinationFileName}' does not exist");
                     }
 
                     if (doCopy)
@@ -428,6 +428,9 @@ namespace Archivist.Services
                             result.Statistics.ItemsProcessed++;
                             result.Statistics.BytesProcessed += fiSrc.Length;
 
+                            result.Statistics.FilesAdded += 1;
+                            result.Statistics.BytesAdded += fiSrc.Length;
+
                             destination.Statistics.FilesAdded += 1;
                             destination.Statistics.BytesAdded += fiSrc.Length;
                         }
@@ -484,7 +487,7 @@ namespace Archivist.Services
                 result.AddError($"Source directory does not exist");
             }
 
-            await _logService.ProcessResult(result, reportItemCounts: true, addCompletionItem: true);
+            await _logService.ProcessResult(result, reportItemCounts: true, reportCompletion: true, reportAllStatistics: true);
 
             return result;
         }

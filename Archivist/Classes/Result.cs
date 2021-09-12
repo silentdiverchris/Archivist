@@ -46,12 +46,12 @@ namespace Archivist.Classes
         internal bool HasErrors => Messages.Any(_ => _.Severity == enSeverity.Error);
         internal bool HasWarnings => Messages.Any(_ => _.Severity == enSeverity.Warning);
 
-        internal Result(string functionName, bool addStartingItem = false, string appendText = null)
+        internal Result(string functionName, bool addStartingItem = false, string functionQualifier = null)
         {
-            FunctionName = functionName;
+            FunctionName = functionName + (string.IsNullOrEmpty(functionQualifier) ? "" : " " + functionQualifier);
 
             if (addStartingItem)
-                AddInfo($"Running {functionName} {appendText}");
+                AddInfo($"Running {functionName} {functionQualifier}");
         }
 
         internal void MarkMessagesWritten()

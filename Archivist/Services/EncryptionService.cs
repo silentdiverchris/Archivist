@@ -70,7 +70,7 @@ namespace Archivist.Services
                 result.AddError($"EncryptFileAsync found {sourceFileName} does not exist");
             }
 
-            await _logService.ProcessResult(result, addCompletionItem: false, false);
+            await _logService.ProcessResult(result, reportCompletion: false, false);
 
             return result;
         }

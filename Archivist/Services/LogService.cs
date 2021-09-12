@@ -110,12 +110,12 @@ namespace Archivist.Services
         /// Send each unprocessed message in the result to the configured log destinations
         /// </summary>
         /// <param name="result">The result</param>
-        /// <param name="addCompletionItem">To be called at the end of a function, or functional unit, it logs error and warning counts or success</param>
+        /// <param name="reportCompletion">To be called at the end of a function, or functional unit, it logs error and warning counts or success</param>
         /// <param name="reportItemCounts">Logs the figures in ItemsFound, ItemsProcessed and BytesProcessed</param>
         /// <returns></returns>
         internal async Task ProcessResult(
             Result result, 
-            bool addCompletionItem = false, 
+            bool reportCompletion = false, 
             bool reportItemCounts = false,
             bool reportAllStatistics = false)
         {
@@ -125,16 +125,16 @@ namespace Archivist.Services
                 {
                     if (result.Statistics.ItemsProcessed > 0)
                     {
-                        result.AddInfo($"{result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, {result.Statistics.ItemsProcessed} processed ({FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)})");
+                        result.AddInfo($"- {result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, {result.Statistics.ItemsProcessed} processed ({FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)}) by {result.FunctionName}");
                     }
                     else
                     {
-                        result.AddInfo($"{result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, none needed processing");
+                        result.AddDebug($"- {result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, none needed processing by {result.FunctionName}");
                     }
                 }
                 else
                 {
-                    result.AddInfo($"No {"file".Pluralise(result.Statistics.ItemsFound)} found to process");
+                    result.AddDebug($"- No {"file".Pluralise(result.Statistics.ItemsFound)} found to process by {result.FunctionName}");
                 }
             }
 
@@ -142,20 +142,20 @@ namespace Archivist.Services
             {
                 if (result.Statistics.FilesAdded > 0)
                 {
-                    result.AddInfo($"Added {result.Statistics.BytesAdded:N0} bytes to {result.Statistics.FilesAdded:N0} files");
+                    result.AddInfo($"- {FileUtilities.GetByteSizeAsText(result.Statistics.BytesAdded)} added to {result.Statistics.FilesAdded:N0} file{result.Statistics.FilesAdded.PluralSuffix()} by {result.FunctionName}");
                 }
                 else
                 {
-                    result.AddInfo($"No files were added");
+                    result.AddDebug($"- No files were added by {result.FunctionName}");
                 }
 
                 if (result.Statistics.FilesDeleted > 0)
                 {
-                    result.AddInfo($"Deleted {result.Statistics.BytesDeleted:N0} bytes from {result.Statistics.FilesDeleted:N0} files");
+                    result.AddInfo($"- {FileUtilities.GetByteSizeAsText(result.Statistics.BytesDeleted)} deleted from {result.Statistics.FilesDeleted:N0} file{result.Statistics.FilesDeleted.PluralSuffix()} by {result.FunctionName}");
                 }
                 else
                 {
-                    result.AddInfo($"No files were deleted");
+                    result.AddDebug($"- No files were deleted by {result.FunctionName}");
                 }
             }
 
@@ -186,7 +186,7 @@ namespace Archivist.Services
                 }
             }
 
-            if (addCompletionItem)
+            if (reportCompletion)
             {
                 if (result.HasErrors)
                 {

@@ -39,7 +39,7 @@ namespace Archivist.Services
                 }
             }
 
-            await _logService.ProcessResult(result, addCompletionItem: true, reportItemCounts: false);
+            await _logService.ProcessResult(result, reportCompletion: true, reportItemCounts: false);
 
             return result;
         }
@@ -179,7 +179,7 @@ namespace Archivist.Services
                 result.AddWarning($"ProcessSecureDirectoryAsync found secure directory {secureDirectory.DirectoryPath} does not exist");
             }
 
-            await _logService.ProcessResult(result, reportItemCounts: true, addCompletionItem: true);
+            await _logService.ProcessResult(result, reportItemCounts: true, reportCompletion: true);
 
             return result;
         }
