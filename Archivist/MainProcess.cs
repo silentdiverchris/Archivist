@@ -113,6 +113,9 @@ namespace Archivist
                     {
                         Result copyArchivesResult = await fileService.CopyToArchives();
                         result.SubsumeResult(copyArchivesResult);
+
+                        Result reportResult = await fileService.GenerateFileReport();
+                        result.SubsumeResult(reportResult);
                     }
                 }
             }

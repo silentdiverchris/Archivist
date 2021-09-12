@@ -193,6 +193,9 @@ namespace Archivist.Models
 
         private bool _isAvailable = false;
 
+        /// <summary>
+        /// Whether this directory was found to exist and be readable
+        /// </summary>
         [JsonIgnore]
         public bool IsAvailable
         {

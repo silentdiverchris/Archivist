@@ -108,13 +108,13 @@ namespace Archivist.Services
 
                                         if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld, out DateTime lastWriteTimeUtc))
                                         {
-                                            double fileLength = new FileInfo(fileName).Length;
+                                            FileInfo fi = new(fileName);
 
-                                            result.AddWarning($"Deleting file version '{fileName}' (last write {lastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
+                                            result.AddWarning($"Deleting file version '{fileName}' ({FileUtilities.GetByteSizeAsText(fi.Length)}, last write {lastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
                                             File.Delete(fileName);
 
                                             result.Statistics.FilesDeleted++;
-                                            result.Statistics.BytesDeleted += fileLength;
+                                            result.Statistics.BytesDeleted += fi.Length;
                                         }
                                         else
                                         {
@@ -134,6 +134,70 @@ namespace Archivist.Services
             catch (Exception ex)
             {
                 result.AddException(ex);
+            }
+
+            await _logService.ProcessResult(result);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Gneerate a report of all the files currently in all the various directories
+        /// </summary>
+        /// <param name="fileReport"></param>
+        /// <returns></returns>
+        internal async Task<Result> GenerateFileReport()
+        {
+            Result result = new("GenerateFileReport");
+
+            FileReport fileReport = new();
+
+            foreach (var fi in new DirectoryInfo(_jobSpec.PrimaryArchiveDirectoryName).GetFiles())
+            {
+                fileReport.Add(fi, true);
+            }
+
+            foreach (var dir in _jobSpec.ArchiveDirectories.Where(_ => _.IsAvailable))
+            {
+                foreach (var fi in new DirectoryInfo(dir.DirectoryPath).GetFiles())
+                {
+                    fileReport.Add(fi, false);
+                }
+            }
+
+            result.AddInfo("File instance report;");
+
+            foreach (var item in fileReport.Items.OrderBy(_ => _.Name))
+            {
+                result.AddInfo($"File {item.Name} has {item.Instances.Count} {"instance".Pluralise(item.Instances.Count)} ({FileUtilities.GetByteSizeAsText(item.Length, true)}, last write UTC {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+
+                foreach (var inst in item.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenBy(_ => _.Path))
+                {
+                    result.AddInfo($" {inst.Path} ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write UTC {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                }
+            }
+            
+            var duplicateNames = fileReport.Items.GroupBy(_ => _.Name).Where(g => g.Count() > 1).Select(y => y).ToList();
+
+            if (duplicateNames.Any())
+            {
+                result.AddWarning("Files with same name but significantly different sizes or dates;");
+                result.AddInfo("Disks formatted with different file syttems or allocation sizes will report different sizes for the same file");
+
+                foreach (var dup in duplicateNames.OrderBy(_ => _.Key))
+                {
+                    result.AddWarning($"{dup.Key}");
+                    
+                    foreach(var df in fileReport.Items.Where(_ => _.Name == dup.Key).OrderBy(_ => _.LastWriteUtc))
+                    {
+                        result.AddWarning($" {df.Instances.Count} {"instance".Pluralise(df.Instances.Count)} {FileUtilities.GetByteSizeAsText(df.Length, true)}, last write UTC {df.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
+
+                        foreach (var inst in df.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenByDescending(_ => _.IsFuzzyMatch).ThenBy(_ => _.Path))
+                        {
+                            result.AddInfo($"  {inst.Path} ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write UTC {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                        }
+                    }
+                }
             }
 
             await _logService.ProcessResult(result);

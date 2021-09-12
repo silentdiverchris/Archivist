@@ -126,9 +126,6 @@ namespace Archivist.Services
 
                             if (doEncryption)
                             {
-                                result.Statistics.ItemsProcessed++;
-                                result.Statistics.BytesProcessed += fiSrc.Length;
-
                                 // Double check the DeleteSourceAfterEncrypt setting in
                                 // case a bug above has failed to honour it
 
@@ -162,6 +159,9 @@ namespace Archivist.Services
                             {
                                 result.Statistics.ItemsProcessed++;
                                 result.Statistics.BytesProcessed += fiSrc.Length;
+
+                                result.Statistics.FilesDeleted++;
+                                result.Statistics.BytesDeleted += fiSrc.Length;
 
                                 result.AddInfo($"Deleting unencrypted source {fullFileName}");
                                 File.Delete(fullFileName);

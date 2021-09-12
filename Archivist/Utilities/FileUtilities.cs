@@ -11,7 +11,7 @@ namespace Archivist.Utilities
 
             DriveInfo found = null; // drives.SingleOrDefault(_ => _.VolumeLabel == label);
 
-            // If we use linq we throw an exception if one of the drives isn't formatted, so...
+            // If we use linq an exception is thrown if one of the drives isn't formatted, so...
 
             foreach (var drv in drives)
             {
@@ -26,10 +26,10 @@ namespace Archivist.Utilities
                 catch  // (Exception drvEx)
                 {
                     // if (drvEx.) ... how to reproduce the error that brought us to capture this ? - it was a
-                    // corrupted USB stick, next time I get a duff drive I'll see about testing this path TODO
+                    // corrupted USB stick, next time I get a duff drive I'll see about testing this path. TODO
 
                     // Either way, there's something wrong with the volume, we don't
-                    // really care what, for sure it's not one we can use so just ignore...
+                    // really care what, it's not one we can use so just ignore it.
                 }
             }
 
@@ -50,23 +50,30 @@ namespace Archivist.Utilities
             return mask;
         }
 
-        internal static string GetByteSizeAsText(double sizeBytes)
+        internal static string GetByteSizeAsText(double sizeBytes, bool exact = false)
         {
-            if (sizeBytes > (1024 * 1024 * 1024))
+            if (exact)
             {
-                return $"{(sizeBytes / 1024 / 1024 / 1024):N2}GB";
-            }
-            else if (sizeBytes > (1024 * 1024))
-            {
-                return $"{(sizeBytes / 1024 / 1024):N1}MB";
-            }
-            else if (sizeBytes > 1024)
-            {
-                return $"{(sizeBytes / 1024):N0}KB";
+                return $"{sizeBytes:N0} bytes";
             }
             else
             {
-                return $"{sizeBytes:N0} bytes";
+                if (sizeBytes > (1024 * 1024 * 1024))
+                {
+                    return $"{(sizeBytes / 1024 / 1024 / 1024):N2}GB";
+                }
+                else if (sizeBytes > (1024 * 1024))
+                {
+                    return $"{(sizeBytes / 1024 / 1024):N2}MB";
+                }
+                else if (sizeBytes > 1024)
+                {
+                    return $"{(sizeBytes / 1024):N2}KB";
+                }
+                else
+                {
+                    return $"{sizeBytes:N0} bytes";
+                }
             }
         }
 

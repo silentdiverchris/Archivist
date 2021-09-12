@@ -44,6 +44,9 @@ namespace Archivist.Services
                         result.Statistics.ItemsProcessed++;
                         result.Statistics.BytesProcessed += fiSrc.Length;
 
+                        result.Statistics.FilesAdded++;
+                        result.Statistics.BytesAdded += fiSrc.Length;
+
                         result.AddSuccess($"Encrypted to {destinationFileName} OK");
 
                         if (synchroniseTimestamps)

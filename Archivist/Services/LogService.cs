@@ -125,16 +125,16 @@ namespace Archivist.Services
                 {
                     if (result.Statistics.ItemsProcessed > 0)
                     {
-                        result.AddInfo($"- {result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, {result.Statistics.ItemsProcessed} processed ({FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)}) by {result.FunctionName}");
+                        result.AddInfo($"{result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, {result.Statistics.ItemsProcessed} processed ({FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)}) by {result.FunctionName}");
                     }
                     else
                     {
-                        result.AddDebug($"- {result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, none needed processing by {result.FunctionName}");
+                        result.AddDebug($"{result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, none needed processing by {result.FunctionName}");
                     }
                 }
                 else
                 {
-                    result.AddDebug($"- No {"file".Pluralise(result.Statistics.ItemsFound)} found to process by {result.FunctionName}");
+                    result.AddDebug($"No {"file".Pluralise(result.Statistics.ItemsFound)} found to process by {result.FunctionName}");
                 }
             }
 
@@ -142,20 +142,20 @@ namespace Archivist.Services
             {
                 if (result.Statistics.FilesAdded > 0)
                 {
-                    result.AddInfo($"- {FileUtilities.GetByteSizeAsText(result.Statistics.BytesAdded)} added to {result.Statistics.FilesAdded:N0} file{result.Statistics.FilesAdded.PluralSuffix()} by {result.FunctionName}");
+                    result.AddInfo($"{FileUtilities.GetByteSizeAsText(result.Statistics.BytesAdded)} added to {result.Statistics.FilesAdded:N0} file{result.Statistics.FilesAdded.PluralSuffix()} by {result.FunctionName}");
                 }
                 else
                 {
-                    result.AddDebug($"- No files were added by {result.FunctionName}");
+                    result.AddDebug($"No files were added by {result.FunctionName}");
                 }
 
                 if (result.Statistics.FilesDeleted > 0)
                 {
-                    result.AddInfo($"- {FileUtilities.GetByteSizeAsText(result.Statistics.BytesDeleted)} deleted from {result.Statistics.FilesDeleted:N0} file{result.Statistics.FilesDeleted.PluralSuffix()} by {result.FunctionName}");
+                    result.AddInfo($"{FileUtilities.GetByteSizeAsText(result.Statistics.BytesDeleted)} deleted from {result.Statistics.FilesDeleted:N0} file{result.Statistics.FilesDeleted.PluralSuffix()} by {result.FunctionName}");
                 }
                 else
                 {
-                    result.AddDebug($"- No files were deleted by {result.FunctionName}");
+                    result.AddDebug($"No files were deleted by {result.FunctionName}");
                 }
             }
 
