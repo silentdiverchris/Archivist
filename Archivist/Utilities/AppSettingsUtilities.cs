@@ -257,12 +257,12 @@ namespace Archivist.Utilities
                     result.AddError($"SourceDirectories.DirectoryPath '{src.DirectoryPath}' does not exist");
                 }
 
-                if (src.RetainMinimumVersions > 0 && !src.AddVersionSuffix)
+                if (src.RetainMinimumVersions > Constants.RETAIN_VERSIONS_MINIMUM && !src.AddVersionSuffix)
                 {
                     result.AddWarning($"SourceDirectories.RetainMinimumVersions = {src.RetainMinimumVersions} is ignored with AddVersionSuffix false for source '{src.DirectoryPath}'");
                 }
 
-                if (src.RetainMaximumVersions > 0 && !src.AddVersionSuffix)
+                if (src.RetainMaximumVersions > Constants.RETAIN_VERSIONS_MINIMUM && !src.AddVersionSuffix)
                 {
                     result.AddWarning($"SourceDirectories.RetainMaximumVersions = {src.RetainMaximumVersions} is ignored with AddVersionSuffix false for source '{src.DirectoryPath}'");
                 }

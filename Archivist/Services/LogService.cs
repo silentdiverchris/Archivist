@@ -46,7 +46,7 @@ namespace Archivist.Services
             if (!string.IsNullOrEmpty(_jobDetails.SqlConnectionString))
             {
                 Result result = VerifyAndPrepareDatabase();
-                
+
                 if (result.HasNoErrorsOrWarnings)
                 {
                     _logToSql = true;
@@ -100,7 +100,9 @@ namespace Archivist.Services
 
                 if (Directory.Exists(_jobDetails.LogDirectoryPath))
                 {
-                    _logFileName = Path.Combine(_jobDetails.LogDirectoryPath, $"Archivist-{_jobDetails.JobNameToRun}-{DateTime.UtcNow.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)}.log");
+                    DateTime useDate = _jobDetails.AppSettings.UseUtcTime ? DateTime.UtcNow : DateTime.Now;
+                    string fileName = $"Archivist-{_jobDetails.JobNameToRun}-{useDate.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)}.log";
+                    _logFileName = Path.Combine(_jobDetails.LogDirectoryPath, fileName);
                     _logToFile = true;
                 }
             }
@@ -164,24 +166,21 @@ namespace Archivist.Services
                 await AddLogAsync(
                     new LogEntry(
                         logText: msg.Text,
-                        severity: msg.Severity,
-                        createdUtc: msg.CreatedUtc));
+                        severity: msg.Severity));
 
                 if (msg.Exception is not null)
                 {
                     await AddLogAsync(
                         new LogEntry (
                             logText: msg.Exception.Message,
-                            severity: msg.Severity,
-                            createdUtc: msg.CreatedUtc));
+                            severity: msg.Severity));
 
                     if (msg.Exception.InnerException is not null)
                     {
                         await AddLogAsync(
                             new LogEntry(
                                 logText: msg.Exception.InnerException.Message,
-                                severity: msg.Severity,
-                                createdUtc: msg.CreatedUtc));
+                                severity: msg.Severity));
                     }
                 }
             }
@@ -282,7 +281,7 @@ namespace Archivist.Services
             {
                 using (FileStream sourceStream = new(_logFileName, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
                 {
-                    byte[] encodedText = Encoding.Unicode.GetBytes(entry.FormatForFile());
+                    byte[] encodedText = Encoding.Unicode.GetBytes(entry.FormatForFile(_jobDetails.AppSettings.UseUtcTime));
                     await sourceStream.WriteAsync(encodedText);
                 };
             }

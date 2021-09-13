@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Archivist.Utilities;
 
 namespace Archivist.Classes
 {
@@ -23,10 +19,8 @@ namespace Archivist.Classes
 
             if (item is null)
             {
-                // OK, is it almost like one we already have...
-                fuzzyMatch = true;
-
-                // If they are within 1 minute then they're the same;
+                // Is it almost like one we already have ?
+                // If they are within 1 minute then we consider them to be the same archive;
 
                 DateTime minDate = fi.LastWriteTimeUtc.AddMinutes(-1);
                 DateTime maxDate = fi.LastWriteTimeUtc.AddMinutes(1);
@@ -35,6 +29,8 @@ namespace Archivist.Classes
                     _.Name == fi.Name &&
                     _.LastWriteUtc >= minDate &&
                     _.LastWriteUtc <= maxDate);
+
+                fuzzyMatch = true;
             }
 
             if (item is null)
@@ -56,13 +52,19 @@ namespace Archivist.Classes
             Length = fi.Length;
             LastWriteUtc = fi.LastWriteTimeUtc;
 
+            IsVersioned = FileUtilities.IsFileVersioned(fi.Name, out string rootName);
+
+            RootName = rootName;
+
             Instances = new List<FileReportItemInstance>
             {
                 new FileReportItemInstance(fi, inPrimaryArchive, fuzzyMatch)
             };
         }
 
+        public bool IsVersioned { get; set; }
         public string Name { get; set; }
+        public string RootName { get; set; }
         public long Length { get; set; }
         public DateTime LastWriteUtc { get; set; }
         public List<FileReportItemInstance> Instances { get; set; }

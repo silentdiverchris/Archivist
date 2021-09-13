@@ -207,7 +207,7 @@ namespace Archivist.Services
 
                                 if (sourceDirectory.RetainMinimumVersions >= Constants.RETAIN_VERSIONS_MINIMUM)
                                 {
-                                    if (FileService.FileNameMatchesVersionedPattern(fiOutput.FullName))
+                                    if (FileUtilities.IsFileVersioned(fiOutput.FullName, out string _))
                                     {
                                         using (var fileService = new FileService(_jobSpec, _logService))
                                         {

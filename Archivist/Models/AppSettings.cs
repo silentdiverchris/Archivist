@@ -8,6 +8,7 @@ namespace Archivist.Models
 {
     public class AppSettings
     {
+        public bool UseUtcTime { get; set; }
         public string DefaultJobName { get; set; }
         public string LogDirectoryPath { get; set; }
         public string AESEncryptPath { get; set; }

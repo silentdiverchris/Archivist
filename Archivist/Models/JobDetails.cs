@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Archivist.Models
+﻿namespace Archivist.Models
 {
     internal class JobDetails
     {

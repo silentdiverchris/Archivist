@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 using static Archivist.Enumerations;
 
 namespace Archivist.Classes
@@ -11,6 +8,7 @@ namespace Archivist.Classes
         internal ResultMessage(string text, enSeverity severity = enSeverity.Info, Exception ex = null, string functionName = null, bool alwaysWriteToEventLog = false)
         {
             CreatedUtc = DateTime.UtcNow;
+            CreatedLocal = DateTime.Now;
             Text = text;
             Severity = severity;
             Exception = ex;
@@ -18,6 +16,7 @@ namespace Archivist.Classes
             AlwaysWriteToEventLog = alwaysWriteToEventLog;
         }
 
+        internal DateTime CreatedLocal { get; private set; }
         internal DateTime CreatedUtc { get; private set; }
         internal enSeverity Severity { get; set; }
         internal string Text { get; set; }

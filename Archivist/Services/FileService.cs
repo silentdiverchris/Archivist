@@ -83,7 +83,7 @@ namespace Archivist.Services
                         {
                             foreach (var fileName in existingFiles)
                             {
-                                if (FileNameMatchesVersionedPattern(fileName) == false)
+                                if (FileUtilities.IsFileVersioned(fileName, out string _) == false)
                                 {
                                     result.AddError($"DeleteOldVersions found {fileName} not matching pattern");
                                 }
@@ -169,11 +169,25 @@ namespace Archivist.Services
 
             foreach (var item in fileReport.Items.OrderBy(_ => _.Name))
             {
-                result.AddInfo($"File {item.Name} has {item.Instances.Count} {"instance".Pluralise(item.Instances.Count)} ({FileUtilities.GetByteSizeAsText(item.Length, true)}, last write UTC {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                var cnt = item.Instances.Count;
+                string msg = $"File {item.Name} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, true)}, last write {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC";
+                
+                if (cnt >= 3)
+                {
+                    result.AddSuccess(msg);
+                }
+                else if (cnt >= 2)
+                {
+                    result.AddInfo(msg);
+                }
+                else
+                {
+                    result.AddWarning(msg);
+                }
 
                 foreach (var inst in item.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenBy(_ => _.Path))
                 {
-                    result.AddInfo($" {inst.Path} ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write UTC {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                    result.AddInfo($" {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")})");
                 }
             }
 
@@ -183,11 +197,27 @@ namespace Archivist.Services
 
             int fnLen = fileReport.Items.Max(_ => _.Name.Length);
 
-            result.AddInfo("File" + new string(' ', fnLen - 2) + "#  Date & time");
+            result.AddInfo("File" + new string(' ', fnLen - 1) + "#  Size      Date & time");
             foreach (var item in fileReport.Items.OrderBy(_ => _.Name))
             {
                 var minDate = item.Instances.Min(_ => _.LastWriteUtc);
-                result.AddInfo($"{item.Name} {new string(' ', fnLen - item.Name.Length)} {item.Instances.Count, -2} {minDate.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}");
+                var size = FileUtilities.GetByteSizeAsText(item.Length);
+                var cnt = item.Instances.Count;
+
+                string msg = $"{item.Name} {new string(' ', fnLen - item.Name.Length)} {cnt, 2}  {size}{new string(' ', 9-size.Length)} {minDate.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}";
+
+                if (cnt >= 3)
+                {
+                    result.AddSuccess(msg);
+                }
+                else if (cnt >= 2)
+                {
+                    result.AddInfo(msg);
+                }
+                else
+                {
+                    result.AddWarning(msg);
+                }
             }
 
             // Duplicates report
@@ -205,50 +235,50 @@ namespace Archivist.Services
                     
                     foreach(var df in fileReport.Items.Where(_ => _.Name == dup.Key).OrderBy(_ => _.LastWriteUtc))
                     {
-                        result.AddWarning($" {df.Instances.Count} {"instance".Pluralise(df.Instances.Count)} {FileUtilities.GetByteSizeAsText(df.Length, true)}, last write UTC {df.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
+                        result.AddWarning($" {df.Instances.Count} {"instance".Pluralise(df.Instances.Count)} {FileUtilities.GetByteSizeAsText(df.Length, true)}, last write {df.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
 
                         foreach (var inst in df.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenByDescending(_ => _.IsFuzzyMatch).ThenBy(_ => _.Path))
                         {
-                            result.AddInfo($"  {inst.Path} ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write UTC {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                            result.AddInfo($"  {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")})");
                         }
                     }
                 }
             }
 
+            // Combine files with same root and check for any with too few/too old copies
+
+            //var rootNames = fileReport.Items.Select(_ => _.RootName).Distinct();
+
+            //fnLen = rootNames.Max(_ => _.Length);
+
+            //result.AddInfo("File version counts and date ranges by root name;");
+            //result.AddInfo("Root file" + new string(' ', fnLen - 6) + "#  Most recent version");
+
+            //foreach (var rn in rootNames.OrderBy(_ => _))
+            //{
+            //    var instances = fileReport.Items.Where(_ => _.RootName == rn).SelectMany(_ => _.Instances);
+
+            //    var cnt = instances.Count();
+            //    var mostRecentDate = instances.Min(_ => _.LastWriteUtc);
+            //    var msg = $"{rn} {new string(' ', fnLen - rn.Length)} {cnt,2}  {mostRecentDate.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}";
+
+            //    if (cnt >= 3)
+            //    {
+            //        result.AddSuccess(msg);
+            //    }
+            //    else if (cnt >= 2)
+            //    {
+            //        result.AddInfo(msg);
+            //    }
+            //    else
+            //    {
+            //        result.AddWarning(msg);
+            //    }
+            //}
+
             await _logService.ProcessResult(result);
 
             return result;
-        }
-
-        /// <summary>
-        /// Matches the pattern for a versioned file, i.e. ends with '-NNNN.xxx' where the Ns are numeric
-        /// </summary>
-        /// <param name="fileName"></param>
-        /// <returns></returns>
-        internal static bool FileNameMatchesVersionedPattern(string fileName)
-        {
-            try
-            {
-                // Any versioned file name will be over 10 characters long
-
-                if (fileName.Length > 10)
-                {
-                    // Replace with a regex? TODO
-                    string hyphen = fileName.Substring(fileName.Length - 9, 1);
-                    string numbers = fileName.Substring(fileName.Length - 8, 4);
-                    string dot = fileName.Substring(fileName.Length - 4, 1);
-
-                    return hyphen == "-" && dot == "." && StringHelpers.IsDigits(numbers);
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"FileNameMatchesVersionedPattern file '{fileName}' exception {ex.Message}", ex);
-            }
         }
 
         internal async Task<Result> CopyToArchives()
@@ -383,6 +413,10 @@ namespace Archivist.Services
 
                 // Not too bad a code smell, but a bit whiffy for sure.
 
+                // When refactoring this, just build a list of what files should end up in the destination, then add/delete
+                // files to/from it according to that, adding first so as not to end up with no files if we crash out or get
+                // abandoned - which requires more space of course but is the safest approach.
+
                 fileNameList = RemoveFilesThatWouldJustGetDeletedAnyway(fileNameList, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays);
 
                 // Now that slightly embarrassing process is done, we're ready to copy the list of files over
@@ -458,11 +492,11 @@ namespace Archivist.Services
 
                             var progressReporter = new Progress<KeyValuePair<long, long>>();
 
-                            LogEntry progressLogEntry = new()
-                            {
-                                ProgressPrefix = $"Copying {fiSrc.Name}", // {fileName} to {destination.DirectoryPath}",
-                                ProgressSuffix = $"of {FileUtilities.GetByteSizeAsText(fiSrc.Length)}" // complete"
-                            };
+                            LogEntry progressLogEntry = new(
+                                percentComplete: 0,
+                                prefix: $"Copying {fiSrc.Name}", // {fileName} to {destination.DirectoryPath}",
+                                suffix: $"of {FileUtilities.GetByteSizeAsText(fiSrc.Length)}" // complete"
+                            );
 
                             progressReporter.ProgressChanged += delegate (object obj, KeyValuePair<long, long> progressValue)
                             {
@@ -572,12 +606,13 @@ namespace Archivist.Services
         }
 
         /// <summary>
-        /// This is a cure for the bad bit of design where files get copied to archive, then immediately deleted due 
-        /// to the RetainVersions being larger on the source than the destination. This works just fine but could
-        /// be refactored out at some point
-        /// </summary>
+        /// This is a cure for the bad bit of design where files get copied to archive, then are immediately deleted due 
+        /// to the RetainVersions being larger on the source than the destination. This works just fine but should 
+        /// be refactored out at some point, see comment block in CopyArchives.        /// </summary>
         /// <param name="fileNameList"></param>
-        /// <param name="retainVersions"></param>
+        /// <param name="retainMinimumVersions"></param>
+        /// <param name="retainMaximumVersions"></param>
+        /// <param name="retainDaysOld"></param>
         /// <returns></returns>
         private List<string> RemoveFilesThatWouldJustGetDeletedAnyway(List<string> fileNameList, int retainMinimumVersions, int retainMaximumVersions, int retainDaysOld)
         {
@@ -589,11 +624,11 @@ namespace Archivist.Services
 
             foreach (var fileName in fileNameList.OrderBy(_ => _))
             {
-                if (FileNameMatchesVersionedPattern(fileName))
+                if (FileUtilities.IsFileVersioned(fileName, out string baseFileName))
                 {
                     var idxFileStart = fileName.LastIndexOf(Path.DirectorySeparatorChar) + 1; // Where the file name starts
                     var idxHyphen = fileName.LastIndexOf("-"); // Where the - of -nnn is
-                    var baseFileName = fileName[idxFileStart..idxHyphen];
+                    //var baseFileName = fileName[idxFileStart..idxHyphen];
 
                     if (versionedFileSets.ContainsKey(baseFileName))
                     {
@@ -661,7 +696,7 @@ namespace Archivist.Services
             }
             else if (recursive)
             {
-                // Ah well, worth a try, check the subdirectories, if any, one by one. Best to do it
+                // Ah well, worth a try, check any subdirectories one by one. Best to do it
                 // this way rather than GetFiles the whole lot, then start looking; we don't need the
                 // full set, just one later file will do.
 

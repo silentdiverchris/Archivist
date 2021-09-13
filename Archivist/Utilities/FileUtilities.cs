@@ -1,10 +1,64 @@
 ﻿using Archivist.Classes;
+using Archivist.Helpers;
 using System.Text.RegularExpressions;
 
 namespace Archivist.Utilities
 {
     internal static class FileUtilities
     {
+        /// <summary>
+        /// Matches the pattern for a versioned file, i.e. ends with '-NNNN.xxx' where the Ns are numeric
+        /// </summary>
+        /// <param name="fileName">Can be just the file name or a full path</param>
+        /// <param name="rootName"></param>
+        /// <returns></returns>
+        internal static bool IsFileVersioned(string fileName, out string rootName)
+        {
+            bool isVersioned = false;
+
+            try
+            {
+                // Get just file name of the file without any path
+
+                if (fileName.Contains(Path.DirectorySeparatorChar))
+                {
+                    fileName = fileName[(fileName.LastIndexOf(Path.DirectorySeparatorChar) + 1)..];
+                }
+
+                // Any versioned file name will be over 9 characters long as the version suffix and extension
+                // are 9 in themselves
+
+                if (fileName.Length > 9)
+                {
+                    // Faster than a regex and/or using a FileInfo to get the extension and we need to check the digits anyway
+                    string hyphen = fileName.Substring(fileName.Length - 9, 1);
+                    string numbers = fileName.Substring(fileName.Length - 8, 4);
+                    string dot = fileName.Substring(fileName.Length - 4, 1);
+
+                    isVersioned = hyphen == "-" && dot == "." && StringHelpers.IsDigits(numbers);
+
+                    if (isVersioned)
+                    {
+                        rootName = fileName[0..^9] + fileName[^4..];
+                    }
+                    else
+                    {
+                        rootName = fileName;
+                    }
+                }
+                else
+                {
+                    rootName = fileName;
+                }
+
+                return isVersioned;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"FileNameMatchesVersionedPattern file '{fileName}' exception {ex.Message}", ex);
+            }
+        }
+
         internal static DriveInfo GetDriveByLabel(string label)
         {
             var drives = DriveInfo.GetDrives();
@@ -58,21 +112,21 @@ namespace Archivist.Utilities
             }
             else
             {
-                if (sizeBytes > (1024 * 1024 * 1024))
+                if (sizeBytes >= (1024 * 1024 * 1024))
                 {
                     return $"{(sizeBytes / 1024 / 1024 / 1024):N2}GB";
                 }
-                else if (sizeBytes > (1024 * 1024))
+                else if (sizeBytes >= (1024 * 1024))
                 {
                     return $"{(sizeBytes / 1024 / 1024):N2}MB";
                 }
-                else if (sizeBytes > 1024)
+                else if (sizeBytes >= 1024)
                 {
                     return $"{(sizeBytes / 1024):N2}KB";
                 }
                 else
                 {
-                    return $"{sizeBytes:N0} bytes";
+                    return $"<1KB";
                 }
             }
         }
@@ -111,7 +165,7 @@ namespace Archivist.Utilities
 
                 string volLabStr = volumeLabel is null
                     ? null
-                    : $", '{volumeLabel}'";
+                    : $" '{volumeLabel}'";
 
                 string freeSpaceText = $"Remaining space on drive {drive[0]}{volLabStr} is {FileUtilities.GetByteSizeAsText(bytesFree)}";
 

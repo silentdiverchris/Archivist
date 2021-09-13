@@ -5,11 +5,6 @@ namespace Archivist.Models
 {
     internal class LogEntry
     {
-        internal LogEntry()
-        {
-            CreatedUtc = DateTime.UtcNow;
-        }
-
         internal LogEntry(short percentComplete, string suffix, string prefix)
         {
             ProgressPrefix = prefix;
@@ -17,11 +12,10 @@ namespace Archivist.Models
             PercentComplete = percentComplete;
         }
 
-        internal LogEntry(string logText, enSeverity severity = enSeverity.Info, DateTime? createdUtc = null, bool alwaysWriteToEventLog = false)
+        internal LogEntry(string logText, enSeverity severity = enSeverity.Info, bool alwaysWriteToEventLog = false)
         {
             Text = logText;
             Severity = severity;
-            CreatedUtc = createdUtc ?? DateTime.UtcNow;
             AlwaysWriteToEventLog = alwaysWriteToEventLog;
         }
 
@@ -30,13 +24,14 @@ namespace Archivist.Models
         internal short? PercentComplete { get; set; } = null;
 
         internal bool AlwaysWriteToEventLog { get; set; }
-        internal DateTime CreatedUtc { get; private set; }
+        internal DateTime CreatedUtc { get; private set; } = DateTime.UtcNow;
+        internal DateTime CreatedLocal { get; private set; } = DateTime.Now;
         internal enSeverity Severity { get; set; }
         internal string Text { get; set; }
 
-        internal string FormatForFile()
+        internal string FormatForFile(bool useUtcTime)
         {
-            return $"{CreatedUtc:HH:mm:ss} {Severity.ToString().PadRight(7)} {Text}\r\n";
+            return $"{(useUtcTime ? CreatedUtc : CreatedLocal):HH:mm:ss} {Severity.ToString().PadRight(7)} {Text}\r\n";
         }
     }
 }

@@ -36,6 +36,10 @@ namespace Archivist
         {
             Result result = new("MainProcess.Initialise");
 
+            DateTime startTime = _jobDetails.AppSettings.UseUtcTime ? DateTime.UtcNow : DateTime.Now;
+            string utcIndicator = _jobDetails.AppSettings.UseUtcTime ? "UTC" : "local time";
+            result.AddInfo($"Archivist starting at {startTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} {utcIndicator}");
+
             if (_logService.LoggingToFile)
             {
                 result.AddInfo($"Log file '{_logService.LogFileName}'");
