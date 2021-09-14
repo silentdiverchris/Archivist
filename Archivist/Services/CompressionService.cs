@@ -16,8 +16,9 @@ namespace Archivist.Services
 
         internal CompressionService(
             Job jobSpec,
+            AppSettings appSettings,
             LogService logService,
-            string aesEncryptExecutable) : base(jobSpec, logService)
+            string aesEncryptExecutable) : base(jobSpec, appSettings, logService)
         {
             if (aesEncryptExecutable is null || !File.Exists(aesEncryptExecutable))
             {
@@ -115,7 +116,7 @@ namespace Archivist.Services
                             result.AddDebug($"Processing archive '{currentOutputFileName}' last written {fiCurrentArchive.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
                             result.AddDebug($"Looking for files written after {lastWriteThreshold.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
 
-                            using (var fileService = new FileService(_jobSpec, _logService))
+                            using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
                             {
                                 var fiLater = FileService.GetLaterFile(sourceDirectory.DirectoryPath, true, lastWriteThreshold);
 
@@ -192,7 +193,7 @@ namespace Archivist.Services
 
                                 if (sourceDirectory.EncryptOutput)
                                 {
-                                    using (var encryptionService = new EncryptionService(_jobSpec, _logService))
+                                    using (var encryptionService = new EncryptionService(_jobSpec, _appSettings, _logService))
                                     {
                                         Result encryptionResult = await encryptionService.EncryptFileAsync(
                                             aesEncryptExecutable: _aesEncryptExecutable,
@@ -209,7 +210,7 @@ namespace Archivist.Services
                                 {
                                     if (FileUtilities.IsFileVersioned(fiOutput.FullName, out string _))
                                     {
-                                        using (var fileService = new FileService(_jobSpec, _logService))
+                                        using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
                                         {
                                             result.SubsumeResult(
                                                 await fileService.DeleteOldVersions(outputFileName, sourceDirectory.RetainMinimumVersions, sourceDirectory.RetainMaximumVersions, sourceDirectory.RetainYoungerThanDays));

@@ -12,17 +12,20 @@ namespace Archivist
     {
         private readonly JobDetails _jobDetails;
         private readonly LogService _logService;
+        private readonly AppSettings _appSettings;
 
         static readonly object _lock = new();
 
-        internal MainProcess(JobDetails jobDetails)
+        internal MainProcess(JobDetails jobDetails, AppSettings appSettings)
         {
             try
             {
                 _jobDetails = jobDetails;
+                _appSettings = appSettings;
 
                 _logService = new LogService(
                     jobDetails: jobDetails,
+                    appSettings: appSettings,
                     consoleDelegate: new(WriteToConsole));
             }
             catch (Exception ex)
@@ -36,8 +39,8 @@ namespace Archivist
         {
             Result result = new("MainProcess.Initialise");
 
-            DateTime startTime = _jobDetails.AppSettings.UseUtcTime ? DateTime.UtcNow : DateTime.Now;
-            string utcIndicator = _jobDetails.AppSettings.UseUtcTime ? "UTC" : "local time";
+            DateTime startTime = _appSettings.UseUtcTime ? DateTime.UtcNow : DateTime.Now;
+            string utcIndicator = _appSettings.UseUtcTime ? "UTC" : "local time";
             result.AddInfo($"Archivist starting at {startTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} {utcIndicator}");
 
             if (_logService.LoggingToFile)
@@ -58,7 +61,7 @@ namespace Archivist
                 result.AddInfo($"Logging to SQL not enabled");
             }
 
-            result.SubsumeResult(AppSettingsUtilities.SelectAndValidateJob(_jobDetails));
+            result.SubsumeResult(AppSettingsUtilities.SelectAndValidateJob(_jobDetails, _appSettings));
 
             if (result.HasNoErrors)
             {
@@ -76,11 +79,11 @@ namespace Archivist
 
         internal async Task<Result> RunAsync()
         {
-            Result result = new("Archivist", true, $"job '{_jobDetails.SelectedJob.Name}'");
+            Result result = new("Archivist", true, $"job '{_appSettings.SelectedJob.Name}'");
 
             await _logService.ProcessResult(result);
 
-            if (_jobDetails.SelectedJob.AutoViewLogFile && _logService.LoggingToFile)
+            if (_appSettings.SelectedJob.AutoViewLogFile && _logService.LoggingToFile)
             {
                 var proc = new Process
                 {
@@ -94,9 +97,9 @@ namespace Archivist
 
             RecordStatistics(true);
 
-            if (_jobDetails.AppSettings.AESEncryptPath is not null)
+            if (_appSettings.AESEncryptPath is not null)
             {
-                using (var secureDirectoryService = new SecureDirectoryService(_jobDetails.SelectedJob, _logService, _jobDetails.AppSettings.AESEncryptPath))
+                using (var secureDirectoryService = new SecureDirectoryService(_appSettings.SelectedJob, _appSettings, _logService, _appSettings.AESEncryptPath))
                 {
                     Result secureDirectoryResult = await secureDirectoryService.ProcessSecureDirectories();
                     result.SubsumeResult(secureDirectoryResult);
@@ -105,7 +108,7 @@ namespace Archivist
 
             if (!result.HasErrors)
             {
-                using (var compressionService = new CompressionService(_jobDetails.SelectedJob, _logService, _jobDetails.AppSettings.AESEncryptPath))
+                using (var compressionService = new CompressionService(_appSettings.SelectedJob, _appSettings, _logService, _appSettings.AESEncryptPath))
                 {
                     Result compressionResult = await compressionService.CompressSources();
                     result.SubsumeResult(compressionResult);
@@ -113,7 +116,7 @@ namespace Archivist
 
                 if (!result.HasErrors)
                 {
-                    using (var fileService = new FileService(_jobDetails.SelectedJob, _logService))
+                    using (var fileService = new FileService(_appSettings.SelectedJob, _appSettings, _logService))
                     {
                         Result copyArchivesResult = await fileService.CopyToArchives();
                         result.SubsumeResult(copyArchivesResult);
@@ -150,7 +153,7 @@ namespace Archivist
 
             await _logService.ProcessResult(result);
 
-            if (_jobDetails.SelectedJob.PauseBeforeExit)
+            if (_appSettings.SelectedJob.PauseBeforeExit)
             {
                 Console.WriteLine("Press any key to exit");
                 Console.ReadLine();
@@ -166,9 +169,9 @@ namespace Archivist
         {
             Result result = new("ReportAllDiskSpaceRemaining");
 
-            result.SubsumeResult(FileUtilities.CheckDiskSpace(_jobDetails.SelectedJob.PrimaryArchiveDirectoryName));
+            result.SubsumeResult(FileUtilities.CheckDiskSpace(_appSettings.SelectedJob.PrimaryArchiveDirectoryName));
 
-            foreach (var dir in _jobDetails.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable).OrderBy(_ => _.DirectoryPath))
+            foreach (var dir in _appSettings.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable).OrderBy(_ => _.DirectoryPath))
             {
                 dir.VerifyVolume(); 
                 result.SubsumeResult(FileUtilities.CheckDiskSpace(dir.DirectoryPath, dir.VolumeLabel));
@@ -183,14 +186,14 @@ namespace Archivist
 
             if (initial)
             {
-                _jobDetails.SelectedJob.PrimaryArchiveStatistics.BytesFreeInitial = FileUtilities.GetAvailableDiskSpace(_jobDetails.SelectedJob.PrimaryArchiveDirectoryName);
+                _appSettings.SelectedJob.PrimaryArchiveStatistics.BytesFreeInitial = FileUtilities.GetAvailableDiskSpace(_appSettings.SelectedJob.PrimaryArchiveDirectoryName);
             }
             else
             {
-                _jobDetails.SelectedJob.PrimaryArchiveStatistics.BytesFreeFinal += FileUtilities.GetAvailableDiskSpace(_jobDetails.SelectedJob.PrimaryArchiveDirectoryName);
+                _appSettings.SelectedJob.PrimaryArchiveStatistics.BytesFreeFinal += FileUtilities.GetAvailableDiskSpace(_appSettings.SelectedJob.PrimaryArchiveDirectoryName);
             }
 
-            foreach (var dir in _jobDetails.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable))
+            foreach (var dir in _appSettings.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable))
             {
                 //dir.VerifyVolume();
 
@@ -207,7 +210,7 @@ namespace Archivist
 
         internal void WriteToConsole(LogEntry entry)
         {
-            if (_jobDetails.WriteToConsole)
+            if (_appSettings.SelectedJob.WriteToConsole)
             {
                 if (entry.PercentComplete is not null)
                 {
@@ -248,7 +251,7 @@ namespace Archivist
                 _logService.Dispose();
         }
 
-        private static Result ValidateJobDetails(JobDetails jobDetails)
+        private static Result ValidateJobDetails(JobDetails jobDetails, AppSettings appSettings)
         {
             Result result = new("ValidateJobDetails", false);
 
@@ -261,14 +264,14 @@ namespace Archivist
             //    result.AddError($"Configuration file '{jobDetails.ConfigFilePath}' does not exist");
             //}
 
-            if (!string.IsNullOrEmpty(jobDetails.AppSettings.AESEncryptPath) && !File.Exists(jobDetails.AppSettings.AESEncryptPath))
+            if (!string.IsNullOrEmpty(appSettings.AESEncryptPath) && !File.Exists(appSettings.AESEncryptPath))
             {
-                result.AddError($"AESEncrypt executable '{jobDetails.AppSettings.AESEncryptPath}' does not exist, please download from https://www.aescrypt.com/");
+                result.AddError($"AESEncrypt executable '{appSettings.AESEncryptPath}' does not exist, please download from https://www.aescrypt.com/");
             }
 
-            if (!string.IsNullOrEmpty(jobDetails.AppSettings.LogDirectoryPath) && !Directory.Exists(jobDetails.AppSettings.LogDirectoryPath))
+            if (!string.IsNullOrEmpty(appSettings.LogDirectoryPath) && !Directory.Exists(appSettings.LogDirectoryPath))
             {
-                result.AddError($"Log directory '{jobDetails.AppSettings.LogDirectoryPath}' does not exist");
+                result.AddError($"Log directory '{appSettings.LogDirectoryPath}' does not exist");
             }
 
             if (jobDetails.JobNameToRun is null)

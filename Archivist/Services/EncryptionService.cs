@@ -8,7 +8,8 @@ namespace Archivist.Services
     {       
         internal EncryptionService(
             Job jobSpec,
-            LogService logService) : base(jobSpec, logService)
+            AppSettings appSettings,
+            LogService logService) : base(jobSpec, appSettings, logService)
         {
         }
 

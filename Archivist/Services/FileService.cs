@@ -14,7 +14,8 @@ namespace Archivist.Services
 
         internal FileService(
             Job jobSpec,
-            LogService logService) : base(jobSpec, logService)
+            AppSettings appSettings,
+            LogService logService) : base(jobSpec, appSettings, logService)
         {
         }
 
@@ -167,10 +168,10 @@ namespace Archivist.Services
 
             result.AddInfo("File instance report;");
 
-            foreach (var item in fileReport.Items.OrderBy(_ => _.Name))
+            foreach (var item in fileReport.Items.OrderBy(_ => _.FileName))
             {
                 var cnt = item.Instances.Count;
-                string msg = $"File {item.Name} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, true)}, last write {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC";
+                string msg = $"File {item.FileName} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, true)}, last write {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC";
                 
                 if (cnt >= 3)
                 {
@@ -195,16 +196,16 @@ namespace Archivist.Services
 
             result.AddInfo("File version counts and date ranges;");
 
-            int fnLen = fileReport.Items.Max(_ => _.Name.Length);
+            int fnLen = fileReport.Items.Max(_ => _.FileName.Length);
 
             result.AddInfo("File" + new string(' ', fnLen - 1) + "#  Size      Date & time");
-            foreach (var item in fileReport.Items.OrderBy(_ => _.Name))
+            foreach (var item in fileReport.Items.OrderBy(_ => _.FileName))
             {
                 var minDate = item.Instances.Min(_ => _.LastWriteUtc);
                 var size = FileUtilities.GetByteSizeAsText(item.Length);
                 var cnt = item.Instances.Count;
 
-                string msg = $"{item.Name} {new string(' ', fnLen - item.Name.Length)} {cnt, 2}  {size}{new string(' ', 9-size.Length)} {minDate.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}";
+                string msg = $"{item.FileName} {new string(' ', fnLen - item.FileName.Length)} {cnt, 2}  {size}{new string(' ', 9-size.Length)} {minDate.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}";
 
                 if (cnt >= 3)
                 {
@@ -222,7 +223,7 @@ namespace Archivist.Services
 
             // Duplicates report
 
-            var duplicateNames = fileReport.Items.GroupBy(_ => _.Name).Where(g => g.Count() > 1).Select(y => y).ToList();
+            var duplicateNames = fileReport.Items.GroupBy(_ => _.FileName).Where(g => g.Count() > 1).Select(y => y).ToList();
 
             if (duplicateNames.Any())
             {
@@ -233,7 +234,7 @@ namespace Archivist.Services
                 {
                     result.AddWarning($"{dup.Key}");
                     
-                    foreach(var df in fileReport.Items.Where(_ => _.Name == dup.Key).OrderBy(_ => _.LastWriteUtc))
+                    foreach(var df in fileReport.Items.Where(_ => _.FileName == dup.Key).OrderBy(_ => _.LastWriteUtc))
                     {
                         result.AddWarning($" {df.Instances.Count} {"instance".Pluralise(df.Instances.Count)} {FileUtilities.GetByteSizeAsText(df.Length, true)}, last write {df.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
 
@@ -247,9 +248,9 @@ namespace Archivist.Services
 
             // Combine files with same root and check for any with too few/too old copies
 
-            //var rootNames = fileReport.Items.Select(_ => _.RootName).Distinct();
+            var rootNames = fileReport.Items.Select(_ => _.RootFileName).Distinct();
 
-            //fnLen = rootNames.Max(_ => _.Length);
+            fnLen = rootNames.Max(_ => _.Length);
 
             //result.AddInfo("File version counts and date ranges by root name;");
             //result.AddInfo("Root file" + new string(' ', fnLen - 6) + "#  Most recent version");
@@ -259,7 +260,7 @@ namespace Archivist.Services
             //    var instances = fileReport.Items.Where(_ => _.RootName == rn).SelectMany(_ => _.Instances);
 
             //    var cnt = instances.Count();
-            //    var mostRecentDate = instances.Min(_ => _.LastWriteUtc);
+            //    var mostRecentDate = instances.Max(_ => _.LastWriteUtc);
             //    var msg = $"{rn} {new string(' ', fnLen - rn.Length)} {cnt,2}  {mostRecentDate.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}";
 
             //    if (cnt >= 3)
@@ -276,9 +277,71 @@ namespace Archivist.Services
             //    }
             //}
 
+            // Find files with a scarily low number of copies, or which are worryingly old compared to the source data
+
+            int concerningFiles = 0;
+
+            result.AddInfo("Files to be concerned about;");
+            result.AddInfo("Root file" + new string(' ', fnLen - 6) + "#  Most recent version   Concerns");
+
+            foreach (var rn in rootNames.OrderBy(_ => _))
+            {
+                List<string> Concerns = new();
+
+                var thresholdHours = 1;
+                var instances = fileReport.Items.Where(_ => _.RootFileName == rn).SelectMany(_ => _.Instances).OrderBy(_ => _.Path);
+                var copyCount = instances.Count();
+                var mostRecentDateLocal = instances.Max(_ => _.LastWriteLocal); 
+                var sourceDirectory = FindSourceDirectory(rn);
+
+                if (copyCount < 2)
+                {
+                    var whereFiles = instances.Select(_ => _.Path);
+                    Concerns.Add($"Only {copyCount} version{copyCount.PluralSuffix()} of this archive, in {string.Join(", ", whereFiles)}");
+                }
+
+                if (sourceDirectory is not null && mostRecentDateLocal < DateTime.Now.AddHours(-thresholdHours))
+                {
+                    var laterFile = GetLaterFile(sourceDirectory.DirectoryPath, true, mostRecentDateLocal);
+
+                    if (laterFile is not null)
+                    {
+                        // Show in local time
+                        var hoursOld = (int)DateTime.Now.Subtract(mostRecentDateLocal).TotalHours;
+                        Concerns.Add($"Archive is {hoursOld} hours old and the source directory {sourceDirectory.DirectoryPath} has changes since then (eg. {laterFile.Name} {laterFile.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                    }
+                }
+
+                if (Concerns.Any())
+                {
+                    concerningFiles++;
+
+                    result.AddInfo($"{rn} {new string(' ', fnLen - rn.Length)} {copyCount,2}  {mostRecentDateLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}");
+
+                    foreach (var concern in Concerns)
+                    {
+                        result.AddWarning(concern);
+                    }
+                }
+            }
+
+            if (concerningFiles > 0)
+            {
+                result.AddInfo($"There were {concerningFiles} file{concerningFiles.PluralSuffix()} that raised concerns");
+            }
+            else
+            {
+                result.AddInfo("No files raised concerns, hoorah.");
+            }
+
             await _logService.ProcessResult(result);
 
             return result;
+        }
+
+        private SourceDirectory FindSourceDirectory(string rootFileName)
+        {
+            return _jobSpec.SourceDirectories.SingleOrDefault(_ => _.DirectoryPath.EndsWith(rootFileName[0..^4]));
         }
 
         internal async Task<Result> CopyToArchives()

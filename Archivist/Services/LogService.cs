@@ -25,6 +25,7 @@ namespace Archivist.Services
         public bool LoggingToConsole => _logToConsole;
 
         private readonly JobDetails _jobDetails = null;
+        private readonly AppSettings _appSettings;
         private readonly string _logFileName = null;
 
         private readonly ConsoleDelegate _consoleDelegate;
@@ -38,12 +39,16 @@ namespace Archivist.Services
         /// </summary>
         /// <param name="connectionString"></param>
         /// <param name="logDirectoryName"></param>
-        internal LogService(JobDetails jobDetails, ConsoleDelegate consoleDelegate)
+        internal LogService(
+            JobDetails jobDetails, 
+            AppSettings appSettings, 
+            ConsoleDelegate consoleDelegate)
         {
             _consoleDelegate = consoleDelegate;
             _jobDetails = jobDetails;
+            _appSettings = appSettings;
 
-            if (!string.IsNullOrEmpty(_jobDetails.SqlConnectionString))
+            if (!string.IsNullOrEmpty(_appSettings.SqlConnectionString))
             {
                 Result result = VerifyAndPrepareDatabase();
 
@@ -57,23 +62,23 @@ namespace Archivist.Services
                 }
             }
 
-            if (!string.IsNullOrEmpty(_jobDetails.LogDirectoryPath))
+            if (!string.IsNullOrEmpty(_appSettings.LogDirectoryPath))
             {
-                if (!_jobDetails.LogDirectoryPath.Contains(Path.DirectorySeparatorChar))
+                if (!_appSettings.LogDirectoryPath.Contains(Path.DirectorySeparatorChar))
                 {
                     // Just the directory name, we will asume it's under the install directory
-                    _jobDetails.AppSettings.LogDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _jobDetails.LogDirectoryPath);
+                    _appSettings.LogDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _appSettings.LogDirectoryPath);
                 }
 
-                if (!Directory.Exists(_jobDetails.LogDirectoryPath))
+                if (!Directory.Exists(_appSettings.LogDirectoryPath))
                 {
                     try
                     {
-                        Directory.CreateDirectory(_jobDetails.LogDirectoryPath);
+                        Directory.CreateDirectory(_appSettings.LogDirectoryPath);
 
                         // Allow autheticated users to write to the log directory
 
-                        var Info = new DirectoryInfo(_jobDetails.LogDirectoryPath);
+                        var Info = new DirectoryInfo(_appSettings.LogDirectoryPath);
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
@@ -92,17 +97,17 @@ namespace Archivist.Services
                     }
                     catch (Exception ex)
                     {
-                        string msg = $"Log directory '{_jobDetails.LogDirectoryPath}' does not exist and cannot be created, remove the setting or ensure it refers to an existing directory or one that can be created.";
+                        string msg = $"Log directory '{_appSettings.LogDirectoryPath}' does not exist and cannot be created, remove the setting or ensure it refers to an existing directory or one that can be created.";
                         EventLogHelpers.WriteEntry(msg, enSeverity.Error);
                         throw new Exception(msg, ex);
                     }
                 }
 
-                if (Directory.Exists(_jobDetails.LogDirectoryPath))
+                if (Directory.Exists(_appSettings.LogDirectoryPath))
                 {
-                    DateTime useDate = _jobDetails.AppSettings.UseUtcTime ? DateTime.UtcNow : DateTime.Now;
+                    DateTime useDate = _appSettings.UseUtcTime ? DateTime.UtcNow : DateTime.Now;
                     string fileName = $"Archivist-{_jobDetails.JobNameToRun}-{useDate.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)}.log";
-                    _logFileName = Path.Combine(_jobDetails.LogDirectoryPath, fileName);
+                    _logFileName = Path.Combine(_appSettings.LogDirectoryPath, fileName);
                     _logToFile = true;
                 }
             }
@@ -206,12 +211,12 @@ namespace Archivist.Services
 
         private async Task AddLogAsync (LogEntry entry)
         {
-            if (_jobDetails.AppSettings.VerboseEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
+            if (_appSettings.VerboseEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
             {
                 EventLogHelpers.WriteEntry(entry.Text, severity: entry.Severity);
             }
 
-            if (_logToConsole && (_jobDetails.AppSettings.VerboseConsole || entry.Severity != enSeverity.Debug))
+            if (_logToConsole && (_appSettings.VerboseConsole || entry.Severity != enSeverity.Debug))
             {
                 _consoleDelegate.Invoke(entry);
             }
@@ -235,7 +240,7 @@ namespace Archivist.Services
 
             try
             {
-                using (SqlConnection conn = new(_jobDetails.SqlConnectionString))
+                using (SqlConnection conn = new(_appSettings.SqlConnectionString))
                 {
                     conn.Open();
 
@@ -272,7 +277,7 @@ namespace Archivist.Services
                    "LogText", entry.Text,
                    "LogSeverity", (int)entry.Severity);
 
-            await SQLUtilities.ExecuteStoredProcedureNonQueryAsync(_jobDetails.SqlConnectionString, "AddLogEntry", parameters);
+            await SQLUtilities.ExecuteStoredProcedureNonQueryAsync(_appSettings.SqlConnectionString, "AddLogEntry", parameters);
         }
 
         private async Task AddLogToFileAsync(LogEntry entry)
@@ -281,7 +286,7 @@ namespace Archivist.Services
             {
                 using (FileStream sourceStream = new(_logFileName, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
                 {
-                    byte[] encodedText = Encoding.Unicode.GetBytes(entry.FormatForFile(_jobDetails.AppSettings.UseUtcTime));
+                    byte[] encodedText = Encoding.Unicode.GetBytes(entry.FormatForFile(_appSettings.UseUtcTime));
                     await sourceStream.WriteAsync(encodedText);
                 };
             }

@@ -27,10 +27,9 @@ namespace Archivist
                 AppSettings appSettings = AppSettingsUtilities.LoadAppSettings(appSettingsFileName);
 
                 JobDetails jobDetails = new(
-                    jobNameToRun: args.Length > 0 ? args[0] : appSettings.DefaultJobName,
-                    appSettings: appSettings);
+                    jobNameToRun: args.Length > 0 ? args[0] : appSettings.DefaultJobName);
 
-                using (var archivist = new MainProcess(jobDetails))
+                using (var archivist = new MainProcess(jobDetails, appSettings))
                 {
                     result.SubsumeResult(await archivist.Initialise());
 

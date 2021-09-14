@@ -13,7 +13,7 @@ namespace Archivist.Classes
             // File sizes will not match when files are on disks with different allocation sizes
 
             var item = Items.SingleOrDefault(_ =>
-                _.Name == fi.Name &&
+                _.FileName == fi.Name &&
                 _.LastWriteUtc == fi.LastWriteTimeUtc &&
                 _.Length == fi.Length);
 
@@ -26,7 +26,7 @@ namespace Archivist.Classes
                 DateTime maxDate = fi.LastWriteTimeUtc.AddMinutes(1);
 
                 item = Items.SingleOrDefault(_ =>
-                    _.Name == fi.Name &&
+                    _.FileName == fi.Name &&
                     _.LastWriteUtc >= minDate &&
                     _.LastWriteUtc <= maxDate);
 
@@ -48,13 +48,14 @@ namespace Archivist.Classes
     {
         public FileReportItem(FileInfo fi, bool inPrimaryArchive, bool fuzzyMatch)
         {
-            Name = fi.Name;
+            FileName = fi.Name;
             Length = fi.Length;
             LastWriteUtc = fi.LastWriteTimeUtc;
+            LastWriteLocal = fi.LastWriteTime;
 
             IsVersioned = FileUtilities.IsFileVersioned(fi.Name, out string rootName);
 
-            RootName = rootName;
+            RootFileName = rootName;
 
             Instances = new List<FileReportItemInstance>
             {
@@ -62,12 +63,14 @@ namespace Archivist.Classes
             };
         }
 
-        public bool IsVersioned { get; set; }
-        public string Name { get; set; }
-        public string RootName { get; set; }
+        public string FileName { get; set; }
         public long Length { get; set; }
         public DateTime LastWriteUtc { get; set; }
+        public DateTime LastWriteLocal { get; set; }
         public List<FileReportItemInstance> Instances { get; set; }
+
+        public string RootFileName { get; private set; }
+        public bool IsVersioned { get; private set; }
     }
 
     public class FileReportItemInstance
@@ -78,6 +81,7 @@ namespace Archivist.Classes
             IsInPrimaryArchive = inPrimaryArchive;
             Length = fi.Length;
             LastWriteUtc = fi.LastWriteTimeUtc;
+            LastWriteLocal = fi.LastWriteTime;
             Path = fi.DirectoryName;
         }
 
@@ -86,5 +90,6 @@ namespace Archivist.Classes
         public string Path { get; set; }
         public long Length { get; set; }
         public DateTime LastWriteUtc { get; set; }
+        public DateTime LastWriteLocal { get; set; }
     }
 }

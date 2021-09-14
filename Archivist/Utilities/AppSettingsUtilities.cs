@@ -182,17 +182,17 @@ namespace Archivist.Utilities
             File.WriteAllText(fileName, json);
         }
 
-        internal static Result SelectAndValidateJob(JobDetails jobDetails)
+        internal static Result SelectAndValidateJob(JobDetails jobDetails, AppSettings appSettings)
         {
             Result result = new("SelectAndValidateJob", false);
 
-            if (!string.IsNullOrEmpty(jobDetails.AppSettings.AESEncryptPath) && !File.Exists(jobDetails.AppSettings.AESEncryptPath))
+            if (!string.IsNullOrEmpty(appSettings.AESEncryptPath) && !File.Exists(appSettings.AESEncryptPath))
             {
-                result.AddError($"AESCrypt executable '{jobDetails.AppSettings.AESEncryptPath}' does not exist");
+                result.AddError($"AESCrypt executable '{appSettings.AESEncryptPath}' does not exist");
             }
 
-            string jobsNamesDefined = jobDetails.AppSettings.Jobs.Any()
-                ? string.Join(',', jobDetails.AppSettings.Jobs.Select(_ => _.Name))
+            string jobsNamesDefined = appSettings.Jobs.Any()
+                ? string.Join(',', appSettings.Jobs.Select(_ => _.Name))
                 : null;
 
             if (jobsNamesDefined is null)
@@ -207,9 +207,9 @@ namespace Archivist.Utilities
             {
                 // OK, let's try to select the specified job
 
-                result.SubsumeResult(jobDetails.AppSettings.SelectJob(jobDetails.JobNameToRun));
+                result.SubsumeResult(appSettings.SelectJob(jobDetails.JobNameToRun));
 
-                if (jobDetails.SelectedJob is null)
+                if (appSettings.SelectedJob is null)
                 {
                     result.AddError($"Job '{jobDetails.JobNameToRun}' cannot be selected, available jobs are '{jobsNamesDefined}'");
                 }
@@ -217,9 +217,9 @@ namespace Archivist.Utilities
                 {
                     // We have successfully selected the job, validate it
 
-                    result.AddInfo($"Selected job is '{jobDetails.SelectedJob.Name}'");
+                    result.AddInfo($"Selected job is '{appSettings.SelectedJob.Name}'");
 
-                    result.SubsumeResult(ValidateJob(jobDetails.SelectedJob));
+                    result.SubsumeResult(ValidateJob(appSettings.SelectedJob));
                 }
             }
 

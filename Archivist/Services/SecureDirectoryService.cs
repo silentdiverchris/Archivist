@@ -9,8 +9,9 @@ namespace Archivist.Services
 
         internal SecureDirectoryService(
             Job jobSpec,
+            AppSettings appSettings,
             LogService logService,
-            string aesEncryptExecutable) : base(jobSpec, logService)
+            string aesEncryptExecutable) : base(jobSpec, appSettings, logService)
         {
             if (string.IsNullOrEmpty(aesEncryptExecutable))
             {
@@ -81,7 +82,7 @@ namespace Archivist.Services
                 {
                     result.Statistics.ItemsFound = filesToProcess.Count();
 
-                    using (var encryptionService = new EncryptionService(_jobSpec, _logService))
+                    using (var encryptionService = new EncryptionService(_jobSpec, _appSettings, _logService))
                     {
                         foreach (var fullFileName in filesToProcess)
                         {
