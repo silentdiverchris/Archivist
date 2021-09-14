@@ -72,8 +72,10 @@ namespace Archivist.Services
                 string fileNamePrefix = fiArchive.Name[0..^9];
                 string searchPattern = $"{fileNamePrefix}*.zip";
 
+                // Get all files whose names that match the versioned format
                 var existingFiles = Directory.GetFiles(fiArchive.DirectoryName, searchPattern)
                     .Where(_ => _.Length == latestFileName.Length)
+                    .Where(_ => _.IsVersionedFileName())
                     .OrderBy(_ => _);
 
                 if (existingFiles.Any())
@@ -175,15 +177,15 @@ namespace Archivist.Services
 
                 if (cnt >= 3)
                 {
-                    result.AddSuccess(msg, consoleBlankLineAfter: true);
+                    result.AddSuccess(msg, consoleBlankLineBefore: true);
                 }
                 else if (cnt >= 2)
                 {
-                    result.AddInfo(msg, consoleBlankLineAfter: true);
+                    result.AddInfo(msg, consoleBlankLineBefore: true);
                 }
                 else
                 {
-                    result.AddWarning(msg, consoleBlankLineAfter: true);
+                    result.AddWarning(msg, consoleBlankLineBefore: true);
                 }
 
                 foreach (var inst in item.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenBy(_ => _.Path))
@@ -289,7 +291,7 @@ namespace Archivist.Services
             {
                 List<string> Concerns = new();
 
-                var thresholdHours = 1;
+                var thresholdHours = 12;
                 var recentThresholdLocal = DateTime.Now.AddHours(-thresholdHours);
                 var instances = fileReport.Items.Where(_ => _.RootFileName == rootFileName).SelectMany(_ => _.Instances).OrderBy(_ => _.Path);
                 var latestInstance = instances.OrderByDescending(_ => _.LastWriteUtc).FirstOrDefault();
@@ -307,7 +309,7 @@ namespace Archivist.Services
                     Concerns.Add(msg);
                 }
 
-                if (sourceDirectory is not null && latestInstance.LastWriteLocal > recentThresholdLocal)
+                if (sourceDirectory is not null && latestInstance.LastWriteLocal < recentThresholdLocal)
                 {
                     var laterFile = GetLaterFile(sourceDirectory.DirectoryPath, true, latestInstance.LastWriteUtc);
 
@@ -353,19 +355,23 @@ namespace Archivist.Services
                 result.AddInfo("No files raised concerns, hoorah.", consoleBlankLineAfter: true);
             }
 
-            foreach (var unmounted in _jobSpec.ArchiveDirectories.Where(_ => _.IsAvailable == false && _.IsEnabled))
+            foreach (var unmounted in _jobSpec.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable == false))
             {
                 var volLabel = string.IsNullOrEmpty(unmounted.VolumeLabel)
                     ? null
                     : $"'{unmounted.VolumeLabel}' ";
 
+                var dirPath = unmounted.DirectoryPath.Contains(Path.DirectorySeparatorChar)
+                    ? $"'{unmounted.DirectoryPath}' "
+                    : null;
+
                 if (unmounted.IsRemovable)
                 {
-                    result.AddInfo($"Removable archive destination {volLabel}{unmounted.DirectoryPath} is enabled but not available.");
+                    result.AddInfo($"Removable archive destination {volLabel}{dirPath}is enabled but not available.");
                 }
                 else
                 {
-                    result.AddWarning($"Fixed archive destination {volLabel}{unmounted.DirectoryPath} is enabled but not available.");
+                    result.AddWarning($"Fixed archive destination {volLabel}{dirPath}is enabled but not available.");
                 }
             }
 
@@ -376,12 +382,55 @@ namespace Archivist.Services
 
         private SourceDirectory FindSourceDirectory(string rootFileName)
         {
-            return _jobSpec.SourceDirectories.SingleOrDefault(_ => _.DirectoryPath.EndsWith(rootFileName[0..^4]));
+            try
+            {
+                var fileNameNoExt = rootFileName[0..^4];
+
+                var matches = _jobSpec.SourceDirectories.Where(_ => _.IsEnabled && _.OutputFileName == fileNameNoExt);
+
+                if (matches.Any() == false)
+                {
+                    matches = _jobSpec.SourceDirectories.Where(_ => _.IsEnabled && _.DirectoryPath.EndsWith(fileNameNoExt));
+                }
+
+                if (matches.Any())
+                {
+                    if (matches.Count() == 1)
+                    {
+                        return matches.First();
+                    }
+                    else
+                    {
+                        // Two or more source directories have the same lowest level folder name, we
+                        // need to look a little deeper... 
+
+                        foreach (var match in matches)
+                        {
+                            var fn = FileUtilities.GenerateFileNameFromPath(match.DirectoryPath);
+
+                            if (fn == fileNameNoExt)
+                            {
+                                return match;
+                            }
+                        }
+
+                        return null;
+                    }
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"FindSourceDirectory for {rootFileName}", ex);
+            }
         }
 
         internal async Task<Result> CopyToArchives()
         {
-            Result result = new("CopyToArchives", true);
+            Result result = new("CopyToArchives", false);
 
             foreach (var destination in _jobSpec.ArchiveDirectories
                 .Where(_ => _.IsToBeProcessed(_jobSpec))
@@ -430,6 +479,12 @@ namespace Archivist.Services
 
             var diSrc = new DirectoryInfo(sourceDirectoryName);
             var diDest = new DirectoryInfo(destination.DirectoryPath);
+
+            foreach (var tempFile in diDest.GetFiles("*.copying"))
+            {
+                result.AddInfo($"Deleting old temporary file '{tempFile.Name}'");
+                tempFile.Delete();
+            }
 
             if (destination.IsRemovable)
             {

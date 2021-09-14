@@ -80,6 +80,12 @@ namespace Archivist.Services
 
             if (sourceDirectory.IsAvailable)
             {
+                foreach (var tempFile in new DirectoryInfo(archiveDirectoryName).GetFiles("*.compressing"))
+                {
+                    result.AddInfo($"Deleting old temporary file '{tempFile.Name}'");
+                    tempFile.Delete();
+                }
+
                 bool needToArchive = true;
                 string movedFileName = null;
 
@@ -267,7 +273,7 @@ namespace Archivist.Services
 
             try
             {
-                string fileName = sourceDirectory.OutputFileName ?? GenerateFileNameFromPath(sourceDirectory.DirectoryPath);
+                string fileName = sourceDirectory.OutputFileName ?? FileUtilities.GenerateFileNameFromPath(sourceDirectory.DirectoryPath);
                 currentFileName = $"{archiveDirectoryName}\\{fileName}";
 
                 if (sourceDirectory.AddVersionSuffix)
@@ -275,37 +281,41 @@ namespace Archivist.Services
                     // The suffix is of the form -nnnn.zip, so for file abcde.zip we are looking for abcde-nnnnn.zip
 
                     int expectedFilenameLength = archiveDirectoryName.Length + 1 + fileName.Length + 5;
+                    string fileSpec = fileName.Replace(".zip", "*.zip");
 
-                    var existingFiles = Directory.GetFiles(archiveDirectoryName, fileName.Replace(".zip", "*.zip"))
+                    var existingVersionedFiles = Directory.GetFiles(archiveDirectoryName, fileSpec)
                         .Where(_ => _.Length == expectedFilenameLength)
+                        .Where(_ => _.IsVersionedFileName())
                         .OrderBy(_ => _);
 
-                    if (existingFiles.Any())
+                    if (existingVersionedFiles.Any())
                     {
-                        var lastFileName = existingFiles.Last();
+                        var lastFileName = existingVersionedFiles.Last();
 
-                        if (lastFileName.Length > 10)
+                        var currentNumber = lastFileName.GetVersionNumber();
+
+                        if (currentNumber > 0)
                         {
-                            var hyphen = lastFileName.Substring(lastFileName.Length - 9, 1);
-                            var numbers = lastFileName.Substring(lastFileName.Length - 8, 4);
+                            int nextNumber = currentNumber + 1;
 
-                            if (hyphen == "-" && StringHelpers.IsDigits(numbers))
+                            string errorPrefix = $"Current version number for '{currentFileName}' is {currentNumber}, ";
+
+                            if (currentNumber == 9999)
                             {
-                                int currentNumber = Int32.Parse(numbers);
-                                int nextNumber = currentNumber + 1;
-
-                                if (currentNumber == 9999)
-                                {
-                                    result.AddError($"Current version number for '{currentFileName}' is {currentNumber}, not generating the next file name, you need to manually renumber the existing files to a lower numbers, ideally 0001.");
-                                }
-                                else if (currentNumber > 9900)
-                                {
-                                    result.AddWarning($"Current version number for '{currentFileName}' is {currentNumber}, this will break when it reaches 9999 and you will need to manually renumber the existing files to a lower numbers, ideally 0001, best do that now.");
-                                }
-
-                                currentFileName = $"{archiveDirectoryName}\\" + fileName.Replace(".zip", $"-{currentNumber:0000}.zip");
-                                result.ReturnedString = Path.Combine(archiveDirectoryName, fileName.Replace(".zip", $"-{nextNumber:0000}.zip"));
+                                result.AddError(errorPrefix + "not generating the next file name, you need to manually renumber the existing files to a lower numbers, ideally 0001.");
                             }
+                            else if (currentNumber > 9900)
+                            {
+                                result.AddWarning(errorPrefix + "this will break when it reaches 9999 and you will need to manually renumber the existing files to a lower numbers, ideally 0001, best do that now.");
+                            }
+
+                            currentFileName = $"{archiveDirectoryName}\\" + fileName.Replace(".zip", $"-{currentNumber:0000}.zip");
+                            result.ReturnedString = Path.Combine(archiveDirectoryName, fileName.Replace(".zip", $"-{nextNumber:0000}.zip"));
+                        }
+                        else
+                        {
+                            // We should have already established that this file name is in the versioned format, a bug has been introduced somewhere..
+                            throw new Exception($"GenerateOutputFileName found currentNumber {currentNumber} for {lastFileName}");
                         }
                     }
                     else
@@ -325,21 +335,6 @@ namespace Archivist.Services
             }
 
             return result;
-        }
-
-        private string GenerateFileNameFromPath(string directoryName)
-        {
-            var bits = directoryName.Split(Path.DirectorySeparatorChar);
-
-            if (bits.Length > 1)
-            {
-                var fileName = string.Join("-", bits[1..]) + ".zip";
-                return fileName;
-            }
-            else
-            {
-                throw new Exception($"GenerateFileNameFromPath found path {directoryName} too short");
-            }
         }
 
         internal new void Dispose()

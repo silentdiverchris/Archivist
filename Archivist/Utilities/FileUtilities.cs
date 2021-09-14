@@ -7,6 +7,26 @@ namespace Archivist.Utilities
     internal static class FileUtilities
     {
         /// <summary>
+        /// Generate a file name from the directory structure the source data is in
+        /// </summary>
+        /// <param name="directoryName"></param>
+        /// <returns></returns>
+        internal static string GenerateFileNameFromPath(string directoryName)
+        {
+            var bits = directoryName.Split(Path.DirectorySeparatorChar);
+
+            if (bits.Length > 1)
+            {
+                var fileName = string.Join("-", bits[1..]) + ".zip";
+                return fileName;
+            }
+            else
+            {
+                throw new Exception($"GenerateFileNameFromPath found path {directoryName} too short");
+            }
+        }
+
+        /// <summary>
         /// Matches the pattern for a versioned file, i.e. ends with '-NNNN.xxx' where the Ns are numeric
         /// </summary>
         /// <param name="fileName">Can be just the file name or a full path</param>
@@ -28,23 +48,9 @@ namespace Archivist.Utilities
                 // Any versioned file name will be over 9 characters long as the version suffix and extension
                 // are 9 in themselves
 
-                if (fileName.Length > 9)
+                if (fileName.IsVersionedFileName())
                 {
-                    // Faster than a regex and/or using a FileInfo to get the extension and we need to check the digits anyway
-                    string hyphen = fileName.Substring(fileName.Length - 9, 1);
-                    string numbers = fileName.Substring(fileName.Length - 8, 4);
-                    string dot = fileName.Substring(fileName.Length - 4, 1);
-
-                    isVersioned = hyphen == "-" && dot == "." && StringHelpers.IsDigits(numbers);
-
-                    if (isVersioned)
-                    {
-                        rootName = fileName[0..^9] + fileName[^4..];
-                    }
-                    else
-                    {
-                        rootName = fileName;
-                    }
+                    rootName = fileName[0..^9] + fileName[^4..];
                 }
                 else
                 {

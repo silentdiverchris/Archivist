@@ -61,7 +61,7 @@ namespace Archivist.Classes
             FunctionName = functionName + (string.IsNullOrEmpty(functionQualifier) ? "" : " " + functionQualifier);
 
             if (addStartingItem)
-                AddInfo($"Running {functionName} {functionQualifier}");
+                AddInfo($"Running {functionName} {functionQualifier}", consoleBlankLineBefore: true);
         }
 
         internal void MarkMessagesWritten()

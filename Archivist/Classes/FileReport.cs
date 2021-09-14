@@ -20,7 +20,7 @@ namespace Archivist.Classes
             if (item is null)
             {
                 // Is it almost like one we already have ?
-                // If they are within 1 minute then we consider them to be the same archive;
+                // If they are last written within 1 minute then we consider them to be the same archive;
 
                 DateTime minDate = fi.LastWriteTimeUtc.AddMinutes(-1);
                 DateTime maxDate = fi.LastWriteTimeUtc.AddMinutes(1);

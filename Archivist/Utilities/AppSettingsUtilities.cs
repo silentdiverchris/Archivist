@@ -245,6 +245,11 @@ namespace Archivist.Utilities
                 result.AddError($"PrimaryArchiveDirectoryName '{job.PrimaryArchiveDirectoryName}' does not exist");
             }
 
+            foreach (var dup in job.SourceDirectories.Where(_ => _.IsEnabled).GroupBy(_ => _.VolumeLabel + " " + _.DirectoryPath).Where(g => g.Count() > 1).Select(y => y).ToList())
+            {
+                result.AddError($"Duplicate enabled source directory '{dup.Key}'");
+            }
+
             foreach (var src in job.SourceDirectories.Where(_ => _.IsToBeProcessed(job)))
             {
                 if (string.IsNullOrEmpty(src.DirectoryPath))
