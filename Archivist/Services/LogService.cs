@@ -171,21 +171,27 @@ namespace Archivist.Services
                 await AddLogAsync(
                     new LogEntry(
                         logText: msg.Text,
-                        severity: msg.Severity));
+                        severity: msg.Severity,
+                        consoleBlankLineBefore: msg.ConsoleBlankLineBefore,
+                        consoleBlankLineAfter: msg.ConsoleBlankLineAfter));
 
                 if (msg.Exception is not null)
                 {
                     await AddLogAsync(
                         new LogEntry (
                             logText: msg.Exception.Message,
-                            severity: msg.Severity));
+                            severity: msg.Severity,
+                            consoleBlankLineBefore: msg.ConsoleBlankLineBefore,
+                            consoleBlankLineAfter: msg.ConsoleBlankLineAfter));
 
                     if (msg.Exception.InnerException is not null)
                     {
                         await AddLogAsync(
                             new LogEntry(
                                 logText: msg.Exception.InnerException.Message,
-                                severity: msg.Severity));
+                                severity: msg.Severity,
+                                consoleBlankLineBefore: msg.ConsoleBlankLineBefore,
+                                consoleBlankLineAfter: msg.ConsoleBlankLineAfter));
                     }
                 }
             }

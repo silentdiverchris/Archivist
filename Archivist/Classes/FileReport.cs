@@ -77,6 +77,7 @@ namespace Archivist.Classes
     {
         public FileReportItemInstance(FileInfo fi, bool inPrimaryArchive, bool fuzzyMatch)
         {
+            FileName = fi.Name;
             IsFuzzyMatch = fuzzyMatch;
             IsInPrimaryArchive = inPrimaryArchive;
             Length = fi.Length;
@@ -85,6 +86,7 @@ namespace Archivist.Classes
             Path = fi.DirectoryName;
         }
 
+        public string FileName { get; set; }
         public bool IsFuzzyMatch { get; set; }
         public bool IsInPrimaryArchive { get; set; }
         public string Path { get; set; }

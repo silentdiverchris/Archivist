@@ -12,11 +12,13 @@ namespace Archivist.Models
             PercentComplete = percentComplete;
         }
 
-        internal LogEntry(string logText, enSeverity severity = enSeverity.Info, bool alwaysWriteToEventLog = false)
+        internal LogEntry(string logText, enSeverity severity = enSeverity.Info, bool alwaysWriteToEventLog = false, bool consoleBlankLineBefore = false, bool consoleBlankLineAfter = false)
         {
             Text = logText;
             Severity = severity;
             AlwaysWriteToEventLog = alwaysWriteToEventLog;
+            ConsoleBlankLineBefore = consoleBlankLineBefore;
+            ConsoleBlankLineAfter = consoleBlankLineAfter;
         }
 
         internal string ProgressPrefix { get; set; } = null;
@@ -28,6 +30,9 @@ namespace Archivist.Models
         internal DateTime CreatedLocal { get; private set; } = DateTime.Now;
         internal enSeverity Severity { get; set; }
         internal string Text { get; set; }
+
+        internal bool ConsoleBlankLineBefore { get; set; }
+        internal bool ConsoleBlankLineAfter { get; set; }
 
         internal string FormatForFile(bool useUtcTime)
         {

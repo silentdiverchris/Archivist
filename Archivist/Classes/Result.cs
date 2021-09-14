@@ -5,7 +5,14 @@ namespace Archivist.Classes
 {
     internal class ResultMessage
     {
-        internal ResultMessage(string text, enSeverity severity = enSeverity.Info, Exception ex = null, string functionName = null, bool alwaysWriteToEventLog = false)
+        internal ResultMessage(
+            string text, 
+            enSeverity severity = enSeverity.Info, 
+            Exception ex = null, 
+            string functionName = null, 
+            bool alwaysWriteToEventLog = false,
+            bool consoleBlankLineBefore = false,
+            bool consoleBlankLineAfter = false)
         {
             CreatedUtc = DateTime.UtcNow;
             CreatedLocal = DateTime.Now;
@@ -14,6 +21,8 @@ namespace Archivist.Classes
             Exception = ex;
             FunctionName = functionName;
             AlwaysWriteToEventLog = alwaysWriteToEventLog;
+            ConsoleBlankLineBefore = consoleBlankLineBefore;
+            ConsoleBlankLineAfter = consoleBlankLineAfter;
         }
 
         internal DateTime CreatedLocal { get; private set; }
@@ -24,6 +33,8 @@ namespace Archivist.Classes
         internal string FunctionName { get; set; }
         internal bool HasBeenWritten { get; set; }
         internal bool AlwaysWriteToEventLog { get; set; }
+        internal bool ConsoleBlankLineBefore { get; set; }
+        internal bool ConsoleBlankLineAfter { get; set; }
     }
 
     internal class Result
@@ -61,32 +72,32 @@ namespace Archivist.Classes
             }
         }
 
-        internal void AddError(string text)
+        internal void AddError(string text, bool consoleBlankLineBefore = false, bool consoleBlankLineAfter = false)
         {
-            Messages.Add(new ResultMessage(text, severity: enSeverity.Error, functionName: FunctionName));
+            Messages.Add(new ResultMessage(text, severity: enSeverity.Error, functionName: FunctionName, consoleBlankLineBefore: consoleBlankLineBefore, consoleBlankLineAfter: consoleBlankLineAfter));
         }
 
-        internal void AddWarning(string text)
+        internal void AddWarning(string text, bool consoleBlankLineBefore = false, bool consoleBlankLineAfter = false)
         {
-            Messages.Add(new ResultMessage(text, severity: enSeverity.Warning, functionName: FunctionName));
+            Messages.Add(new ResultMessage(text, severity: enSeverity.Warning, functionName: FunctionName, consoleBlankLineBefore: consoleBlankLineBefore, consoleBlankLineAfter: consoleBlankLineAfter));
         }
 
-        internal void AddInfo(string text)
+        internal void AddInfo(string text, bool consoleBlankLineBefore = false, bool consoleBlankLineAfter = false)
         {
-            Messages.Add(new ResultMessage(text, severity: enSeverity.Info, functionName: FunctionName));
+            Messages.Add(new ResultMessage(text, severity: enSeverity.Info, functionName: FunctionName, consoleBlankLineBefore: consoleBlankLineBefore, consoleBlankLineAfter: consoleBlankLineAfter));
         }
 
-        internal void AddDebug(string text)
+        internal void AddDebug(string text, bool consoleBlankLineBefore = false, bool consoleBlankLineAfter = false)
         {
-            Messages.Add(new ResultMessage(text, severity: enSeverity.Debug, functionName: FunctionName));
+            Messages.Add(new ResultMessage(text, severity: enSeverity.Debug, functionName: FunctionName, consoleBlankLineBefore: consoleBlankLineBefore, consoleBlankLineAfter: consoleBlankLineAfter));
         }
 
-        internal void AddSuccess(string text)
+        internal void AddSuccess(string text, bool consoleBlankLineBefore = false, bool consoleBlankLineAfter = false)
         {
-            Messages.Add(new ResultMessage(text, severity: enSeverity.Success, functionName: FunctionName));
+            Messages.Add(new ResultMessage(text, severity: enSeverity.Success, functionName: FunctionName, consoleBlankLineBefore: consoleBlankLineBefore, consoleBlankLineAfter: consoleBlankLineAfter));
         }
 
-        internal void AddException(Exception ex)
+        internal void AddException(Exception ex, bool consoleBlankLineBefore = false, bool consoleBlankLineAfter = false)
         {
             Messages.Add(new ResultMessage($"{FunctionName} {ex.Message}", severity: enSeverity.Error, ex: ex, functionName: FunctionName));
         }

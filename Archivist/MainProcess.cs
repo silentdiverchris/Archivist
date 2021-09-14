@@ -136,17 +136,17 @@ namespace Archivist
             if (result.HasErrors)
             {
                 EventLogHelpers.WriteEntry($"Archivist completed job {_jobDetails.JobNameToRun} with errors", enSeverity.Error);
-                result.AddError($"Job {_jobDetails.JobNameToRun} completed with errors");
+                result.AddError($"Job {_jobDetails.JobNameToRun} completed with errors", consoleBlankLineBefore: true, consoleBlankLineAfter: true);
             }
             else if (result.HasWarnings)
             {
                 EventLogHelpers.WriteEntry($"Archivist completed job {_jobDetails.JobNameToRun} with warnings", enSeverity.Warning);
-                result.AddWarning($"Job {_jobDetails.JobNameToRun} completed with warnings");
+                result.AddWarning($"Job {_jobDetails.JobNameToRun} completed with warnings", consoleBlankLineBefore: true, consoleBlankLineAfter: true);
             }
             else
             {
                 EventLogHelpers.WriteEntry($"Archivist completed job {_jobDetails.JobNameToRun} successfully", enSeverity.Info);
-                result.AddSuccess($"Job {_jobDetails.JobNameToRun} completed successfully");
+                result.AddSuccess($"Job {_jobDetails.JobNameToRun} completed successfully", consoleBlankLineBefore: true, consoleBlankLineAfter: true);
             }
 
             await ReportAllDiskSpaceRemaining();
@@ -212,6 +212,11 @@ namespace Archivist
         {
             if (_appSettings.SelectedJob.WriteToConsole)
             {
+                if (entry.ConsoleBlankLineBefore)
+                {
+                    Console.WriteLine();
+                }
+
                 if (entry.PercentComplete is not null)
                 {
                     lock (_lock)
@@ -241,6 +246,11 @@ namespace Archivist
 
                     if (entry.Severity != enSeverity.Info)
                         Console.ResetColor();
+                }
+
+                if (entry.ConsoleBlankLineAfter)
+                {
+                    Console.WriteLine();
                 }
             }
         }

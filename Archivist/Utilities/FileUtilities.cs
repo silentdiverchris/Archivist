@@ -167,7 +167,7 @@ namespace Archivist.Utilities
                     ? null
                     : $" '{volumeLabel}'";
 
-                string freeSpaceText = $"Remaining space on drive {drive[0]}{volLabStr} is {FileUtilities.GetByteSizeAsText(bytesFree)}";
+                string freeSpaceText = $"Remaining space on drive {drive[0]}{volLabStr} for '{directoryPath}' is {FileUtilities.GetByteSizeAsText(bytesFree)}";
 
                 if (bytesFree < threshold)
                 {
@@ -186,15 +186,15 @@ namespace Archivist.Utilities
             return result;
         }
 
-        internal static bool IsLastWrittenMoreThanDaysAgo(string filePath, int daysAgo, out DateTime lastWriteTimeUtc)
+        internal static bool IsLastWrittenMoreThanDaysAgo(string filePath, int daysAgo, out DateTime lastWriteTimeLocal)
         {
             if (File.Exists(filePath))
             {
                 var fi = new FileInfo(filePath);
 
-                lastWriteTimeUtc = fi.LastWriteTimeUtc;
+                lastWriteTimeLocal = fi.LastWriteTime;
 
-                return fi.LastWriteTimeUtc < DateTime.UtcNow.AddDays(-1 * daysAgo);
+                return fi.LastWriteTime < DateTime.Now.AddDays(-1 * daysAgo);
             }
             else
             {
@@ -202,9 +202,9 @@ namespace Archivist.Utilities
             }
         }
 
-        internal static bool IsLastWrittenLessThanDaysAgo(string fileName, int daysAgo, out DateTime lastWriteTimeUtc)
+        internal static bool IsLastWrittenLessThanDaysAgo(string fileName, int daysAgo, out DateTime lastWriteTime)
         {
-            return !IsLastWrittenMoreThanDaysAgo(fileName, daysAgo, out lastWriteTimeUtc);
+            return !IsLastWrittenMoreThanDaysAgo(fileName, daysAgo, out lastWriteTime);
         }
     }
 }

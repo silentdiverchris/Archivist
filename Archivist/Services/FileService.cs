@@ -107,11 +107,11 @@ namespace Archivist.Services
                                     {
                                         // Never delete anything that is younger than RetainDaysOld regardless of other settings
 
-                                        if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld, out DateTime lastWriteTimeUtc))
+                                        if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld, out DateTime lastWriteTimeLocal))
                                         {
                                             FileInfo fi = new(fileName);
 
-                                            result.AddWarning($"Deleting file version '{fileName}' ({FileUtilities.GetByteSizeAsText(fi.Length)}, last write {lastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
+                                            result.AddWarning($"Deleting file version '{fileName}' ({FileUtilities.GetByteSizeAsText(fi.Length)}, last write {fi.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
                                             File.Delete(fileName);
 
                                             result.Statistics.FilesDeleted++;
@@ -119,7 +119,7 @@ namespace Archivist.Services
                                         }
                                         else
                                         {
-                                            result.AddDebug($"Retaining version '{fileName}', last written under {retainDaysOld} days ago ({lastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
+                                            result.AddDebug($"Retaining version '{fileName}', last written under {retainDaysOld} days ago ({lastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
                                         }
                                     }
                                 }
@@ -166,24 +166,24 @@ namespace Archivist.Services
                 }
             }
 
-            result.AddInfo("File instance report;");
+            result.AddInfo("File instance report;", consoleBlankLineBefore: true);
 
             foreach (var item in fileReport.Items.OrderBy(_ => _.FileName))
             {
                 var cnt = item.Instances.Count;
                 string msg = $"File {item.FileName} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, true)}, last write {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC";
-                
+
                 if (cnt >= 3)
                 {
-                    result.AddSuccess(msg);
+                    result.AddSuccess(msg, consoleBlankLineAfter: true);
                 }
                 else if (cnt >= 2)
                 {
-                    result.AddInfo(msg);
+                    result.AddInfo(msg, consoleBlankLineAfter: true);
                 }
                 else
                 {
-                    result.AddWarning(msg);
+                    result.AddWarning(msg, consoleBlankLineAfter: true);
                 }
 
                 foreach (var inst in item.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenBy(_ => _.Path))
@@ -194,7 +194,7 @@ namespace Archivist.Services
 
             // Names and numbers table
 
-            result.AddInfo("File version counts and date ranges;");
+            result.AddInfo("File version counts and date ranges;", consoleBlankLineBefore: true);
 
             int fnLen = fileReport.Items.Max(_ => _.FileName.Length);
 
@@ -205,7 +205,7 @@ namespace Archivist.Services
                 var size = FileUtilities.GetByteSizeAsText(item.Length);
                 var cnt = item.Instances.Count;
 
-                string msg = $"{item.FileName} {new string(' ', fnLen - item.FileName.Length)} {cnt, 2}  {size}{new string(' ', 9-size.Length)} {minDate.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}";
+                string msg = $"{item.FileName} {new string(' ', fnLen - item.FileName.Length)} {cnt,2}  {size}{new string(' ', 9 - size.Length)} {minDate.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}";
 
                 if (cnt >= 3)
                 {
@@ -227,14 +227,14 @@ namespace Archivist.Services
 
             if (duplicateNames.Any())
             {
-                result.AddWarning("Files with same name but significantly different sizes or dates;");
-                result.AddInfo("Disks formatted with different file syttems or allocation sizes will report different sizes for the same file");
+                result.AddWarning("Files with same name but significantly different sizes or dates;", consoleBlankLineBefore: true);
+                result.AddInfo("Disks formatted with different file systems or allocation sizes will report different sizes for the same file");
 
                 foreach (var dup in duplicateNames.OrderBy(_ => _.Key))
                 {
-                    result.AddWarning($"{dup.Key}");
-                    
-                    foreach(var df in fileReport.Items.Where(_ => _.FileName == dup.Key).OrderBy(_ => _.LastWriteUtc))
+                    result.AddWarning($"{dup.Key}", consoleBlankLineBefore: true);
+
+                    foreach (var df in fileReport.Items.Where(_ => _.FileName == dup.Key).OrderBy(_ => _.LastWriteUtc))
                     {
                         result.AddWarning($" {df.Instances.Count} {"instance".Pluralise(df.Instances.Count)} {FileUtilities.GetByteSizeAsText(df.Length, true)}, last write {df.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
 
@@ -250,7 +250,7 @@ namespace Archivist.Services
 
             var rootNames = fileReport.Items.Select(_ => _.RootFileName).Distinct();
 
-            fnLen = rootNames.Max(_ => _.Length);
+            //fnLen = rootNames.Max(_ => _.Length);
 
             //result.AddInfo("File version counts and date ranges by root name;");
             //result.AddInfo("Root file" + new string(' ', fnLen - 6) + "#  Most recent version");
@@ -280,35 +280,53 @@ namespace Archivist.Services
             // Find files with a scarily low number of copies, or which are worryingly old compared to the source data
 
             int concerningFiles = 0;
+            fnLen = Math.Max(_jobSpec.SourceDirectories.Max(_ => _.DirectoryPath.Length), rootNames.Max(_ => _.Length));
 
-            result.AddInfo("Files to be concerned about;");
-            result.AddInfo("Root file" + new string(' ', fnLen - 6) + "#  Most recent version   Concerns");
+            result.AddInfo("Files to be concerned about;", consoleBlankLineBefore: true, consoleBlankLineAfter: true);
+            result.AddInfo("Source directory" + new string(' ', fnLen - 6) + "#   Size     Most recent version");
 
-            foreach (var rn in rootNames.OrderBy(_ => _))
+            foreach (var rootFileName in rootNames.OrderBy(_ => _))
             {
                 List<string> Concerns = new();
 
                 var thresholdHours = 1;
-                var instances = fileReport.Items.Where(_ => _.RootFileName == rn).SelectMany(_ => _.Instances).OrderBy(_ => _.Path);
+                var recentThresholdLocal = DateTime.Now.AddHours(-thresholdHours);
+                var instances = fileReport.Items.Where(_ => _.RootFileName == rootFileName).SelectMany(_ => _.Instances).OrderBy(_ => _.Path);
+                var latestInstance = instances.OrderByDescending(_ => _.LastWriteUtc).FirstOrDefault();
+                var latestSize = FileUtilities.GetByteSizeAsText(latestInstance.Length);
                 var copyCount = instances.Count();
-                var mostRecentDateLocal = instances.Max(_ => _.LastWriteLocal); 
-                var sourceDirectory = FindSourceDirectory(rn);
+                var sourceDirectory = FindSourceDirectory(rootFileName);
 
                 if (copyCount < 2)
                 {
                     var whereFiles = instances.Select(_ => _.Path);
-                    Concerns.Add($"Only {copyCount} version{copyCount.PluralSuffix()} of this archive, in {string.Join(", ", whereFiles)}");
+                    var msg = copyCount == 1
+                        ? $"Only 1 version of this archive exists, in {string.Join(", ", whereFiles)}"
+                        : $"Only {copyCount} versions of this archive exist, in {string.Join(", ", whereFiles)}";
+
+                    Concerns.Add(msg);
                 }
 
-                if (sourceDirectory is not null && mostRecentDateLocal < DateTime.Now.AddHours(-thresholdHours))
+                if (sourceDirectory is not null && latestInstance.LastWriteLocal > recentThresholdLocal)
                 {
-                    var laterFile = GetLaterFile(sourceDirectory.DirectoryPath, true, mostRecentDateLocal);
+                    var laterFile = GetLaterFile(sourceDirectory.DirectoryPath, true, latestInstance.LastWriteUtc);
 
                     if (laterFile is not null)
                     {
                         // Show in local time
-                        var hoursOld = (int)DateTime.Now.Subtract(mostRecentDateLocal).TotalHours;
-                        Concerns.Add($"Archive is {hoursOld} hours old and the source directory {sourceDirectory.DirectoryPath} has changes since then (eg. {laterFile.Name} {laterFile.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                        var hoursOld = (int)DateTime.Now.Subtract(latestInstance.LastWriteLocal).TotalHours;
+
+                        var msg = $"Latest archive {latestInstance.FileName} is ";
+
+                        msg += hoursOld == 0
+                            ? $"less than an hour"
+                            : hoursOld == 1
+                                ? $"one hour"
+                                : $"{hoursOld} hours";
+
+                        msg += $" old and there are changes since then (eg. {laterFile.Name} {laterFile.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})";
+
+                        Concerns.Add(msg);
                     }
                 }
 
@@ -316,7 +334,8 @@ namespace Archivist.Services
                 {
                     concerningFiles++;
 
-                    result.AddInfo($"{rn} {new string(' ', fnLen - rn.Length)} {copyCount,2}  {mostRecentDateLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}");
+                    string name = sourceDirectory?.DirectoryPath ?? rootFileName;
+                    result.AddInfo($"{name} {new string(' ', fnLen - name.Length)} {copyCount,2}  {latestSize,8}  {latestInstance.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}");
 
                     foreach (var concern in Concerns)
                     {
@@ -327,11 +346,27 @@ namespace Archivist.Services
 
             if (concerningFiles > 0)
             {
-                result.AddInfo($"There were {concerningFiles} file{concerningFiles.PluralSuffix()} that raised concerns");
+                result.AddInfo($"{concerningFiles} file{concerningFiles.PluralSuffix()} raised concerns", consoleBlankLineAfter: true);
             }
             else
             {
-                result.AddInfo("No files raised concerns, hoorah.");
+                result.AddInfo("No files raised concerns, hoorah.", consoleBlankLineAfter: true);
+            }
+
+            foreach (var unmounted in _jobSpec.ArchiveDirectories.Where(_ => _.IsAvailable == false && _.IsEnabled))
+            {
+                var volLabel = string.IsNullOrEmpty(unmounted.VolumeLabel)
+                    ? null
+                    : $"'{unmounted.VolumeLabel}' ";
+
+                if (unmounted.IsRemovable)
+                {
+                    result.AddInfo($"Removable archive destination {volLabel}{unmounted.DirectoryPath} is enabled but not available.");
+                }
+                else
+                {
+                    result.AddWarning($"Fixed archive destination {volLabel}{unmounted.DirectoryPath} is enabled but not available.");
+                }
             }
 
             await _logService.ProcessResult(result);
@@ -649,7 +684,7 @@ namespace Archivist.Services
 
                     double mbps = result.Statistics.BytesProcessed / stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
 
-                    result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{sourceDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
+                    result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{sourceDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)", consoleBlankLineBefore: true, consoleBlankLineAfter: true);
 
                     result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath, destination.VolumeLabel));
                 }
