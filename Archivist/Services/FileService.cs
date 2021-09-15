@@ -84,14 +84,6 @@ namespace Archivist.Services
                     {
                         if (latestFileName == existingFiles.Last())
                         {
-                            foreach (var fileName in existingFiles)
-                            {
-                                if (FileUtilities.IsFileVersioned(fileName, out string _) == false)
-                                {
-                                    result.AddError($"DeleteOldVersions found {fileName} not matching pattern");
-                                }
-                            }
-
                             if (result.HasNoErrorsOrWarnings)
                             {
                                 // OK, it's safe, all the files look right, delete the excess
@@ -145,7 +137,7 @@ namespace Archivist.Services
         }
 
         /// <summary>
-        /// Gneerate a report of all the files currently in all the various directories
+        /// Generate a report of all the files currently in all the various directories
         /// </summary>
         /// <param name="fileReport"></param>
         /// <returns></returns>
@@ -230,7 +222,8 @@ namespace Archivist.Services
             if (duplicateNames.Any())
             {
                 result.AddWarning("Files with same name but significantly different sizes or dates;", consoleBlankLineBefore: true);
-                result.AddInfo("Disks formatted with different file systems or allocation sizes will report different sizes for the same file");
+                
+                //result.AddInfo("Disks formatted with different file systems or allocation sizes will report different sizes for the same file");
 
                 foreach (var dup in duplicateNames.OrderBy(_ => _.Key))
                 {
@@ -248,46 +241,13 @@ namespace Archivist.Services
                 }
             }
 
-            // Combine files with same root and check for any with too few/too old copies
-
-            var rootNames = fileReport.Items.Select(_ => _.RootFileName).Distinct();
-
-            //fnLen = rootNames.Max(_ => _.Length);
-
-            //result.AddInfo("File version counts and date ranges by root name;");
-            //result.AddInfo("Root file" + new string(' ', fnLen - 6) + "#  Most recent version");
-
-            //foreach (var rn in rootNames.OrderBy(_ => _))
-            //{
-            //    var instances = fileReport.Items.Where(_ => _.RootName == rn).SelectMany(_ => _.Instances);
-
-            //    var cnt = instances.Count();
-            //    var mostRecentDate = instances.Max(_ => _.LastWriteUtc);
-            //    var msg = $"{rn} {new string(' ', fnLen - rn.Length)} {cnt,2}  {mostRecentDate.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}";
-
-            //    if (cnt >= 3)
-            //    {
-            //        result.AddSuccess(msg);
-            //    }
-            //    else if (cnt >= 2)
-            //    {
-            //        result.AddInfo(msg);
-            //    }
-            //    else
-            //    {
-            //        result.AddWarning(msg);
-            //    }
-            //}
-
-            // Find files with a scarily low number of copies, or which are worryingly old compared to the source data
+            
+            // Find files with a scarily low number of copies, or which are worryingly stale
 
             int concerningFiles = 0;
-            fnLen = Math.Max(_jobSpec.SourceDirectories.Max(_ => _.DirectoryPath.Length), rootNames.Max(_ => _.Length));
-
-            result.AddInfo("Files to be concerned about;", consoleBlankLineBefore: true, consoleBlankLineAfter: true);
-            result.AddInfo("Source directory" + new string(' ', fnLen - 6) + "#   Size     Most recent version");
-
-            foreach (var rootFileName in rootNames.OrderBy(_ => _))
+            var rootNames = fileReport.Items.Select(_ => _.RootFileName).Distinct().OrderBy(_ => _);
+                        
+            foreach (var rootFileName in rootNames)
             {
                 List<string> Concerns = new();
 
@@ -337,7 +297,7 @@ namespace Archivist.Services
                     concerningFiles++;
 
                     string name = sourceDirectory?.DirectoryPath ?? rootFileName;
-                    result.AddInfo($"{name} {new string(' ', fnLen - name.Length)} {copyCount,2}  {latestSize,8}  {latestInstance.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH)}");
+                    result.AddInfo(name, consoleBlankLineBefore: true); 
 
                     foreach (var concern in Concerns)
                     {
@@ -346,32 +306,25 @@ namespace Archivist.Services
                 }
             }
 
-            if (concerningFiles > 0)
-            {
-                result.AddInfo($"{concerningFiles} file{concerningFiles.PluralSuffix()} raised concerns", consoleBlankLineAfter: true);
-            }
-            else
-            {
-                result.AddInfo("No files raised concerns, hoorah.", consoleBlankLineAfter: true);
-            }
+            var unmountedButAvailables = _jobSpec.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable == false);
 
-            foreach (var unmounted in _jobSpec.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable == false))
+            foreach (var uba in unmountedButAvailables)
             {
-                var volLabel = string.IsNullOrEmpty(unmounted.VolumeLabel)
+                var volLabel = string.IsNullOrEmpty(uba.VolumeLabel)
                     ? null
-                    : $"'{unmounted.VolumeLabel}' ";
+                    : $"'{uba.VolumeLabel}' ";
 
-                var dirPath = unmounted.DirectoryPath.Contains(Path.DirectorySeparatorChar)
-                    ? $"'{unmounted.DirectoryPath}' "
+                var dirPath = uba.DirectoryPath.Contains(Path.DirectorySeparatorChar)
+                    ? $"'{uba.DirectoryPath}' "
                     : null;
 
-                if (unmounted.IsRemovable)
+                if (uba.IsRemovable)
                 {
-                    result.AddInfo($"Removable archive destination {volLabel}{dirPath}is enabled but not available.");
+                    result.AddInfo($"Removable archive destination {volLabel}{dirPath}is enabled but not available.", consoleBlankLineBefore: uba == unmountedButAvailables.First(), consoleBlankLineAfter: uba == unmountedButAvailables.Last());
                 }
                 else
                 {
-                    result.AddWarning($"Fixed archive destination {volLabel}{dirPath}is enabled but not available.");
+                    result.AddWarning($"Fixed archive destination {volLabel}{dirPath}is enabled but not available.", consoleBlankLineBefore: uba == unmountedButAvailables.First(), consoleBlankLineAfter: uba == unmountedButAvailables.Last());
                 }
             }
 
@@ -777,7 +730,7 @@ namespace Archivist.Services
 
             foreach (var fileName in fileNameList.OrderBy(_ => _))
             {
-                if (FileUtilities.IsFileVersioned(fileName, out string baseFileName))
+                if (fileName.IsVersionedFileName(out string baseFileName))
                 {
                     var idxFileStart = fileName.LastIndexOf(Path.DirectorySeparatorChar) + 1; // Where the file name starts
                     var idxHyphen = fileName.LastIndexOf("-"); // Where the - of -nnn is

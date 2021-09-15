@@ -26,44 +26,44 @@ namespace Archivist.Utilities
             }
         }
 
-        /// <summary>
-        /// Matches the pattern for a versioned file, i.e. ends with '-NNNN.xxx' where the Ns are numeric
-        /// </summary>
-        /// <param name="fileName">Can be just the file name or a full path</param>
-        /// <param name="rootName"></param>
-        /// <returns></returns>
-        internal static bool IsFileVersioned(string fileName, out string rootName)
-        {
-            bool isVersioned = false;
+        ///// <summary>
+        ///// Matches the pattern for a versioned file, i.e. ends with '-NNNN.xxx' where the Ns are numeric
+        ///// </summary>
+        ///// <param name="fileName">Can be just the file name or a full path</param>
+        ///// <param name="rootName"></param>
+        ///// <returns></returns>
+        //internal static bool IsFileVersioned(string fileName, out string rootName)
+        //{
+        //    bool isVersioned = false;
 
-            try
-            {
-                // Get just file name of the file without any path
+        //    try
+        //    {
+        //        // Get just file name of the file without any path
 
-                if (fileName.Contains(Path.DirectorySeparatorChar))
-                {
-                    fileName = fileName[(fileName.LastIndexOf(Path.DirectorySeparatorChar) + 1)..];
-                }
+        //        if (fileName.Contains(Path.DirectorySeparatorChar))
+        //        {
+        //            fileName = fileName[(fileName.LastIndexOf(Path.DirectorySeparatorChar) + 1)..];
+        //        }
 
-                // Any versioned file name will be over 9 characters long as the version suffix and extension
-                // are 9 in themselves
+        //        // Any versioned file name will be over 9 characters long as the version suffix and extension
+        //        // are 9 in themselves
 
-                if (fileName.IsVersionedFileName())
-                {
-                    rootName = fileName[0..^9] + fileName[^4..];
-                }
-                else
-                {
-                    rootName = fileName;
-                }
+        //        if (fileName.IsVersionedFileName())
+        //        {
+        //            rootName = fileName.GetVersionRoot(); 
+        //        }
+        //        else
+        //        {
+        //            rootName = fileName;
+        //        }
 
-                return isVersioned;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"FileNameMatchesVersionedPattern file '{fileName}' exception {ex.Message}", ex);
-            }
-        }
+        //        return isVersioned;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception($"FileNameMatchesVersionedPattern file '{fileName}' exception {ex.Message}", ex);
+        //    }
+        //}
 
         internal static DriveInfo GetDriveByLabel(string label)
         {

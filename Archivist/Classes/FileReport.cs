@@ -1,4 +1,5 @@
-﻿using Archivist.Utilities;
+﻿using Archivist.Helpers;
+using Archivist.Utilities;
 
 namespace Archivist.Classes
 {
@@ -53,7 +54,7 @@ namespace Archivist.Classes
             LastWriteUtc = fi.LastWriteTimeUtc;
             LastWriteLocal = fi.LastWriteTime;
 
-            IsVersioned = FileUtilities.IsFileVersioned(fi.Name, out string rootName);
+            IsVersioned = fi.IsVersionedFile(out string rootName);
 
             RootFileName = rootName;
 
