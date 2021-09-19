@@ -4,6 +4,16 @@ namespace Archivist.Helpers
 {
     internal static class StringHelpers
     {
+        internal static string PrefixIfNotEmpty(this string text, string prefix = " ")
+        {
+            return $"{(string.IsNullOrEmpty(text) ? prefix : null)}{text}";
+        }
+
+        internal static string SuffixIfNotEmpty(this string text, string suffix = " ")
+        {
+            return $"{text}{(string.IsNullOrEmpty(text) ? suffix : null)}";
+        }
+
         internal static string ConcatenateToDelimitedList(this IEnumerable<string> strings, string delimiter = ";", string quote = "'")
         {
             return quote + string.Join(delimiter, strings) + quote;

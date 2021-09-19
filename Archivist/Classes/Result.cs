@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using Archivist.Helpers;
+using System.Text;
 using static Archivist.Enumerations;
 
 namespace Archivist.Classes
@@ -56,12 +57,12 @@ namespace Archivist.Classes
         internal bool HasErrors => Messages.Any(_ => _.Severity == enSeverity.Error);
         internal bool HasWarnings => Messages.Any(_ => _.Severity == enSeverity.Warning);
 
-        internal Result(string functionName, bool addStartingItem = false, string functionQualifier = null)
+        internal Result(string functionName, bool addStartingItem = false, string functionQualifier = null, bool consoleBlankLineBefore = false)
         {
-            FunctionName = functionName + (string.IsNullOrEmpty(functionQualifier) ? "" : " " + functionQualifier);
+            FunctionName = functionName + functionQualifier.PrefixIfNotEmpty();
 
             if (addStartingItem)
-                AddInfo($"Running {functionName} {functionQualifier}", consoleBlankLineBefore: true);
+                AddInfo($"Running {functionName} {functionQualifier}", consoleBlankLineBefore: consoleBlankLineBefore);
         }
 
         internal void MarkMessagesWritten()
