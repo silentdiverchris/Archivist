@@ -108,8 +108,7 @@ namespace Archivist.Services
                                             result.AddWarning($"Deleting file version '{fileName}' ({FileUtilities.GetByteSizeAsText(fi.Length)}, last write {fi.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
                                             File.Delete(fileName);
 
-                                            result.Statistics.FilesDeleted++;
-                                            result.Statistics.BytesDeleted += fi.Length;
+                                            result.Statistics.RecordDeleted(fi.Length);
                                         }
                                         else
                                         {
@@ -473,7 +472,7 @@ namespace Archivist.Services
             {
                 // NOT RECURSIVE
 
-                result.Statistics.ItemsFound = Directory.GetFiles(sourceDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length;
+                result.Statistics.RecordFound(Directory.GetFiles(sourceDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length);
 
                 var fileNameList = destination.IncludeSpecifications
                     .SelectMany(_ => Directory.GetFiles(sourceDirectoryName, _, SearchOption.TopDirectoryOnly))
@@ -644,14 +643,9 @@ namespace Archivist.Services
                                 File.Move(tempDestFileName, destinationFileName, true);
                             }
 
-                            result.Statistics.ItemsProcessed++;
-                            result.Statistics.BytesProcessed += fiSrc.Length;
-
-                            result.Statistics.FilesAdded += 1;
-                            result.Statistics.BytesAdded += fiSrc.Length;
-
-                            destination.Statistics.FilesAdded += 1;
-                            destination.Statistics.BytesAdded += fiSrc.Length;
+                            result.Statistics.RecordProcessed(fiSrc.Length);
+                            result.Statistics.RecordAdded(fiSrc.Length);
+                            destination.Statistics.RecordAdded(fiSrc.Length);
                         }
                         catch (Exception fileException)
                         {

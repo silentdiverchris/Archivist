@@ -42,11 +42,8 @@ namespace Archivist.Services
                 {
                     if (result.HasNoErrorsOrWarnings && File.Exists(destinationFileName))
                     {
-                        result.Statistics.ItemsProcessed++;
-                        result.Statistics.BytesProcessed += fiSrc.Length;
-
-                        result.Statistics.FilesAdded++;
-                        result.Statistics.BytesAdded += fiSrc.Length;
+                        result.Statistics.RecordProcessed(fiSrc.Length);
+                        result.Statistics.RecordAdded(fiSrc.Length);
 
                         result.AddSuccess($"Encrypted to {destinationFileName} OK");
 
