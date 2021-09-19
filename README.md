@@ -800,5 +800,4 @@ None, archive directories just have the shared settings, above.
 ## Jiminy items
 
 =ctx-project:Archivist-p:low=
-=b:next-enh= Use local time in log files
-=b:next-enh= Log message change - 'Running CompressSource...' to 'Compressing [source] to [dest]'
+== Add item counts (but what about updates on hide?)

@@ -165,7 +165,7 @@ namespace Archivist.Services
             foreach (var item in fileReport.Items.OrderBy(_ => _.FileName))
             {
                 var cnt = item.Instances.Count;
-                string msg = $"File {item.FileName} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, true)}, last write {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC";
+                string msg = $"{item.FileName} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, true)}, last write {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC";
 
                 if (cnt >= 3)
                 {
@@ -538,14 +538,14 @@ namespace Archivist.Services
 
                     bool doCopy = true;
 
-                    result.AddDebug($"Processing source {fileName}, destination {destinationFileName}");
+                    //result.AddDebug($"Processing source {fileName}, destination {destinationFileName}");
 
                     if (fiDest.Exists)
                     {
                         if (fiSrc.LastWriteTimeUtc.CompareTo(fiDest.LastWriteTimeUtc) == 0)
                         {
                             doCopy = false;
-                            result.AddDebug($"Source and destination for '{fiSrc.Name}' have identical last write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                            //result.AddDebug($"Source and destination for '{fiSrc.Name}' have identical last write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
                         }
                         else
                         {
@@ -554,18 +554,18 @@ namespace Archivist.Services
                             if (howStale.TotalMinutes < 5)
                             {
                                 doCopy = false;
-                                result.AddDebug($"Source and destination for '{fiSrc.Name}' have close enough write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
+                                //result.AddDebug($"Source and destination for '{fiSrc.Name}' have close enough write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
                             }
                         }
 
-                        if (doCopy)
-                        {
-                            result.AddDebug($"Source and destination for '{fiSrc.Name}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
-                        }
-                    }
-                    else
-                    {
-                        result.AddDebug($"Destination '{destinationFileName}' does not exist");
+                    //    if (doCopy)
+                    //    {
+                    //        result.AddDebug($"Source and destination for '{fiSrc.Name}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    result.AddDebug($"Destination '{destinationFileName}' does not exist");
                     }
 
                     if (doCopy)
@@ -639,7 +639,7 @@ namespace Archivist.Services
 
                             if (File.Exists(tempDestFileName))
                             {
-                                result.AddInfo($"Copied {fiSrc.Name} to {destination.DirectoryPath} ({FileUtilities.GetByteSizeAsText(fiSrc.Length)}) OK");
+                                result.AddSuccess($"Copied {fiSrc.Name} to {destination.DirectoryPath} ({FileUtilities.GetByteSizeAsText(fiSrc.Length)}) OK");
                                 await _logService.ProcessResult(result);
                                 File.Move(tempDestFileName, destinationFileName, true);
                             }
