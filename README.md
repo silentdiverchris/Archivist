@@ -80,6 +80,8 @@ The next day I decided to add a file that contains a password to it, so set the 
 ## Concerns and final disk space
 A list of those archives which either have fewer than 2 copies, or are more than 12 hours old where changed or new files exist in the source directory. At some point, the 2 and 12 will be defined as settings rather than hard coded.
 
+It then mentions those destination directories on removable drives that it did not find, this isn't a problem as such because they are marked as removable. If any fixed drives are not found it will list them as warnings.
+
 This is followed by a list of all the archive directories and how much space remains on them.
 
 <img alt="Concerns and disk space report" title="Concerns and disk space report" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report3.png">
@@ -836,4 +838,5 @@ The list of changes I plan to make, encoded for my [Jiminy](https://github.com/s
 
 =ctx-project:Archivist-p:low=
 == Add item counts (but what about updates on hide?)
-== Store concerns report thresholds of versions and hours stale as configurable settings
+=b:n-pri:2= Store concerns report thresholds of versions and hours stale as configurable settings
+=pri:1-b:n= Concerns report complains about a stale file when a more up to date encrypted version exists
