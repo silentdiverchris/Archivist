@@ -11,6 +11,10 @@ It's not ideal for non-technical users, it has no GUI and relies on considered t
 
 Rather than dump a single subset of everything to one place, it can archive different sets of files in different directories to multiple places depending on inclusion and exclusion file specifications, retaining a complete history of them in one place such as a massive local or NAS volume, and just the latest X versions and/or the last Y days worth of various selections of them on any number of other fixed or removable volumes.
 
+While I want to be proof against fire, burglary and ransomware attack though rotating removable USB archives stored elsewhere and uploading AES Encrypted archives to the cloud, I also want to know that I always have at least 2 copies of everything that is important immediately to hand as proof against hardware failure or accidental deletion.
+
+I have 5 fixed SSD drives of 128, 256 or 512Gb capacity on my main machine, rather than one large disk / point of failure and store a subset of my archives on all of them, so each  has an 'Archives' directory and a set of filters that define what gets copied to which and how many generations are retained on each. Manually that'd get rather complicated but Archiver makes it very simple.
+
 You can define different backup jobs, perhaps one to back up everything to everywhere on an automated schedule and/or via a shortcut, one to add new photos and movies to an archive every week, set up desktop shortcuts to fire off backups of specific, frequently changing files like code and documents to fast internal drives, or to a specific volume if it's mounted, or whatever happens to be mapped to F: at the time.
 
 There is no UI other than the console output, it's driven from a single json configuration file 'appsettings.json' and reports to the console, plus optionally to a text log file and/or a SQL table and/or the Windows event log.
@@ -56,20 +60,27 @@ The system produces three reports after each run, currently they are written to 
 These reports do not include any information about or counts of removable drives that are not mounted.
 
 ## Archive file list
-A list of each archive the system found, how many copies of it exist, and where they are.
-![Archive file list](../Screenshots/Report1.png)
+A list of each archive the system found in the primary archive directory, how many copies of each exist, and where they are. 
+
+This includes files that were not created by Archivist, you can manually add files there and they will be copied to the destination directories and reported on.
+
+In the screenshot below it is reassuring me that there are 3 copies of my HyperVExports archive, and warnign me that only one copy of my movies was found (there are offline backups that it can't see).
 
 <img alt="Archive file list" title="Archive file list" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report1.png">
 
 ## Archive file summary
-Much the same data as above, but one line per archive
-![Archive file summary](../Screenshots/Report2.png)
+Much the same data as above, but one line per archive.
+
+Note that the 'Config-nnn' file is a new one, I decided to move a few general configuration files from here and there to one place, so added a source directory for it and on the next run, suddenly I have 4 copies of it. 
+
+The next day I decided to add a file that contains a password to it, so set the EncryptOutput and DeleteArchiveAfterEncryption settings to true, so all archives of the folder with the password in it will now be encrypted.
 
 <img alt="Archive file summary" title="Archive file summary" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report2.png">
 
 ## Concerns and final disk space
 A list of those archives which either have fewer than 2 copies, or are more than 12 hours old where changed or new files exist in the source directory.
-![Concerns and disk space report](../Screenshots/Report3.png)
+
+This is followed by a list of all the archive directories and how much space remains on them.
 
 <img alt="Concerns and disk space report" title="Concerns and disk space report" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report3.png">
 

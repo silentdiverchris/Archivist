@@ -164,7 +164,7 @@ namespace Archivist.Services
             foreach (var item in fileReport.Items.OrderBy(_ => _.FileName))
             {
                 var cnt = item.Instances.Count;
-                string msg = $"{item.FileName} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, true)}, last write {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC";
+                string msg = $"{item.FileName} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, false)}, last write {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC";
 
                 if (cnt >= 3)
                 {
@@ -181,7 +181,7 @@ namespace Archivist.Services
 
                 foreach (var inst in item.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenBy(_ => _.Path))
                 {
-                    result.AddInfo($" {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")})");
+                    result.AddInfo($" {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, false)}, last write {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")})");
                 }
             }
 
