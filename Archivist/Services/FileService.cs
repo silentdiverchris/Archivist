@@ -391,7 +391,7 @@ namespace Archivist.Services
             {
                 result.SubsumeResult(await DeleteTemporaryFiles(destination.DirectoryPath, false));
 
-                Result copyResult = await CopyArchives(_jobSpec.PrimaryArchiveDirectoryName, destination);
+                Result copyResult = await CopyPrimaryArchives(destination);
 
                 result.SubsumeResult(copyResult);
 
@@ -409,12 +409,12 @@ namespace Archivist.Services
         }
 
         /// <summary>
-        /// Copies from one directory to another, NOT RECURSIVE
+        /// Copies from primary archive directory to specifiied destination, NOT RECURSIVE
         /// </summary>
         /// <param name="sourceDirectoryName"></param>
         /// <param name="destination"></param>
         /// <returns></returns>
-        internal async Task<Result> CopyArchives(string sourceDirectoryName, ArchiveDirectory destination)
+        internal async Task<Result> CopyPrimaryArchives(ArchiveDirectory destination)
         {
             string destName = string.IsNullOrEmpty(destination.VolumeLabel)
                 ? $"'{destination.DirectoryPath}'"
@@ -423,13 +423,13 @@ namespace Archivist.Services
             Result result = new(
                 functionName: "CopyArchives",
                 addStartingItem: true,
-                functionQualifier: $"from '{sourceDirectoryName}' to {destName}");
+                functionQualifier: $"from '{_jobSpec.PrimaryArchiveDirectoryName}' to {destName}");
 
             result.AddInfo($"Including {destination.IncludeSpecificationsText}, excluding { destination.ExcludeSpecificationsText}");
 
             result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath, destination.VolumeLabel));
 
-            var diSrc = new DirectoryInfo(sourceDirectoryName);
+            var diSrc = new DirectoryInfo(_jobSpec.PrimaryArchiveDirectoryName);
             var diDest = new DirectoryInfo(destination.DirectoryPath);
 
             foreach (var tempFile in diDest.GetFiles("*.copying"))
@@ -472,10 +472,10 @@ namespace Archivist.Services
             {
                 // NOT RECURSIVE
 
-                result.Statistics.FileFound(Directory.GetFiles(sourceDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length);
+                result.Statistics.FileFound(Directory.GetFiles(_jobSpec.PrimaryArchiveDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length);
 
                 var fileNameList = destination.IncludeSpecifications
-                    .SelectMany(_ => Directory.GetFiles(sourceDirectoryName, _, SearchOption.TopDirectoryOnly))
+                    .SelectMany(_ => Directory.GetFiles(_jobSpec.PrimaryArchiveDirectoryName, _, SearchOption.TopDirectoryOnly))
                     .ToArray()
                     .OrderBy(_ => _)
                     .ToList();
@@ -685,13 +685,13 @@ namespace Archivist.Services
 
                     double mbps = result.Statistics.BytesProcessed / stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
 
-                    result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{sourceDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
+                    result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{_jobSpec.PrimaryArchiveDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
 
                     result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath, destination.VolumeLabel));
                 }
                 else
                 {
-                    result.AddInfo($"No files needed copying from '{sourceDirectoryName}' to {destName}");
+                    result.AddInfo($"No files needed copying from '{_jobSpec.PrimaryArchiveDirectoryName}' to {destName}");
                 }
             }
             else
