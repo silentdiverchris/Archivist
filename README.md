@@ -64,21 +64,21 @@ A list of each archive the system found in the primary archive directory, how ma
 
 This includes files that were not created by Archivist, you can manually add files there and they will be copied to the destination directories and reported on.
 
-In the screenshot below it is reassuring me that there are 3 copies of my HyperVExports archive, and warnign me that only one copy of my movies was found (there are offline backups that it can't see).
+In the screenshot below it is reassuring me that there are 3 copies of my HyperVExports archive, and warning me that only one copy of my movies archive was found (there are offline backups that it can't see).
 
 <img alt="Archive file list" title="Archive file list" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report1.png">
 
 ## Archive file summary
-Much the same data as above, but one line per archive.
+A summary of the same data as above, with one line per archive.
 
-Note that the 'Config-nnn' file is a new one, I decided to move a few general configuration files from here and there to one place, so added a source directory for it and on the next run, suddenly I have 4 copies of it. 
+Note that the 'Config-nnnn' file is a new one, I decided to move a few general configuration files from here and there to one place, so added a source directory for it and on the next run, suddenly I had 4 copies of it and now have 4 copies of each of the last 4 generations of it spread over 4 different devices.
 
-The next day I decided to add a file that contains a password to it, so set the EncryptOutput and DeleteArchiveAfterEncryption settings to true, so all archives of the folder with the password in it will now be encrypted.
+The next day I decided to add a file that contains a password to it, so set the EncryptOutput and DeleteArchiveAfterEncryption settings to true, so version 4 of this archive is an aes file and all subsequent archives of the folder with the password in it will also be encrypted.
 
 <img alt="Archive file summary" title="Archive file summary" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report2.png">
 
 ## Concerns and final disk space
-A list of those archives which either have fewer than 2 copies, or are more than 12 hours old where changed or new files exist in the source directory.
+A list of those archives which either have fewer than 2 copies, or are more than 12 hours old where changed or new files exist in the source directory. At some point, the 2 and 12 will be defined as settings rather than hard coded.
 
 This is followed by a list of all the archive directories and how much space remains on them.
 
@@ -832,6 +832,8 @@ Settings that only apply to archive directories.
 None, archive directories just have the shared settings, above.
 
 ## Jiminy items
+The list of changes I plan to make, encoded for my [Jiminy](https://github.com/silentdiverchris/Jiminy) todo/gtd system.
 
 =ctx-project:Archivist-p:low=
 == Add item counts (but what about updates on hide?)
+== Store concerns report thresholds of versions and hours stale as configurable settings
