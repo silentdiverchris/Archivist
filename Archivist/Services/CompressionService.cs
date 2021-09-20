@@ -45,7 +45,7 @@ namespace Archivist.Services
                     .OrderBy(_ => _.Priority)
                     .ThenBy(_ => _.DirectoryPath);
 
-                result.Statistics.ItemsFound = foldersToCompress.Count();
+                result.Statistics.FileFound(foldersToCompress.Count());
 
                 foreach (var sourceDirectory in foldersToCompress)
                 {
@@ -188,14 +188,8 @@ namespace Archivist.Services
                                 TotalBytesArchived += fiOutput.Length;
                                 TotalArchivesCreated++;
 
-                                result.Statistics.ItemsProcessed++;
-                                result.Statistics.BytesProcessed += fiOutput.Length;
-
-                                result.Statistics.FilesAdded += 1;
-                                result.Statistics.BytesAdded += fiOutput.Length;
-
-                                _jobSpec.PrimaryArchiveStatistics.FilesAdded += 1;
-                                _jobSpec.PrimaryArchiveStatistics.BytesAdded += fiOutput.Length;
+                                result.Statistics.FiledAdded(fiOutput.Length);
+                                _jobSpec.PrimaryArchiveStatistics.FiledAdded(fiOutput.Length);
 
                                 if (sourceDirectory.EncryptOutput)
                                 {
