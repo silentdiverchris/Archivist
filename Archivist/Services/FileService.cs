@@ -108,7 +108,7 @@ namespace Archivist.Services
                                             result.AddWarning($"Deleting file version '{fileName}' ({FileUtilities.GetByteSizeAsText(fi.Length)}, last write {fi.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
                                             File.Delete(fileName);
 
-                                            result.Statistics.RecordDeleted(fi.Length);
+                                            result.Statistics.FileDeleted(fi.Length);
                                         }
                                         else
                                         {
@@ -472,7 +472,7 @@ namespace Archivist.Services
             {
                 // NOT RECURSIVE
 
-                result.Statistics.RecordFound(Directory.GetFiles(sourceDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length);
+                result.Statistics.FileFound(Directory.GetFiles(sourceDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length);
 
                 var fileNameList = destination.IncludeSpecifications
                     .SelectMany(_ => Directory.GetFiles(sourceDirectoryName, _, SearchOption.TopDirectoryOnly))
@@ -643,9 +643,8 @@ namespace Archivist.Services
                                 File.Move(tempDestFileName, destinationFileName, true);
                             }
 
-                            result.Statistics.RecordProcessed(fiSrc.Length);
-                            result.Statistics.RecordAdded(fiSrc.Length);
-                            destination.Statistics.RecordAdded(fiSrc.Length);
+                            result.Statistics.FiledAdded(fiSrc.Length);
+                            destination.Statistics.FiledAdded(fiSrc.Length);
                         }
                         catch (Exception fileException)
                         {
@@ -686,7 +685,7 @@ namespace Archivist.Services
 
                     double mbps = result.Statistics.BytesProcessed / stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
 
-                    result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{sourceDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)", consoleBlankLineBefore: true, consoleBlankLineAfter: true);
+                    result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{sourceDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
 
                     result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath, destination.VolumeLabel));
                 }

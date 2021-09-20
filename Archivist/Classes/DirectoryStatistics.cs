@@ -25,27 +25,33 @@
             BytesProcessed += stats.BytesProcessed;
         }
 
-        public void RecordFound(int itemCount = 1)
+        public void FileFound(int itemCount = 1)
         {
             ItemsFound += itemCount;
         }
 
-        public void RecordDeleted(long bytesTotal, int fileCount = 1)
+        public void FileDeleted(long bytesTotal, int fileCount = 1)
         {
             FilesDeleted += fileCount;
             BytesDeleted += bytesTotal;
+
+            ItemsProcessed += fileCount;
+            BytesProcessed += bytesTotal;
         }
 
-        public void RecordProcessed(long bytesTotal, int fileCount = 1)
+        public void FileProcessed(long bytesTotal, int fileCount = 1)
         {
             ItemsProcessed += fileCount;
             BytesProcessed += bytesTotal;
         }
 
-        public void RecordAdded(long bytesTotal, int fileCount = 1)
+        public void FiledAdded(long bytesTotal, int fileCount = 1)
         {
             FilesAdded += fileCount;
             BytesAdded += bytesTotal;
+
+            ItemsProcessed += fileCount;
+            BytesProcessed += bytesTotal;
         }
     }
 }

@@ -80,7 +80,7 @@ namespace Archivist.Services
 
                 if (filesToProcess.Any())
                 {
-                    result.Statistics.RecordFound(filesToProcess.Count());
+                    result.Statistics.FileFound(filesToProcess.Count());
 
                     using (var encryptionService = new EncryptionService(_jobSpec, _appSettings, _logService))
                     {
@@ -158,8 +158,7 @@ namespace Archivist.Services
                             }
                             else if (deleteSource)
                             {
-                                result.Statistics.RecordProcessed(fiSrc.Length);
-                                result.Statistics.RecordDeleted(fiSrc.Length);
+                                result.Statistics.FileDeleted(fiSrc.Length);
 
                                 result.AddInfo($"Deleting unencrypted source {fullFileName}");
                                 File.Delete(fullFileName);
