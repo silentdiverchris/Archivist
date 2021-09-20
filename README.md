@@ -62,7 +62,7 @@ These reports do not include any information about or counts of removable drives
 ## Archive file list
 A list of each archive the system found in the primary archive directory, how many copies of each exist, and where they are. 
 
-This includes files that were not created by Archivist, you can manually add files there and they will be copied to the destination directories and reported on.
+This includes files that were not created by Archivist, you can manually add files there and they will be copied to the destination directories according to the include and exclude settings for each, and reported on.
 
 In the screenshot below it is reassuring me that there are 3 copies of my HyperVExports archive, and warning me that only one copy of my movies archive was found (there are offline backups that it can't see).
 
@@ -71,9 +71,9 @@ In the screenshot below it is reassuring me that there are 3 copies of my HyperV
 ## Archive file summary
 A summary of the same data as above, with one line per archive.
 
-Note that the 'Config-nnnn' file is a new one, I decided to move a few general configuration files from here and there to one place, so added a source directory for it and on the next run, suddenly I had 4 copies of it and now have 4 copies of each of the last 4 generations of it spread over 4 different devices.
+Note that the 'Config-nnnn' file is a new one, I decided to move a few general configuration files from here and there to one place, so added a source directory for it and after the next run, had 4 copies of it, and now have 4 copies of each of the last 4 generations of it spread over 4 different devices.
 
-The next day I decided to add a file that contains a password to it, so set the EncryptOutput and DeleteArchiveAfterEncryption settings to true, so version 4 of this archive is an aes file and all subsequent archives of the folder with the password in it will also be encrypted.
+After version 3 of the archive was created I added a file to that directory which contains a plain text password, so set the EncryptOutput and DeleteArchiveAfterEncryption settings to true. As a result, version 4 of this archive is a .aes file and all subsequent archives of the folder will also be encrypted.
 
 <img alt="Archive file summary" title="Archive file summary" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report2.png">
 
