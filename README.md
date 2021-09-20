@@ -50,6 +50,29 @@ It doesn't address the source files individually in this code at all, it purely 
 
 If you enable the 'secure directories' function by defining some, it will delete unencrypted files in the set of secure directories, only when it's specifically told to with the DeleteSourceAfterEncrypt setting (which defaults to false), only after having checked an encrypted version already exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
 
+# Reports
+The system produces three reports after each run, currently they are written to the console as well as the log. Colour coding has things to be comfortable about in green, and things to be concerned about in yellow.
+
+These reports do not include any information about or counts of removable drives that are not mounted.
+
+## Archive file list
+A list of each archive the system found, how many copies of it exist, and where they are.
+![Archive file list](../Screenshots/Report1.png)
+
+<img alt="Archive file list" title="Archive file list" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report1.png">
+
+## Archive file summary
+Much the same data as above, but one line per archive
+![Archive file summary](../Screenshots/Report2.png)
+
+<img alt="Archive file summary" title="Archive file summary" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report2.png">
+
+## Concerns and final disk space
+A list of those archives which either have fewer than 2 copies, or are more than 12 hours old where changed or new files exist in the source directory.
+![Concerns and disk space report](../Screenshots/Report3.png)
+
+<img alt="Concerns and disk space report" title="Concerns and disk space report" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report3.png">
+
 # The archiving process
 
 The diagram below shows a simple layout, essentially source directories are zipped to files in the primary archive directory, then copied to other archive directories.
