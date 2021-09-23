@@ -1,7 +1,11 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
 using Microsoft.Data.SqlClient;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Archivist.Utilities
 {
@@ -75,6 +79,13 @@ namespace Archivist.Utilities
             return parameters;
         }
 
+        /// <summary>
+        /// Generate the SQL text that replicates this proc call, to be logged. The result should be 
+        /// pasteable into SSMS and run as-is
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
         internal static string GenerateStoredProcedureCallText(string name, List<SqlParameter> parameters)
         {
             StringBuilder sb = new(500);

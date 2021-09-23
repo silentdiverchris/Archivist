@@ -1,6 +1,8 @@
 ﻿using Archivist.Classes;
 using Archivist.Models;
 using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace Archivist.Services
 {

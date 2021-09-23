@@ -837,6 +837,6 @@ None, archive directories just have the shared settings, above.
 The list of changes I plan to make, encoded for my [Jiminy](https://github.com/silentdiverchris/Jiminy) todo/gtd system.
 
 =ctx-project:Archivist-p:low=
-== Add item counts (but what about updates on hide?)
+
 =b:n-pri:2= Store concerns report thresholds of versions and hours stale as configurable settings
 =pri:1-b:n= Concerns report complains about a stale file when a more up to date encrypted version exists

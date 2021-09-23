@@ -1,7 +1,11 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
 using Archivist.Utilities;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace Archivist.Models

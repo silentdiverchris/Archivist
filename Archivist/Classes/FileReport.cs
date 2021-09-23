@@ -1,5 +1,9 @@
 ﻿using Archivist.Helpers;
 using Archivist.Utilities;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace Archivist.Classes
 {

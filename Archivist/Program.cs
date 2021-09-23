@@ -2,6 +2,9 @@
 using Archivist.Helpers;
 using Archivist.Models;
 using Archivist.Utilities;
+using System;
+using System.IO;
+using System.Threading.Tasks;
 using static Archivist.Enumerations;
 
 namespace Archivist

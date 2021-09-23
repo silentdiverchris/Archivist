@@ -2,8 +2,12 @@
 using Archivist.Helpers;
 using Archivist.Models;
 using Archivist.Utilities;
+using System;
 using System.Diagnostics;
+using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Archivist.Services
 {

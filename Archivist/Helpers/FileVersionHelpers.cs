@@ -1,4 +1,7 @@
-﻿namespace Archivist.Helpers
+﻿using System;
+using System.IO;
+
+namespace Archivist.Helpers
 {
     public static class FileVersionHelpers
     {

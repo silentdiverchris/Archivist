@@ -1,4 +1,6 @@
-﻿namespace Archivist.Models
+﻿using System;
+
+namespace Archivist.Models
 {
     internal class JobDetails
     {

@@ -1,5 +1,7 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
+using System;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace Archivist.Utilities

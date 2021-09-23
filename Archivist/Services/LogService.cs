@@ -3,8 +3,13 @@ using Archivist.Helpers;
 using Archivist.Models;
 using Archivist.Utilities;
 using Microsoft.Data.SqlClient;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Security.AccessControl;
 using System.Text;
+using System.Threading.Tasks;
 using static Archivist.Delegates;
 using static Archivist.Enumerations;
 
@@ -126,10 +131,14 @@ namespace Archivist.Services
             bool reportItemCounts = false,
             bool reportAllStatistics = false)
         {
+            bool addBlankLine = false;
+
             if (reportItemCounts)
             {
                 if (result.Statistics.ItemsFound > 0)
                 {
+                    addBlankLine = true;
+
                     if (result.Statistics.ItemsProcessed > 0)
                     {
                         result.AddInfo($"{result.Statistics.ItemsFound} {"file".Pluralise(result.Statistics.ItemsFound, " ")}found, {result.Statistics.ItemsProcessed} processed ({FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)}) by {result.FunctionName}");
@@ -149,6 +158,8 @@ namespace Archivist.Services
             {
                 if (result.Statistics.FilesAdded > 0)
                 {
+                    addBlankLine = true;
+
                     result.AddInfo($"{FileUtilities.GetByteSizeAsText(result.Statistics.BytesAdded)} added to {result.Statistics.FilesAdded:N0} file{result.Statistics.FilesAdded.PluralSuffix()} by {result.FunctionName}");
                 }
                 else
@@ -158,6 +169,8 @@ namespace Archivist.Services
 
                 if (result.Statistics.FilesDeleted > 0)
                 {
+                    addBlankLine = true;
+
                     result.AddInfo($"{FileUtilities.GetByteSizeAsText(result.Statistics.BytesDeleted)} deleted from {result.Statistics.FilesDeleted:N0} file{result.Statistics.FilesDeleted.PluralSuffix()} by {result.FunctionName}");
                 }
                 else
@@ -198,6 +211,8 @@ namespace Archivist.Services
 
             if (reportCompletion)
             {
+                addBlankLine = true;
+
                 if (result.HasErrors)
                 {
                     result.AddError($"{result.FunctionName} completed with errors");
@@ -210,6 +225,11 @@ namespace Archivist.Services
                 {
                     result.AddSuccess($"{result.FunctionName} completed OK");
                 }
+            }
+
+            if (addBlankLine)
+            {
+                _consoleDelegate.Invoke(new LogEntry(""));
             }
 
             result.MarkMessagesWritten();
