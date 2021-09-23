@@ -1,5 +1,4 @@
 ﻿using Archivist.Helpers;
-using Archivist.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +6,10 @@ using System.Linq;
 
 namespace Archivist.Classes
 {
+    /// <summary>
+    /// Represents a register of all archives known to the system, where they are, how 
+    /// big they are and when they were last updated.
+    /// </summary>
     public class FileReport
     {
         public List<FileReportItem> Items = new();

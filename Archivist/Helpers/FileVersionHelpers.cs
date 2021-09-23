@@ -1,10 +1,43 @@
-﻿using System;
+﻿using Archivist.Classes;
+using System;
 using System.IO;
 
 namespace Archivist.Helpers
 {
+    /// <summary>
+    /// Encapsulates the concept of versioned files, these have a fixed file name format 
+    /// of ..\RootFileName-nnnn.zip where nnnn is four digits
+    /// </summary>
     public static class FileVersionHelpers
     {
+        internal static string GenerateVersionedFileName(this string rootFileName, string archiveDirectoryName, int currentVersionNumber, out Result result)
+        {
+            result = new("GenerateVersionedFileName");
+
+            if (currentVersionNumber > 0)
+            {
+                int nextNumber = currentVersionNumber + 1;
+
+                string errorPrefix = $"Current version number for '{rootFileName}' is {currentVersionNumber}, ";
+
+                if (currentVersionNumber == 9999)
+                {
+                    result.AddError(errorPrefix + "not generating the next file name, you need to manually renumber the existing files to a lower numbers, ideally 0001.");
+                }
+                else if (currentVersionNumber > 9900)
+                {
+                    result.AddWarning(errorPrefix + "this will break when it reaches 9999 and you will need to manually renumber the existing files to a lower numbers, ideally 0001, best do that now.");
+                }
+
+                return $"{archiveDirectoryName}\\" + rootFileName.Replace(".zip", $"-{nextNumber:0000}.zip");
+            }
+            else
+            {
+                result.AddError($"GenerateVersionedFileName given invalid currentVersionNumber {currentVersionNumber}");
+                return null;
+            }
+        }
+
         /// <summary>
         /// The version suffix is of the form -nnnn.zip, so for root file name abcde.zip the versioned name 
         /// would be abcde-nnnn.zip where nnnn is four digits.
@@ -29,7 +62,7 @@ namespace Archivist.Helpers
         }
 
         /// <summary>
-        /// Extract the version number from a vaersioned file name, see IsVersionedFileName for explanation
+        /// Extract the version number from a versioned file name, see IsVersionedFileName for explanation
         /// </summary>
         /// <param name="fileName"></param>
         /// <returns></returns>
@@ -70,7 +103,6 @@ namespace Archivist.Helpers
         /// <returns></returns>
         internal static bool IsVersionedFileName(this string fileName, out string rootName)
         {
-
             try
             {
                 bool isVersioned = fileName.IsVersionedFileName();

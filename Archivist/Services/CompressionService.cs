@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 
 namespace Archivist.Services
 {
+    /// <summary>
+    /// The service responsible for compressing archive files, uses System.IO.Compression to create zip files
+    /// </summary>
     internal class CompressionService : BaseService
     {
         internal int TotalArchivesCreated { get; private set; } = 0;
@@ -281,6 +284,8 @@ namespace Archivist.Services
                     int expectedFilenameLength = archiveDirectoryName.Length + 1 + fileName.Length + 5;
                     string fileSpec = fileName.Replace(".zip", "*.zip");
 
+                    // Oops, this is ignoring encrypted files, fix this TODO
+
                     var existingVersionedFiles = Directory.GetFiles(archiveDirectoryName, fileSpec)
                         .Where(_ => _.Length == expectedFilenameLength)
                         .Where(_ => _.IsVersionedFileName())
@@ -292,28 +297,17 @@ namespace Archivist.Services
 
                         var currentNumber = lastFileName.GetVersionNumber();
 
-                        if (currentNumber > 0)
+                        string nextFileName = fileName.GenerateVersionedFileName(archiveDirectoryName: archiveDirectoryName, currentVersionNumber: currentNumber, out Result fileNameResult);
+
+                        result.SubsumeResult(fileNameResult);
+
+                        if (fileNameResult.HasNoErrors)
                         {
-                            int nextNumber = currentNumber + 1;
-
-                            string errorPrefix = $"Current version number for '{currentFileName}' is {currentNumber}, ";
-
-                            if (currentNumber == 9999)
-                            {
-                                result.AddError(errorPrefix + "not generating the next file name, you need to manually renumber the existing files to a lower numbers, ideally 0001.");
-                            }
-                            else if (currentNumber > 9900)
-                            {
-                                result.AddWarning(errorPrefix + "this will break when it reaches 9999 and you will need to manually renumber the existing files to a lower numbers, ideally 0001, best do that now.");
-                            }
-
-                            currentFileName = $"{archiveDirectoryName}\\" + fileName.Replace(".zip", $"-{currentNumber:0000}.zip");
-                            result.ReturnedString = Path.Combine(archiveDirectoryName, fileName.Replace(".zip", $"-{nextNumber:0000}.zip"));
+                            result.ReturnedString = nextFileName; 
                         }
                         else
                         {
-                            // We should have already established that this file name is in the versioned format, a bug has been introduced somewhere..
-                            throw new Exception($"GenerateOutputFileName found currentNumber {currentNumber} for {lastFileName}");
+                            result.AddError($"GenerateOutputFileName failed to generate new versioned file name for currentNumber {currentNumber}, lastFileName {lastFileName}");
                         }
                     }
                     else

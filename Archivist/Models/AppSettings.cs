@@ -10,6 +10,10 @@ using System.Text.Json.Serialization;
 
 namespace Archivist.Models
 {
+    /// <summary>
+    /// The structure that the appsettings.json is loaded into on startup and then referenced 
+    /// to each service, plus functionality for selecting which job is to be run.
+    /// </summary>
     public class AppSettings
     {
         public bool UseUtcTime { get; set; }

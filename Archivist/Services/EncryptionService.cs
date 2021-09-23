@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Archivist.Services
 {
+    /// <summary>
+    /// The service that encrypts archives, uses external executable AESEncrypt
+    /// </summary>
     internal class EncryptionService : BaseService
     {       
         internal EncryptionService(

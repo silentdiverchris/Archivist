@@ -119,11 +119,13 @@ namespace Archivist.Services
         }
 
         /// <summary>
-        /// Send each unprocessed message in the result to the configured log destinations
+        /// Send each unprocessed message in the result to the configured log destinations and optionally
+        /// log statistics and completion messages.
         /// </summary>
         /// <param name="result">The result</param>
         /// <param name="reportCompletion">To be called at the end of a function, or functional unit, it logs error and warning counts or success</param>
-        /// <param name="reportItemCounts">Logs the figures in ItemsFound, ItemsProcessed and BytesProcessed</param>
+        /// <param name="reportItemCounts">Logs the statistics in ItemsFound, ItemsProcessed and BytesProcessed</param>
+        /// <param name="reportAllStatistics">Logs detailed file and byte statistics</param>
         /// <returns></returns>
         internal async Task ProcessResult(
             Result result, 
@@ -235,6 +237,11 @@ namespace Archivist.Services
             result.MarkMessagesWritten();
         }
 
+        /// <summary>
+        /// The primary 'log something' interface
+        /// </summary>
+        /// <param name="entry"></param>
+        /// <returns></returns>
         private async Task AddLogAsync (LogEntry entry)
         {
             if (_appSettings.VerboseEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
@@ -258,9 +265,13 @@ namespace Archivist.Services
             }
         }
 
+        /// <summary>
+        /// Used to check and if necessary, initialise the SQL entities to enable logging to SQL
+        /// </summary>
+        /// <returns></returns>
         private Result VerifyAndPrepareDatabase()
         {
-            // test database can be got at and initialise it if the log table doesn't exist
+            // Test database is accessible and initialise it if the AddLogEntry stored procedure doesn't exist
 
             Result result = new("VerifyAndPrepareDatabase", false);
 
