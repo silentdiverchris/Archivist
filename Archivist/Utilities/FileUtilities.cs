@@ -1,5 +1,6 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
+using Archivist.Models;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -9,32 +10,41 @@ namespace Archivist.Utilities
     internal static class FileUtilities
     {
         /// <summary>
-        /// Generate a file name from the directory structure the source data is in
+        /// Generate the base output file name for this source directory, that is, the
+        /// file name without any extension. The final file name will be given 
+        /// a .zip or .aes extension as required
         /// </summary>
         /// <param name="directoryName"></param>
         /// <returns></returns>
-        internal static string GenerateFileNameFromPath(string directoryName)
+        internal static string GenerateBaseOutputFileName(SourceDirectory sourceDirectory)
         {
-            var bits = directoryName.Split(Path.DirectorySeparatorChar);
-
-            if (bits.Length > 1)
+            if (string.IsNullOrEmpty(sourceDirectory.OverrideOutputFileName))
             {
-                var fileName = string.Join("-", bits[1..]) + ".zip";
-                return fileName;
+                var dirNames = sourceDirectory.DirectoryPath!.Split(Path.DirectorySeparatorChar);
+
+                if (dirNames.Length > 1)
+                {
+                    var fileName = string.Join("-", dirNames[1..]);
+                    return fileName;
+                }
+                else
+                {
+                    throw new Exception($"GenerateFileNameFromPath found path {sourceDirectory.DirectoryPath} too short");
+                }
             }
             else
             {
-                throw new Exception($"GenerateFileNameFromPath found path {directoryName} too short");
+                return sourceDirectory.OverrideOutputFileName;
             }
         }
 
-        internal static DriveInfo GetDriveByLabel(string label)
+        internal static DriveInfo? GetDriveByLabel(string? label)
         {
             var drives = DriveInfo.GetDrives();
 
-            DriveInfo found = null; // drives.SingleOrDefault(_ => _.VolumeLabel == label);
+            DriveInfo? found = null; // drives.SingleOrDefault(_ => _.VolumeLabel == label);
 
-            // If we use linq an exception is thrown if one of the drives isn't formatted, so...
+            // If we use linq an exception is thrown if one of the drives isn't readable, so...
 
             foreach (var drv in drives)
             {
@@ -46,13 +56,11 @@ namespace Archivist.Utilities
                         break;
                     }
                 }
-                catch  // (Exception drvEx)
+                catch
                 {
-                    // if (drvEx.) ... how to reproduce the error that brought us to capture this ? - it was a
-                    // corrupted USB stick, next time I get a duff drive I'll see about testing this path. TODO
-
-                    // Either way, there's something wrong with the volume, we don't
-                    // really care what, it's not one we can use so just ignore it.
+                    // There's something wrong with the volume, we don't really care
+                    // what, it's certainly not one we can get a label from or use so
+                    // just ignore it.
                 }
             }
 
@@ -104,7 +112,7 @@ namespace Archivist.Utilities
         {
             if (Directory.Exists(directoryPath))
             {
-                string drive = Path.GetPathRoot(directoryPath);
+                string drive = Path.GetPathRoot(directoryPath)!;
 
                 DriveInfo di = new(drive);
 
@@ -118,13 +126,13 @@ namespace Archivist.Utilities
             }
         }
 
-        internal static Result CheckDiskSpace(string directoryPath, string volumeLabel = null)
+        internal static Result CheckDiskSpace(string directoryPath, string? volumeLabel = null)
         {
             Result result = new("CheckDiskSpace", false);
 
             if (Directory.Exists(directoryPath))
             {
-                string drive = Path.GetPathRoot(directoryPath);
+                string drive = Path.GetPathRoot(directoryPath)!;
 
                 DriveInfo di = new(drive);
 
@@ -132,7 +140,7 @@ namespace Archivist.Utilities
 
                 const double threshold = 50L * 1024 * 1024 * 1024;
 
-                string volLabStr = volumeLabel is null
+                string? volLabStr = volumeLabel is null
                     ? null
                     : $" '{volumeLabel}'";
 

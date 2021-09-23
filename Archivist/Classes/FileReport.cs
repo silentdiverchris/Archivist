@@ -7,8 +7,8 @@ using System.Linq;
 namespace Archivist.Classes
 {
     /// <summary>
-    /// Represents a register of all archives known to the system, where they are, how 
-    /// big they are and when they were last updated.
+    /// Represents a register of all archives known to the system, which includes files in archive directories
+    /// not created by this system. It stores where they are, how big they are and when they were last updated.
     /// </summary>
     public class FileReport
     {
@@ -61,9 +61,8 @@ namespace Archivist.Classes
             LastWriteUtc = fi.LastWriteTimeUtc;
             LastWriteLocal = fi.LastWriteTime;
 
-            IsVersioned = fi.IsVersionedFile(out string rootName);
-
-            RootFileName = rootName;
+            IsVersioned = fi.IsVersionedFile();
+            BaseFileName = FileVersionHelpers.GetBaseFileName(fi.Name);
 
             Instances = new List<FileReportItemInstance>
             {
@@ -77,7 +76,7 @@ namespace Archivist.Classes
         public DateTime LastWriteLocal { get; set; }
         public List<FileReportItemInstance> Instances { get; set; }
 
-        public string RootFileName { get; private set; }
+        public string BaseFileName { get; private set; }
         public bool IsVersioned { get; private set; }
     }
 
@@ -91,7 +90,7 @@ namespace Archivist.Classes
             Length = fi.Length;
             LastWriteUtc = fi.LastWriteTimeUtc;
             LastWriteLocal = fi.LastWriteTime;
-            Path = fi.DirectoryName;
+            Path = fi.DirectoryName!;
         }
 
         public string FileName { get; set; }

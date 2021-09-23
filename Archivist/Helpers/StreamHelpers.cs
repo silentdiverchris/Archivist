@@ -52,12 +52,16 @@ namespace Archivist.Helpers
 
                 totalBytesCopied += bytesRead;
 
-                if (null != progress)
+                if (progress is not null)
+                {
                     progress.Report(new KeyValuePair<long, long>(totalBytesCopied, sourceLength));
+                }
             }
 
-            if (totalBytesCopied > 0)
+            if (totalBytesCopied > 0 && progress is not null)
+            {
                 progress.Report(new KeyValuePair<long, long>(totalBytesCopied, sourceLength));
+            }
 
             cancellationToken.ThrowIfCancellationRequested();
         }

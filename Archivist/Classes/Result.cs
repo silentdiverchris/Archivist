@@ -12,8 +12,8 @@ namespace Archivist.Classes
         internal ResultMessage(
             string text, 
             enSeverity severity = enSeverity.Info, 
-            Exception ex = null, 
-            string functionName = null, 
+            Exception? ex = null, 
+            string? functionName = null, 
             bool alwaysWriteToEventLog = false,
             bool consoleBlankLineBefore = false,
             bool consoleBlankLineAfter = false)
@@ -33,9 +33,9 @@ namespace Archivist.Classes
         internal DateTime CreatedUtc { get; private set; }
         internal enSeverity Severity { get; set; }
         internal string Text { get; set; }
-        internal Exception Exception { get; set; }
-        internal string FunctionName { get; set; }
-        internal bool HasBeenWritten { get; set; }
+        internal Exception? Exception { get; set; }
+        internal string? FunctionName { get; set; }
+        internal bool HasBeenProcessed { get; set; }
         internal bool AlwaysWriteToEventLog { get; set; }
         internal bool ConsoleBlankLineBefore { get; set; }
         internal bool ConsoleBlankLineAfter { get; set; }
@@ -50,29 +50,28 @@ namespace Archivist.Classes
         internal List<ResultMessage> Messages { get; set; } = new();
         internal string FunctionName { get; private set; }
 
-        internal List<ResultMessage> UnprocessedMessages => Messages.Where(_ => _.HasBeenWritten == false).ToList();
-
-        internal int ReturnedInt { get; set; }
-        internal string ReturnedString { get; set; }
+        internal List<ResultMessage> UnprocessedMessages => Messages.Where(_ => _.HasBeenProcessed == false).ToList();
 
         internal enSeverity HighestSeverity => Messages.OrderBy(_ => _.Severity).First().Severity;
 
         internal bool HasErrors => Messages.Any(_ => _.Severity == enSeverity.Error);
         internal bool HasWarnings => Messages.Any(_ => _.Severity == enSeverity.Warning);
 
-        internal Result(string functionName, bool addStartingItem = false, string functionQualifier = null, bool consoleBlankLineBefore = false)
+        internal Result(string functionName, bool addStartingItem = false, string? functionQualifier = null, bool consoleBlankLineBefore = false)
         {
             FunctionName = functionName + functionQualifier.PrefixIfNotEmpty();
 
             if (addStartingItem)
+            {
                 AddInfo($"Running {functionName} {functionQualifier}", consoleBlankLineBefore: consoleBlankLineBefore);
+            }
         }
 
         internal void MarkMessagesWritten()
         {
             foreach (var msg in UnprocessedMessages)
             {
-                msg.HasBeenWritten = true;
+                msg.HasBeenProcessed = true;
             }
         }
 

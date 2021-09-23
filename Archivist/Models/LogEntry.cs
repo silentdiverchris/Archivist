@@ -21,15 +21,15 @@ namespace Archivist.Models
             ConsoleBlankLineAfter = consoleBlankLineAfter;
         }
 
-        internal string ProgressPrefix { get; set; } = null;
-        internal string ProgressSuffix { get; set; } = null;
+        internal string? ProgressPrefix { get; set; } = null;
+        internal string? ProgressSuffix { get; set; } = null;
         internal short? PercentComplete { get; set; } = null;
 
         internal bool AlwaysWriteToEventLog { get; set; }
         internal DateTime CreatedUtc { get; private set; } = DateTime.UtcNow;
         internal DateTime CreatedLocal { get; private set; } = DateTime.Now;
         internal enSeverity Severity { get; set; }
-        internal string Text { get; set; }
+        internal string? Text { get; set; }
 
         internal bool ConsoleBlankLineBefore { get; set; }
         internal bool ConsoleBlankLineAfter { get; set; }

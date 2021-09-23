@@ -17,10 +17,10 @@ namespace Archivist.Models
     public class AppSettings
     {
         public bool UseUtcTime { get; set; }
-        public string DefaultJobName { get; set; }
-        public string LogDirectoryPath { get; set; }
-        public string AESEncryptPath { get; set; }
-        public string SqlConnectionString { get; set; }
+        public string? DefaultJobName { get; set; }
+        public string? LogDirectoryPath { get; set; }
+        public string? AESEncryptPath { get; set; }
+        public string? SqlConnectionString { get; set; }
         
         /// <summary>
         /// Send more details progress information to the console
@@ -46,10 +46,10 @@ namespace Archivist.Models
         public List<SecureDirectory> GlobalSecureDirectories { get; set; } = new();
 
         [JsonIgnore]
-        public string LoadedFromFile { get; set; }
+        public string? LoadedFromFile { get; set; }
 
         [JsonIgnore]
-        internal Job SelectedJob { get; private set; } = null;
+        internal Job? SelectedJob { get; private set; } = null;
 
         internal Result SelectJob(string jobName)
         {
@@ -108,7 +108,11 @@ namespace Archivist.Models
                 {
                     if (Jobs.Any())
                     {
-                        result.AddError($"cannot find job specification '{jobName}', available names are {Jobs.Select(_ => _.Name).ConcatenateToDelimitedList()}, loaded from '{LoadedFromFile}'");
+                        string jobNameList = Jobs is not null
+                            ? Jobs.Select(_ => _.Name)!.ConcatenateToDelimitedList()
+                            : "[no jobs defined]";
+
+                        result.AddError($"cannot find job specification '{jobName}', available names are {jobNameList}, loaded from '{LoadedFromFile}'");
                     }
                     else
                     {
@@ -134,31 +138,19 @@ namespace Archivist.Models
         /// is ignored (specifically characters 2 and 3 are ':\'), so to use this function, set
         /// this to, say, '4TB External HDD' and the DirectoryPath to 'Archive'
         /// </summary>
-        public string VolumeLabel { get; set; }
+        public string? VolumeLabel { get; set; }
 
         /// <summary>
         /// The path of this directory
         /// </summary>
-        public string DirectoryPath { get; set; }
-
-        /// <summary>
-        /// Set the creation and last write time of any files created to the same as the source
-        /// </summary>
-        public bool SynchoniseFileTimestamps { get; set; } = true;
-
-        /// <summary>
-        /// Whether to delete the source file after a successful encrypt, this would
-        /// generally be a yes as the whole point is not to leave unencrypted files at 
-        /// rest, but the default is not to, so deleting files is a user decision
-        /// </summary>
-        public bool DeleteSourceAfterEncrypt { get; set; } = false;
+        public string? DirectoryPath { get; set; }
 
         /// <summary>
         /// A human description of what this directory is, or what drive it's 
         /// on - eg '128gb USB Key' or 'Where my photos are', this doesn't make anything work or
         /// break anything if left undefined, it's just a reminder for the human.
         /// </summary>
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// Whether to process this directory in any way
@@ -220,9 +212,9 @@ namespace Archivist.Models
 
             if (!string.IsNullOrEmpty(VolumeLabel))
             {
-                if (!DirectoryPath.Contains(@":\"))
+                if (DirectoryPath!.Contains(@":\") == false)
                 {
-                    DriveInfo drive = FileUtilities.GetDriveByLabel(VolumeLabel);
+                    DriveInfo? drive = FileUtilities.GetDriveByLabel(VolumeLabel);
 
                     if (drive is not null)
                     {
@@ -288,8 +280,7 @@ namespace Archivist.Models
     public class BaseDirectoryFiles : BaseDirectory
     {
         /// <summary>
-        /// If a file has a version suffix (created by setting source directory setting AddVersionSuffix 
-        /// to true) it will retain at least this many of them in this directory, zero means we keep all versions, which
+        /// Retain at least this many versions of each archive in this directory, zero means we keep all versions, which
         /// will eventually fill the volume. One gotcha is that if you set this lower on an archive directory
         /// than on the source directory the system will keep copying over older versions and then deleting 
         /// them, watch out for that.
@@ -297,8 +288,7 @@ namespace Archivist.Models
         public int RetainMinimumVersions { get; set; } = Constants.RETAIN_VERSIONS_MINIMUM;
 
         /// <summary>
-        /// If a file has a version suffix (created by setting source directory setting AddVersionSuffix 
-        /// to true) it will retain a maximum this many of them in this directory, zero means we keep all versions, which
+        /// Retain a maximum of this many versions in this directory, zero means we keep all versions, which
         /// will eventually fill the volume. One gotcha is that if you set this lower on an archive directory
         /// than on the source directory the system will keep copying over older versions and then deleting 
         /// them, watch out for that.
@@ -306,9 +296,8 @@ namespace Archivist.Models
         public int RetainMaximumVersions { get; set; } = Constants.RETAIN_VERSIONS_MINIMUM;
 
         /// <summary>
-        /// If a file has a version suffix (created by setting source directory setting AddVersionSuffix 
-        /// to true) it will retain files that were written less than this many days ago, this overrides
-        /// the retainVersions setting. Zero disables this function.
+        /// Retain files that were written less than this many days ago, this overrides
+        /// the RetainMaximumVersions setting. Zero disables this function.
         /// </summary>
         public int RetainYoungerThanDays { get; set; } = 0;
 
@@ -316,7 +305,7 @@ namespace Archivist.Models
         /// A list of file specs to include, eg "*.txt', 'thing.*', abc???de.jpg' etc.
         /// An empty list includes all files
         /// </summary>
-        public List<string> IncludeSpecifications { get; set; }
+        public List<string> IncludeSpecifications { get; set; } = new();
 
         [JsonIgnore]
         public string IncludeSpecificationsText => IncludeSpecifications.Any()
@@ -327,7 +316,7 @@ namespace Archivist.Models
         /// A list of file specs to ignore, eg "*.txt', 'thing.*', abc???de.jpg' etc. 
         /// An empty list doesn't exclude any files
         /// </summary>
-        public List<string> ExcludeSpecifications { get; set; }
+        public List<string> ExcludeSpecifications { get; set; } = new();
 
         [JsonIgnore]
         public string ExcludeSpecificationsText => ExcludeSpecifications.Any()
@@ -353,7 +342,7 @@ namespace Archivist.Models
         /// the files email are stored in, so have this set to 'Thunderbird' for that sourec directory. Any running task
         /// found with this string in the name will prevent this directory being processed.
         /// </summary>
-        public string CheckTaskNameIsNotRunning { get; set; }
+        public string? CheckTaskNameIsNotRunning { get; set; }
 
         /// <summary>
         /// Indicates whether this source is something that changes a lot, eg source code
@@ -370,36 +359,21 @@ namespace Archivist.Models
         public CompressionLevel CompressionLevel { get; set; } = CompressionLevel.Optimal;
 
         /// <summary>
-        /// Overwrite any output files with the same name as one being created
-        /// </summary>
-        public bool ReplaceExisting { get; set; } = true;
-
-        /// <summary>
         /// Encrypt the output file after zipping, uses AESEncrypt at the moment, so you'd need to install that 
         /// and put the path to the exe in the AESEncryptPath setting in appsettings.json. The reason
         /// it doesn't use built-in .Net encryption is because I use the AESEncrypt Explorer extension
-        /// so want to encrypt files with the same code.
+        /// so want to encrypt files with the same code. If this is true, the unencrypted version will 
+        /// always be deleted after the encryption is completed. If for some reason the encryption fails, the
+        /// unencrypted version will not be deleted.
         /// </summary>
         public bool EncryptOutput { get; set; } = false;
 
         /// <summary>
-        /// Delete the unencrypted zip archive after successful encryption
-        /// </summary>
-        public bool DeleteArchiveAfterEncryption { get; set; } = false;
-
-        /// <summary>
-        /// Adds a suffix to the file name of the form '-NNNN' before 
-        /// the extension, each new file adds 1 to the number. So archiving
-        /// 'C:\Blah' results in files like 'Blah-0001.zip', 'Blah-0002.zip' etc.
-        /// </summary>
-        public bool AddVersionSuffix { get; set; } = false;
-
-        /// <summary>
-        /// The name of the zipped output file (no path), if not specified it uses 
+        /// The name of the output file to be created, with no path or extension, if not specified it uses 
         /// the path to generate the name so directory 'C:\AbC\DeF\GhI' will be 
-        /// archived to 'AbC-DeF-GhI.zip'
+        /// archived to file name 'AbC-DeF-GhI' with a .zip or .aes extension
         /// </summary>
-        public string OutputFileName { get; set; } = null;
+        public string? OverrideOutputFileName { get; set; } = null;
     }
 
     /// <summary>
@@ -426,10 +400,10 @@ namespace Archivist.Models
         /// <summary>
         /// The name of this job, cannot contain spaces
         /// </summary>
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         // For humans only, a description of what this job does, not validated in any way
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         /// <summary>
         /// If logging to file is enabled, open the new log file in the associated 
@@ -468,19 +442,19 @@ namespace Archivist.Models
         /// are then copied out to the various archive directories, so ideally this is on a large and 
         /// reasonably fast volume.
         /// </summary>
-        public string PrimaryArchiveDirectoryName { get; set; }
+        public string? PrimaryArchiveDirectoryPath { get; set; }
 
         /// <summary>
         /// The password to be used for encrypting wit AESEncrypt. Yep, I know, a password in plain text, use 
         /// with caution or just don't use the encrypt facility. 
         /// </summary>
-        public string EncryptionPassword { get; set; }
+        public string? EncryptionPassword { get; set; }
 
         /// <summary>
         /// Loads the encryption password from this file, opens the file as a text file and takes the content
         /// as the encryption password. If specified, this overrides any value in EncryptionPassword if the fle exists.
         /// </summary>
-        public string EncryptionPasswordFile { get; set; }
+        public string? EncryptionPasswordFile { get; set; }
 
         /// <summary>
         /// Source, archive and secure directories for this particular job, the global directory

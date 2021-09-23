@@ -32,7 +32,7 @@ namespace Archivist.Services
 
         internal async Task<Result> ProcessSecureDirectories()
         {
-            Result result = new("ProcessSecureDirectories", true);
+            Result result = new("ProcessSecureDirectories", false);
 
             if (_jobSpec.SecureDirectories != null)
             {
@@ -78,7 +78,7 @@ namespace Archivist.Services
 
             if (secureDirectory.IsAvailable)
             {
-                var filesToProcess = Directory.GetFiles(secureDirectory.DirectoryPath)
+                var filesToProcess = Directory.GetFiles(secureDirectory.DirectoryPath!)
                         .Where(_ => _.ToLower().EndsWith(".aes") == false)
                         .Where(_ => _.ToLower().EndsWith("clue.txt") == false);
 
@@ -94,7 +94,6 @@ namespace Archivist.Services
                             var encFileName = fiSrc.FullName + ".aes";
 
                             bool doEncryption = false;
-                            bool deleteSource = false;
 
                             if (File.Exists(encFileName))
                             {
@@ -104,19 +103,16 @@ namespace Archivist.Services
                                 {
                                     // Unencrypted version has been changed, make a new encrypt
                                     doEncryption = true;
-                                    deleteSource = secureDirectory.DeleteSourceAfterEncrypt;
                                 }
                                 else if (fiSrc.LastWriteTimeUtc == fiEnc.LastWriteTimeUtc)
                                 {
                                     // Encrypted version exists, unencrypted has same last write time, just remove the unencrypted one
                                     doEncryption = false;
-                                    deleteSource = secureDirectory.DeleteSourceAfterEncrypt;
                                 }
                                 else if (fiSrc.LastWriteTimeUtc <= fiEnc.LastWriteTimeUtc)
                                 {
                                     // Encrypted version is later, must have been done manually, lets recreate it just to be on the safe side
                                     doEncryption = true;
-                                    deleteSource = secureDirectory.DeleteSourceAfterEncrypt;
                                 }
                                 else
                                 {
@@ -126,46 +122,29 @@ namespace Archivist.Services
                             else
                             {
                                 doEncryption = true;
-                                deleteSource = true;
                             }
 
                             if (doEncryption)
                             {
-                                // Double check the DeleteSourceAfterEncrypt setting in
-                                // case a bug above has failed to honour it
-
-                                if (deleteSource && secureDirectory.DeleteSourceAfterEncrypt == false)
-                                {
-                                    // The system is saying we can now delete the source, but
-                                    // the config says no, so we will leave the source file as-is
-                                    // even though this goes against the whole point of not leaving
-                                    // clear text versions lying around.
-                                    deleteSource = false;
-                                }
-
                                 result.AddInfo($"Securing file {fullFileName}");
 
                                 Result encryptResult = await encryptionService.EncryptFileAsync(
                                     aesEncryptExecutable:  _aesEncryptExecutable,
                                     sourceFileName: fullFileName,
                                     destinationFileName: null,
-                                    password: _jobSpec.EncryptionPassword,
-                                    deleteSourceFile: deleteSource,
-                                    synchroniseTimestamps: secureDirectory.SynchoniseFileTimestamps);
+                                    password: _jobSpec.EncryptionPassword);
 
                                 await _logService.ProcessResult(encryptResult);
 
                                 result.SubsumeResult(encryptResult);
 
-                                if (encryptResult.HasErrors)
-                                    break;
-                            }
-                            else if (deleteSource)
-                            {
-                                result.Statistics.FileDeleted(fiSrc.Length);
+                                if (encryptResult.HasNoErrors)
+                                {
+                                    result.AddInfo($"Deleting unencrypted source {fullFileName}");
+                                    File.Delete(fullFileName);
 
-                                result.AddInfo($"Deleting unencrypted source {fullFileName}");
-                                File.Delete(fullFileName);
+                                    result.Statistics.FileDeleted(fiSrc.Length);
+                                }
                             }
                         }
                     }

@@ -18,24 +18,24 @@ namespace Archivist.Services
     internal class LogService : IDisposable
     {
         private readonly bool _logToSql = false;
-        private string _logToSqlDatabaseName = null;
+        private string? _logToSqlDatabaseName = null;
 
         private readonly bool _logToFile = false;
         private readonly bool _logToConsole = true; // No way to turn this off at present
 
         public bool LoggingToSql => _logToSql;
-        public string LoggingToSqlDatabaseName => _logToSqlDatabaseName;
+        public string? LoggingToSqlDatabaseName => _logToSqlDatabaseName;
 
         public bool LoggingToFile => _logToFile;
         public bool LoggingToConsole => _logToConsole;
 
-        private readonly JobDetails _jobDetails = null;
+        private readonly JobDetails? _jobDetails = null;
         private readonly AppSettings _appSettings;
-        private readonly string _logFileName = null;
+        private readonly string? _logFileName = null;
 
         private readonly ConsoleDelegate _consoleDelegate;
 
-        internal string LogFileName => _logFileName;
+        internal string? LogFileName => _logFileName;
 
         /// <summary>
         /// If we get a connection string, log to SQL
@@ -244,9 +244,9 @@ namespace Archivist.Services
         /// <returns></returns>
         private async Task AddLogAsync (LogEntry entry)
         {
-            if (_appSettings.VerboseEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
+            if (entry.Text is not null && _appSettings.VerboseEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
             {
-                EventLogHelpers.WriteEntry(entry.Text, severity: entry.Severity);
+                EventLogHelpers.WriteEntry(entry.Text!, severity: entry.Severity);
             }
 
             if (_logToConsole && (_appSettings.VerboseConsole || entry.Severity != enSeverity.Debug))
@@ -314,14 +314,14 @@ namespace Archivist.Services
                    "LogText", entry.Text,
                    "LogSeverity", (int)entry.Severity);
 
-            await SQLUtilities.ExecuteStoredProcedureNonQueryAsync(_appSettings.SqlConnectionString, "AddLogEntry", parameters);
+            await SQLUtilities.ExecuteStoredProcedureNonQueryAsync(_appSettings.SqlConnectionString!, "AddLogEntry", parameters);
         }
 
         private async Task AddLogToFileAsync(LogEntry entry)
         {
             if (_logToFile)
             {
-                using (FileStream sourceStream = new(_logFileName, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
+                using (FileStream sourceStream = new(_logFileName!, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
                 {
                     byte[] encodedText = Encoding.Unicode.GetBytes(entry.FormatForFile(_appSettings.UseUtcTime));
                     await sourceStream.WriteAsync(encodedText);

@@ -29,7 +29,7 @@ namespace Archivist.Utilities
         /// <param name="prefix">Text to show before the progress display</param>
         /// <param name="suffix">Text to show after the progress display</param>
         /// <param name="extraSpaces">A number of spaces to write after the suffix, to clear longer text from last time</param>
-        public static void WriteProgressBar(short percentComplete, string prefix = null, string suffix = null, short extraSpaces = 0)
+        public static void WriteProgressBar(short percentComplete, string? prefix = null, string? suffix = null, short extraSpaces = 0)
         {
             if (percentComplete < 0)
             {

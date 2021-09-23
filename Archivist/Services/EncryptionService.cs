@@ -10,7 +10,7 @@ namespace Archivist.Services
     /// The service that encrypts archives, uses external executable AESEncrypt
     /// </summary>
     internal class EncryptionService : BaseService
-    {       
+    {
         internal EncryptionService(
             Job jobSpec,
             AppSettings appSettings,
@@ -18,7 +18,12 @@ namespace Archivist.Services
         {
         }
 
-        internal async Task<Result> EncryptFileAsync(string aesEncryptExecutable, string sourceFileName, string destinationFileName = null, string password = null, bool deleteSourceFile = false, bool synchroniseTimestamps = true)
+        internal async Task<Result> EncryptFileAsync(
+            string aesEncryptExecutable,
+            string sourceFileName,
+            string? destinationFileName = null,
+            string? password = null,
+            bool synchroniseTimestamps = true)
         {
             Result result = new("EncryptFileAsync", false);
 
@@ -28,46 +33,50 @@ namespace Archivist.Services
 
                 if (destinationFileName is null)
                 {
-                    destinationFileName = sourceFileName + ".aes";
+                    destinationFileName = sourceFileName[0..^4] + ".aes";
                 }
-                
+
                 ProcessStartInfo procInfo = new()
                 {
                     FileName = aesEncryptExecutable,
                     Arguments = $"-e -p{password} -o\"{destinationFileName}\" \"{sourceFileName}\""
                 };
 
-                result.AddInfo($"AESCrypt encrypting '{fiSrc.Name}'"); // to '{destinationFileName}'");
+                result.AddInfo($"AESCrypt encrypting '{fiSrc.Name}' to '{destinationFileName}'");
 
-                Process process = Process.Start(procInfo);
+                Process? process = Process.Start(procInfo);
 
-                await process.WaitForExitAsync();
-
-                if (process.ExitCode == 0)
+                if (process is not null)
                 {
-                    if (result.HasNoErrorsOrWarnings && File.Exists(destinationFileName))
+                    await process.WaitForExitAsync();
+
+                    if (process.ExitCode == 0)
                     {
-                        result.Statistics.FiledAdded(fiSrc.Length);
-
-                        result.AddSuccess($"Encrypted to {destinationFileName} OK");
-
-                        if (synchroniseTimestamps)
+                        if (result.HasNoErrorsOrWarnings && File.Exists(destinationFileName))
                         {
-                            FileInfo fiDest = new(destinationFileName);
-                            fiDest.CreationTimeUtc = fiSrc.CreationTimeUtc;
-                            fiDest.LastWriteTimeUtc = fiSrc.LastWriteTimeUtc;
-                        }
+                            result.Statistics.FiledAdded(fiSrc.Length);
 
-                        if (deleteSourceFile)
-                        {
+                            result.AddSuccess($"Encrypted to {destinationFileName} OK");
+
+                            if (synchroniseTimestamps)
+                            {
+                                FileInfo fiDest = new(destinationFileName);
+                                fiDest.CreationTimeUtc = fiSrc.CreationTimeUtc;
+                                fiDest.LastWriteTimeUtc = fiSrc.LastWriteTimeUtc;
+                            }
+
                             result.AddInfo($"Deleting unencrypted source {sourceFileName}");
                             File.Delete(sourceFileName);
                         }
                     }
+                    else
+                    {
+                        result.AddError($"EncryptFileAsync calling AESEncrypt failed with exit code {process.ExitCode}");
+                    }
                 }
                 else
                 {
-                    result.AddError($"EncryptFileAsync calling AESEncrypt failed with exit code {process.ExitCode}");
+                    result.AddError($"EncryptFileAsync failed to generate process to call AESEncrypt");
                 }
             }
             else

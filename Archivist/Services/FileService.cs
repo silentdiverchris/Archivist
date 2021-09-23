@@ -52,81 +52,64 @@ namespace Archivist.Services
             return result;
         }
 
-        internal async Task<Result> DeleteOldVersions(string latestFileName, int retainMinimumVersions, int retainMaximumVersions, int retainDaysOld)
+        internal async Task<Result> DeleteOldVersions(string directoryPath, string baseFileName, int retainMinimumVersions, int retainMaximumVersions, int retainDaysOld)
         {
             Result result = new("DeleteOldVersions");
 
             try
             {
                 // We shouldn't even be in here if RetainVersions isn't at least the minimum, but just in case...
+
                 if (retainMinimumVersions < Constants.RETAIN_VERSIONS_MINIMUM)
                 {
-                    throw new Exception($"DeleteOldVersions invalid retainMinimumVersions {retainMinimumVersions} for '{latestFileName}'");
+                    throw new Exception($"DeleteOldVersions invalid retainMinimumVersions {retainMinimumVersions} for '{baseFileName}'");
                 }
 
                 // Handy for debugging, a bit excessive otherwise
-                string retainStr = $"DeleteOldVersions for '{latestFileName}' retaining min/max {retainMinimumVersions}/{retainMaximumVersions} versions and all files under {retainDaysOld} days old";
+                string retainStr = $"DeleteOldVersions for '{baseFileName}' in '{directoryPath}' retaining min/max {retainMinimumVersions}/{retainMaximumVersions} versions and all files under {retainDaysOld} days old";
 
                 result.AddDebug(retainStr);
                 await _logService.ProcessResult(result);
 
-                // The suffix is of the form -nnnn.zip, so for file abcde.zip we are looking for abcde-nnnnn.zip
-
-                FileInfo fiArchive = new(latestFileName);
-
-                string fileNamePrefix = fiArchive.Name[0..^9];
-                string searchPattern = $"{fileNamePrefix}*.zip";
-
                 // Get all files whose names that match the versioned format
-                var existingFiles = Directory.GetFiles(fiArchive.DirectoryName, searchPattern)
-                    .Where(_ => _.Length == latestFileName.Length)
+
+                var fileSpec = baseFileName + "*.*";
+
+                var existingFiles = Directory.GetFiles(directoryPath, fileSpec)
+                    .Where(_ => _.Length == baseFileName.Length + 9)
                     .Where(_ => _.IsVersionedFileName())
                     .OrderBy(_ => _);
 
                 if (existingFiles.Any())
                 {
-                    if (existingFiles.Count() > retainMaximumVersions)
+                    if (existingFiles.Count() >= retainMinimumVersions)
                     {
-                        if (latestFileName == existingFiles.Last())
+                        // They should already be ordered by ascending file name, but just in case...
+
+                        var filesToDelete = existingFiles.OrderBy(_ => _).Take(existingFiles.Count() - retainMaximumVersions);
+
+                        foreach (var fileName in filesToDelete)
                         {
-                            if (result.HasNoErrorsOrWarnings)
+                            // Never delete anything that is younger than RetainDaysOld regardless of other settings
+
+                            if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld, out DateTime lastWriteTimeLocal))
                             {
-                                // OK, it's safe, all the files look right, delete the excess
+                                FileInfo fi = new(fileName);
 
-                                // They should already be ordered by ascending file name, but just in case...
+                                result.AddWarning($"Deleting file version '{fileName}' ({FileUtilities.GetByteSizeAsText(fi.Length)}, last write {fi.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
+                                File.Delete(fileName);
 
-                                var filesToDelete = existingFiles.OrderBy(_ => _).Take(existingFiles.Count() - retainMaximumVersions);
-
-                                foreach (var fileName in filesToDelete)
-                                {
-                                    // Last second paranoia, whatever bug might get introduced above, never
-                                    // delete the one we just created !
-
-                                    if (fileName != latestFileName)
-                                    {
-                                        // Never delete anything that is younger than RetainDaysOld regardless of other settings
-
-                                        if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld, out DateTime lastWriteTimeLocal))
-                                        {
-                                            FileInfo fi = new(fileName);
-
-                                            result.AddWarning($"Deleting file version '{fileName}' ({FileUtilities.GetByteSizeAsText(fi.Length)}, last write {fi.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
-                                            File.Delete(fileName);
-
-                                            result.Statistics.FileDeleted(fi.Length);
-                                        }
-                                        else
-                                        {
-                                            result.AddDebug($"Retaining version '{fileName}', last written under {retainDaysOld} days ago ({lastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
-                                        }
-                                    }
-                                }
+                                result.Statistics.FileDeleted(fi.Length);
+                            }
+                            else
+                            {
+                                result.AddDebug($"Retaining version '{fileName}', last written under {retainDaysOld} days ago ({lastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
                             }
                         }
                     }
                     else
                     {
-                        result.AddDebug($"DeleteOldVersions for '{latestFileName}' found {existingFiles.Count()} version{existingFiles.Count().PluralSuffix()}, which is OK");
+                        result.AddDebug($"DeleteOldVersions found {existingFiles.Count()} version{existingFiles.Count().PluralSuffix()}, which is OK");
                     }
                 }
             }
@@ -151,14 +134,14 @@ namespace Archivist.Services
 
             FileReport fileReport = new();
 
-            foreach (var fi in new DirectoryInfo(_jobSpec.PrimaryArchiveDirectoryName).GetFiles())
+            foreach (var fi in new DirectoryInfo(_jobSpec.PrimaryArchiveDirectoryPath!).GetFiles())
             {
                 fileReport.Add(fi, true);
             }
 
             foreach (var dir in _jobSpec.ArchiveDirectories.Where(_ => _.IsAvailable))
             {
-                foreach (var fi in new DirectoryInfo(dir.DirectoryPath).GetFiles())
+                foreach (var fi in new DirectoryInfo(dir.DirectoryPath!).GetFiles())
                 {
                     fileReport.Add(fi, false);
                 }
@@ -226,7 +209,7 @@ namespace Archivist.Services
             if (duplicateNames.Any())
             {
                 result.AddWarning("Files with same name but significantly different sizes or dates;", consoleBlankLineBefore: true);
-                
+
                 //result.AddInfo("Disks formatted with different file systems or allocation sizes will report different sizes for the same file");
 
                 foreach (var dup in duplicateNames.OrderBy(_ => _.Key))
@@ -245,21 +228,20 @@ namespace Archivist.Services
                 }
             }
 
-            
             // Find files with a scarily low number of copies, or which are worryingly stale
 
             int concerningFiles = 0;
-            var rootNames = fileReport.Items.Select(_ => _.RootFileName).Distinct().OrderBy(_ => _);
-                        
+            var rootNames = fileReport.Items.Select(_ => _.BaseFileName).Distinct().OrderBy(_ => _);
+
             foreach (var rootFileName in rootNames)
             {
                 List<string> Concerns = new();
 
                 var thresholdHours = 12;
                 var recentThresholdLocal = DateTime.Now.AddHours(-thresholdHours);
-                var instances = fileReport.Items.Where(_ => _.RootFileName == rootFileName).SelectMany(_ => _.Instances).OrderBy(_ => _.Path);
+                var instances = fileReport.Items.Where(_ => _.BaseFileName == rootFileName).SelectMany(_ => _.Instances).OrderBy(_ => _.Path);
                 var latestInstance = instances.OrderByDescending(_ => _.LastWriteUtc).FirstOrDefault();
-                var latestSize = FileUtilities.GetByteSizeAsText(latestInstance.Length);
+                var latestSize = FileUtilities.GetByteSizeAsText(latestInstance!.Length);
                 var copyCount = instances.Count();
                 var sourceDirectory = FindSourceDirectory(rootFileName);
 
@@ -275,7 +257,7 @@ namespace Archivist.Services
 
                 if (sourceDirectory is not null && latestInstance.LastWriteLocal < recentThresholdLocal)
                 {
-                    var laterFile = GetLaterFile(sourceDirectory.DirectoryPath, true, latestInstance.LastWriteUtc);
+                    var laterFile = GetLaterFile(sourceDirectory.DirectoryPath!, true, latestInstance.LastWriteUtc);
 
                     if (laterFile is not null)
                     {
@@ -301,7 +283,7 @@ namespace Archivist.Services
                     concerningFiles++;
 
                     string name = sourceDirectory?.DirectoryPath ?? rootFileName;
-                    result.AddInfo(name, consoleBlankLineBefore: true); 
+                    result.AddInfo(name, consoleBlankLineBefore: true);
 
                     foreach (var concern in Concerns)
                     {
@@ -318,7 +300,7 @@ namespace Archivist.Services
                     ? null
                     : $"'{uba.VolumeLabel}' ";
 
-                var dirPath = uba.DirectoryPath.Contains(Path.DirectorySeparatorChar)
+                var dirPath = uba.DirectoryPath!.Contains(Path.DirectorySeparatorChar)
                     ? $"'{uba.DirectoryPath}' "
                     : null;
 
@@ -337,17 +319,21 @@ namespace Archivist.Services
             return result;
         }
 
-        private SourceDirectory FindSourceDirectory(string rootFileName)
+        /// <summary>
+        /// Dig around to try to discover which source directory resulted in this archive file
+        /// </summary>
+        /// <param name="baseFileName"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        private SourceDirectory? FindSourceDirectory(string baseFileName)
         {
             try
             {
-                var fileNameNoExt = rootFileName[0..^4];
-
-                var matches = _jobSpec.SourceDirectories.Where(_ => _.IsEnabled && _.OutputFileName == fileNameNoExt);
+                var matches = _jobSpec.SourceDirectories.Where(_ => _.IsEnabled && _.OverrideOutputFileName == baseFileName);
 
                 if (matches.Any() == false)
                 {
-                    matches = _jobSpec.SourceDirectories.Where(_ => _.IsEnabled && _.DirectoryPath.EndsWith(fileNameNoExt));
+                    matches = _jobSpec.SourceDirectories.Where(_ => _.IsEnabled && _.DirectoryPath!.EndsWith(baseFileName));
                 }
 
                 if (matches.Any())
@@ -363,9 +349,9 @@ namespace Archivist.Services
 
                         foreach (var match in matches)
                         {
-                            var fn = FileUtilities.GenerateFileNameFromPath(match.DirectoryPath);
+                            var fn = FileUtilities.GenerateBaseOutputFileName(match);
 
-                            if (fn == fileNameNoExt)
+                            if (fn.StartsWith(baseFileName))
                             {
                                 return match;
                             }
@@ -381,7 +367,7 @@ namespace Archivist.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"FindSourceDirectory for {rootFileName}", ex);
+                throw new Exception($"FindSourceDirectory for {baseFileName}", ex);
             }
         }
 
@@ -394,7 +380,7 @@ namespace Archivist.Services
                 .OrderBy(_ => _.Priority)
                 .ThenBy(_ => _.DirectoryPath))
             {
-                result.SubsumeResult(await DeleteTemporaryFiles(destination.DirectoryPath, false));
+                result.SubsumeResult(await DeleteTemporaryFiles(destination.DirectoryPath!, false));
 
                 Result copyResult = await CopyPrimaryArchives(destination);
 
@@ -421,21 +407,21 @@ namespace Archivist.Services
         /// <returns></returns>
         internal async Task<Result> CopyPrimaryArchives(ArchiveDirectory destination)
         {
-            string destName = string.IsNullOrEmpty(destination.VolumeLabel)
+            string destDirName = string.IsNullOrEmpty(destination.VolumeLabel)
                 ? $"'{destination.DirectoryPath}'"
                 : $"volume '{destination.VolumeLabel}', path '{destination.DirectoryPath}'";
 
             Result result = new(
                 functionName: "CopyArchives",
                 addStartingItem: true,
-                functionQualifier: $"from '{_jobSpec.PrimaryArchiveDirectoryName}' to {destName}");
+                functionQualifier: $"from '{_jobSpec.PrimaryArchiveDirectoryPath}' to {destDirName}");
 
             result.AddInfo($"Including {destination.IncludeSpecificationsText}, excluding { destination.ExcludeSpecificationsText}");
 
-            result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath, destination.VolumeLabel));
+            result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath!, destination.VolumeLabel));
 
-            var diSrc = new DirectoryInfo(_jobSpec.PrimaryArchiveDirectoryName);
-            var diDest = new DirectoryInfo(destination.DirectoryPath);
+            var diSrc = new DirectoryInfo(_jobSpec.PrimaryArchiveDirectoryPath!);
+            var diDest = new DirectoryInfo(destination.DirectoryPath!);
 
             foreach (var tempFile in diDest.GetFiles("*.copying"))
             {
@@ -445,7 +431,7 @@ namespace Archivist.Services
 
             if (destination.IsRemovable)
             {
-                string drive = Path.GetPathRoot(destination.DirectoryPath);
+                string drive = Path.GetPathRoot(destination.DirectoryPath)!;
 
                 if (!Directory.Exists(drive))
                 {
@@ -457,8 +443,8 @@ namespace Archivist.Services
 
             if (!diDest.Exists)
             {
-                Directory.CreateDirectory(destination.DirectoryPath);
-                diDest = new DirectoryInfo(destination.DirectoryPath);
+                Directory.CreateDirectory(destination.DirectoryPath!);
+                diDest = new DirectoryInfo(destination.DirectoryPath!);
 
                 if (!diDest.Exists)
                 {
@@ -477,10 +463,10 @@ namespace Archivist.Services
             {
                 // NOT RECURSIVE
 
-                result.Statistics.FileFound(Directory.GetFiles(_jobSpec.PrimaryArchiveDirectoryName, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length);
+                result.Statistics.FileFound(Directory.GetFiles(_jobSpec.PrimaryArchiveDirectoryPath!, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length);
 
                 var fileNameList = destination.IncludeSpecifications
-                    .SelectMany(_ => Directory.GetFiles(_jobSpec.PrimaryArchiveDirectoryName, _, SearchOption.TopDirectoryOnly))
+                    .SelectMany(_ => Directory.GetFiles(_jobSpec.PrimaryArchiveDirectoryPath!, _, SearchOption.TopDirectoryOnly))
                     .ToArray()
                     .OrderBy(_ => _)
                     .ToList();
@@ -536,7 +522,7 @@ namespace Archivist.Services
                 foreach (var fileName in fileNameList.OrderBy(_ => _))
                 {
                     var fiSrc = new FileInfo(fileName);
-                    string destinationFileName = Path.Combine(destination.DirectoryPath, fiSrc.Name);
+                    string destinationFileName = Path.Combine(destination.DirectoryPath!, fiSrc.Name);
 
                     var fiDest = new FileInfo(destinationFileName);
 
@@ -562,19 +548,19 @@ namespace Archivist.Services
                             }
                         }
 
-                    //    if (doCopy)
-                    //    {
-                    //        result.AddDebug($"Source and destination for '{fiSrc.Name}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
-                    //    }
-                    //}
-                    //else
-                    //{
-                    //    result.AddDebug($"Destination '{destinationFileName}' does not exist");
+                        //    if (doCopy)
+                        //    {
+                        //        result.AddDebug($"Source and destination for '{fiSrc.Name}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
+                        //    }
+                        //}
+                        //else
+                        //{
+                        //    result.AddDebug($"Destination '{destinationFileName}' does not exist");
                     }
 
                     if (doCopy)
                     {
-                        double spaceAvailable = FileUtilities.GetAvailableDiskSpace(destination.DirectoryPath);
+                        double spaceAvailable = FileUtilities.GetAvailableDiskSpace(destination.DirectoryPath!);
 
                         if (spaceAvailable < fiSrc.Length)
                         {
@@ -600,7 +586,7 @@ namespace Archivist.Services
 
                             decimal percentageComplete = 0;
 
-                            var progressReporter = new Progress<KeyValuePair<long, long>>();
+                            Progress<KeyValuePair<long, long>> progressReporter = new();
 
                             LogEntry progressLogEntry = new(
                                 percentComplete: 0,
@@ -608,7 +594,7 @@ namespace Archivist.Services
                                 suffix: $"of {FileUtilities.GetByteSizeAsText(fiSrc.Length)}" // complete"
                             );
 
-                            progressReporter.ProgressChanged += delegate (object obj, KeyValuePair<long, long> progressValue)
+                            progressReporter.ProgressChanged += delegate (object? obj, KeyValuePair<long, long> progressValue)
                             {
                                 if (progressValue.Key == 0)
                                 {
@@ -662,20 +648,14 @@ namespace Archivist.Services
                             TotalBytesCopied += fiSrc.Length;
                             TotalFilesCopied++;
 
-                            if (destination.SynchoniseFileTimestamps)
+                            fiDest = new FileInfo(destinationFileName)
                             {
-                                fiDest = new FileInfo(destinationFileName)
-                                {
-                                    LastWriteTimeUtc = fiSrc.LastWriteTimeUtc,
-                                    CreationTimeUtc = fiSrc.CreationTimeUtc
-                                };
-                            }
+                                LastWriteTimeUtc = fiSrc.LastWriteTimeUtc,
+                                CreationTimeUtc = fiSrc.CreationTimeUtc
+                            };
 
-                            if (destination.RetainMinimumVersions >= Constants.RETAIN_VERSIONS_MINIMUM)
-                            {
-                                result.SubsumeResult(
-                                    await DeleteOldVersions(destinationFileName, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays));
-                            }
+                            var baseFileName = FileVersionHelpers.GetBaseFileName(fileName);
+                            result.SubsumeResult(await DeleteOldVersions(destination.DirectoryPath!, baseFileName, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays));
                         }
                         else
                         {
@@ -690,13 +670,13 @@ namespace Archivist.Services
 
                     double mbps = result.Statistics.BytesProcessed / stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
 
-                    result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{_jobSpec.PrimaryArchiveDirectoryName}' to {destName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
+                    result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{_jobSpec.PrimaryArchiveDirectoryPath}' to {destDirName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
 
-                    result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath, destination.VolumeLabel));
+                    result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath!, destination.VolumeLabel));
                 }
                 else
                 {
-                    result.AddInfo($"No files needed copying from '{_jobSpec.PrimaryArchiveDirectoryName}' to {destName}");
+                    result.AddInfo($"No files needed copying from '{_jobSpec.PrimaryArchiveDirectoryPath}' to {destDirName}");
                 }
             }
             else
@@ -728,11 +708,9 @@ namespace Archivist.Services
 
             foreach (var fileName in fileNameList.OrderBy(_ => _))
             {
-                if (fileName.IsVersionedFileName(out string baseFileName))
+                if (fileName.IsVersionedFileName())
                 {
-                    var idxFileStart = fileName.LastIndexOf(Path.DirectorySeparatorChar) + 1; // Where the file name starts
-                    var idxHyphen = fileName.LastIndexOf("-"); // Where the - of -nnn is
-                    //var baseFileName = fileName[idxFileStart..idxHyphen];
+                    var baseFileName = FileVersionHelpers.GetBaseFileName(fileName);    
 
                     if (versionedFileSets.ContainsKey(baseFileName))
                     {
@@ -746,7 +724,7 @@ namespace Archivist.Services
                 }
                 else
                 {
-                    // Non-versioned file, we always copy these
+                    // Non-versioned file, not created by Archivist, we always copy these
                     filesToProcess.Add(fileName);
                 }
             }
@@ -777,13 +755,13 @@ namespace Archivist.Services
 
         /// <summary>        
         /// We don't need the latest file, or more than one, just the first we find that is last 
-        /// written after the specified time
+        /// written after the specified time, returns null if no later files exist
         /// </summary>
         /// <param name="directoryName"></param>
         /// <param name="recursive"></param>
         /// <param name="laterThanUtc"></param>
         /// <returns></returns>
-        internal static FileInfo GetLaterFile(string directoryName, bool recursive, DateTime laterThanUtc)
+        internal static FileInfo? GetLaterFile(string directoryName, bool recursive, DateTime laterThanUtc)
         {
             DirectoryInfo root = new(directoryName);
 

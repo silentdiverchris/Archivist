@@ -1,15 +1,52 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 
 namespace Archivist.Helpers
 {
     internal static class StringHelpers
     {
-        internal static string PrefixIfNotEmpty(this string text, string prefix = " ")
+        internal static bool IsExistingFileName(this string? value)
         {
-            return $"{(string.IsNullOrEmpty(text) ? prefix : null)}{text}";
+            return value.NotEmpty() && File.Exists(value);
         }
 
-        internal static string SuffixIfNotEmpty(this string text, string suffix = " ")
+        internal static bool NoSuchFileName(this string? value)
+        {
+            return value.IsEmpty() || !File.Exists(value);
+        }
+
+        /// <summary>
+        /// Return the value, or the alternativeValue if it's empty, or the ifBothEmpty if both are empty
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="alternativeValue"></param>
+        /// <param name="ifBothEmpty"></param>
+        /// <returns></returns>
+        internal static string IfEmpty(this string? value, string? alternativeValue, string ifBothEmpty = "")
+        {
+            return value.NotEmpty()
+                ? value!
+                : alternativeValue.NotEmpty()
+                    ? alternativeValue!
+                    : ifBothEmpty;
+        }
+
+        internal static bool NotEmpty(this string? value)
+        {
+            return !string.IsNullOrEmpty(value);
+        }
+
+        internal static bool IsEmpty(this string? value)
+        {
+            return string.IsNullOrEmpty(value);
+        }
+
+        internal static string PrefixIfNotEmpty(this string? text, string prefix = " ")
+        {
+            return $"{(string.IsNullOrEmpty(text) ? null : prefix)}{text}";
+        }
+
+        internal static string SuffixIfNotEmpty(this string? text, string suffix = " ")
         {
             return $"{text}{(string.IsNullOrEmpty(text) ? suffix : null)}";
         }
@@ -39,7 +76,7 @@ namespace Archivist.Helpers
         /// <param name="str"></param>
         /// <param name="number"></param>
         /// <returns></returns>
-        internal static string Pluralise(this string str, int number, string addSuffixIfNotEmpty = null)
+        internal static string Pluralise(this string str, int number, string? addSuffixIfNotEmpty = null)
         {
             if (string.IsNullOrEmpty(str))
             {

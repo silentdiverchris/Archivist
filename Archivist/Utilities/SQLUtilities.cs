@@ -12,15 +12,15 @@ namespace Archivist.Utilities
     internal static class SQLUtilities
     {
         internal static List<SqlParameter> BuildSQLParameterList(
-            string name1 = null, object value1 = null,
-            string name2 = null, object value2 = null,
-            string name3 = null, object value3 = null,
-            string name4 = null, object value4 = null,
-            string name5 = null, object value5 = null,
-            string name6 = null, object value6 = null,
-            string name7 = null, object value7 = null,
-            string name8 = null, object value8 = null,
-            string name9 = null, object value9 = null,
+            string? name1 = null, object? value1 = null,
+            string? name2 = null, object? value2 = null,
+            string? name3 = null, object? value3 = null,
+            string? name4 = null, object? value4 = null,
+            string? name5 = null, object? value5 = null,
+            string? name6 = null, object? value6 = null,
+            string? name7 = null, object? value7 = null,
+            string? name8 = null, object? value8 = null,
+            string? name9 = null, object? value9 = null,
             bool ignoreNullValues = true)
         {
             List<SqlParameter> parameters = new();
@@ -99,7 +99,7 @@ namespace Archivist.Utilities
                     {
                         if (param.SqlDbType == System.Data.SqlDbType.VarChar || param.SqlDbType == System.Data.SqlDbType.NVarChar || param.SqlDbType == System.Data.SqlDbType.DateTime || param.SqlDbType == System.Data.SqlDbType.Date || param.SqlDbType == System.Data.SqlDbType.DateTime2)
                         {
-                            sb.Append($" @{param.ParameterName}='{param.Value.ToString().TruncateWithEllipsis(100)}',");
+                            sb.Append($" @{param.ParameterName}='{param.Value.ToString()!.TruncateWithEllipsis(100)}',");
                         }
                         else
                         {

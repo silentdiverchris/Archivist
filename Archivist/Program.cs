@@ -27,19 +27,34 @@ namespace Archivist
                     AppSettingsUtilities.CreateDefaultAppSettings(appSettingsFileName);
                 }
 
-                AppSettings appSettings = AppSettingsUtilities.LoadAppSettings(appSettingsFileName);
+                AppSettings? appSettings = AppSettingsUtilities.LoadAppSettings(appSettingsFileName);
 
-                JobDetails jobDetails = new(
-                    jobNameToRun: args.Length > 0 ? args[0] : appSettings.DefaultJobName);
-
-                using (var archivist = new MainProcess(jobDetails, appSettings))
+                if (appSettings is not null)
                 {
-                    result.SubsumeResult(await archivist.Initialise());
+                    string? jobName = args.Length > 0 ? args[0] : appSettings.DefaultJobName ?? null;
 
-                    if (!result.HasErrors)
+                    if (jobName is not null)
                     {
-                        result.SubsumeResult(await archivist.RunAsync());
+                        JobDetails jobDetails = new(jobName);
+
+                        using (var archivist = new MainProcess(jobDetails, appSettings))
+                        {
+                            result.SubsumeResult(await archivist.Initialise());
+
+                            if (!result.HasErrors)
+                            {
+                                result.SubsumeResult(await archivist.RunAsync());
+                            }
+                        }
                     }
+                    else
+                    {
+                        result.AddError("Program.Main could not find a job name to run");
+                    }
+                }
+                else
+                {
+
                 }
 
                 // The result has been processed within MainProcess, no need to log or display anything here

@@ -83,15 +83,20 @@ namespace Archivist
 
         internal async Task<Result> RunAsync()
         {
-            Result result = new("Archivist", true, $"job '{_appSettings.SelectedJob.Name}'");
+            Result result = new("Archivist", true, $"job '{_appSettings.SelectedJob?.Name}'");
 
             await _logService.ProcessResult(result);
 
-            if (_appSettings.SelectedJob.AutoViewLogFile && _logService.LoggingToFile)
+            if (_appSettings.SelectedJob is null)
+            {
+                throw new Exception("RunAsync called without a selected job, this shouldn't be possible");
+            }
+
+            if (_logService.LoggingToFile && (_appSettings.SelectedJob!.AutoViewLogFile))
             {
                 var proc = new Process
                 {
-                    StartInfo = new ProcessStartInfo(_logService.LogFileName)
+                    StartInfo = new ProcessStartInfo(_logService.LogFileName!)
                     {
                         UseShellExecute = true
                     }
@@ -112,7 +117,7 @@ namespace Archivist
 
             if (!result.HasErrors)
             {
-                using (var compressionService = new CompressionService(_appSettings.SelectedJob, _appSettings, _logService, _appSettings.AESEncryptPath))
+                using (var compressionService = new CompressionService(_appSettings.SelectedJob, _appSettings, _logService, _appSettings.AESEncryptPath!))
                 {
                     Result compressionResult = await compressionService.CompressSources();
                     result.SubsumeResult(compressionResult);
@@ -173,12 +178,12 @@ namespace Archivist
         {
             Result result = new("ReportAllDiskSpaceRemaining");
 
-            result.SubsumeResult(FileUtilities.CheckDiskSpace(_appSettings.SelectedJob.PrimaryArchiveDirectoryName));
+            result.SubsumeResult(FileUtilities.CheckDiskSpace(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!));
 
             foreach (var dir in _appSettings.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable).OrderBy(_ => _.DirectoryPath))
             {
                 dir.VerifyVolume(); 
-                result.SubsumeResult(FileUtilities.CheckDiskSpace(dir.DirectoryPath, dir.VolumeLabel));
+                result.SubsumeResult(FileUtilities.CheckDiskSpace(dir.DirectoryPath!, dir.VolumeLabel));
             }
 
             await _logService.ProcessResult(result);
@@ -190,11 +195,11 @@ namespace Archivist
 
             if (initial)
             {
-                _appSettings.SelectedJob.PrimaryArchiveStatistics.BytesFreeInitial = FileUtilities.GetAvailableDiskSpace(_appSettings.SelectedJob.PrimaryArchiveDirectoryName);
+                _appSettings.SelectedJob!.PrimaryArchiveStatistics.BytesFreeInitial = FileUtilities.GetAvailableDiskSpace(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!);
             }
             else
             {
-                _appSettings.SelectedJob.PrimaryArchiveStatistics.BytesFreeFinal += FileUtilities.GetAvailableDiskSpace(_appSettings.SelectedJob.PrimaryArchiveDirectoryName);
+                _appSettings.SelectedJob!.PrimaryArchiveStatistics.BytesFreeFinal += FileUtilities.GetAvailableDiskSpace(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!);
             }
 
             foreach (var dir in _appSettings.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable))
@@ -203,18 +208,18 @@ namespace Archivist
 
                 if (initial)
                 {
-                    dir.Statistics.BytesFreeInitial = FileUtilities.GetAvailableDiskSpace(dir.DirectoryPath);
+                    dir.Statistics.BytesFreeInitial = FileUtilities.GetAvailableDiskSpace(dir.DirectoryPath!);
                 }
                 else
                 {
-                    dir.Statistics.BytesFreeFinal += FileUtilities.GetAvailableDiskSpace(dir.DirectoryPath);
+                    dir.Statistics.BytesFreeFinal += FileUtilities.GetAvailableDiskSpace(dir.DirectoryPath!);
                 }
             }
         }
 
         internal void WriteToConsole(LogEntry entry)
         {
-            if (_appSettings.SelectedJob.WriteToConsole)
+            if (_appSettings.SelectedJob?.WriteToConsole ?? true) // If in doubt, log to the console
             {
                 if (entry.ConsoleBlankLineBefore)
                 {

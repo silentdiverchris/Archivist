@@ -1,4 +1,5 @@
 ﻿using Archivist.Classes;
+using Archivist.Helpers;
 using Archivist.Models;
 using System;
 using System.Collections.Generic;
@@ -43,7 +44,7 @@ namespace Archivist.Utilities
                         ProcessTestOnly = true,
                         ProcessSlowVolumes = false,
                         ArchiveFairlyStatic = false,
-                        PrimaryArchiveDirectoryName = @"M:\PrimaryArchiveDirectoryName"
+                        PrimaryArchiveDirectoryPath = @"M:\PrimaryArchiveDirectoryName"
                     },
                     new Job
                     {
@@ -52,7 +53,7 @@ namespace Archivist.Utilities
                         PauseBeforeExit = true,
                         ProcessSlowVolumes = false,
                         ArchiveFairlyStatic = false,
-                        PrimaryArchiveDirectoryName = @"M:\PrimaryArchiveDirectoryName",
+                        PrimaryArchiveDirectoryPath = @"M:\PrimaryArchiveDirectoryName",
                         EncryptionPasswordFile = @"C:\InvalidDirectoryName\PasswordInTextFile.txt",
                     }
                 },
@@ -60,13 +61,11 @@ namespace Archivist.Utilities
                     new SecureDirectory
                     {
                         IsEnabled = true,
-                        SynchoniseFileTimestamps = true,
                         DirectoryPath = @"C:\Something\Secure"
                     },
                     new SecureDirectory
                     {
                         IsEnabled = true,
-                        SynchoniseFileTimestamps = true,
                         DirectoryPath = @"C:\SomethingElse\AlsoSecure"
                     },
                 },
@@ -75,24 +74,19 @@ namespace Archivist.Utilities
                         IsEnabled = true,
                         IsForTesting = false,
                         DirectoryPath = @"C:\ProbablyDoesntExist",
-                        OutputFileName = null,
-                        AddVersionSuffix = true,
+                        OverrideOutputFileName = null,
                         RetainMinimumVersions = 1,
                         RetainMaximumVersions = 3,
-                        EncryptOutput = false,
-                        DeleteArchiveAfterEncryption = true
+                        EncryptOutput = false
                     },
                     new SourceDirectory {
                         Priority = 3,
                         IsEnabled = true,
                         IsForTesting = false,
                         DirectoryPath = @"C:\ProbablyDoesntExistEither",
-                        OutputFileName = null,
-                        AddVersionSuffix = true,
                         RetainMinimumVersions = 1,
                         RetainMaximumVersions = 5,
-                        EncryptOutput = true,
-                        DeleteArchiveAfterEncryption = true
+                        EncryptOutput = true
                     },
                     new SourceDirectory {
                         IsEnabled = true,
@@ -100,7 +94,6 @@ namespace Archivist.Utilities
                         IsFairlyStatic = false,
                         DirectoryPath = @"D:\Temp",
                         CompressionLevel = CompressionLevel.Fastest,
-                        AddVersionSuffix = true,
                         RetainMinimumVersions = 1,
                         RetainMaximumVersions = 2,
                         MinutesOldThreshold = 60
@@ -109,8 +102,7 @@ namespace Archivist.Utilities
                         IsEnabled = true,
                         IsFairlyStatic = true,
                         DirectoryPath = @"M:\Media\Movies",
-                        CompressionLevel = CompressionLevel.NoCompression,
-                        AddVersionSuffix = false
+                        CompressionLevel = CompressionLevel.NoCompression
                     }
                 },
                 GlobalArchiveDirectories = new List<ArchiveDirectory>
@@ -121,7 +113,6 @@ namespace Archivist.Utilities
                         IsSlowVolume = true,
                         IsEnabled = true,
                         IsRemovable = true,
-                        SynchoniseFileTimestamps = true,
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         VolumeLabel = "BigMicroSD-01",
@@ -137,7 +128,6 @@ namespace Archivist.Utilities
                         IsEnabled = true,
                         IsForTesting = true,
                         IsRemovable = true,
-                        SynchoniseFileTimestamps = true,
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         VolumeLabel = "ExternalSSD-01",
@@ -153,7 +143,6 @@ namespace Archivist.Utilities
                         IsEnabled = true,
                         IsForTesting = true,
                         IsRemovable = true,
-                        SynchoniseFileTimestamps = true,
                         IncludeSpecifications = new List<string> { "Media*.*" },
                         ExcludeSpecifications = new List<string> { },
                         VolumeLabel = "ExternalHDD-01",
@@ -168,7 +157,6 @@ namespace Archivist.Utilities
                         IsEnabled = true,
                         IsForTesting = true,
                         IsRemovable = true,
-                        SynchoniseFileTimestamps = true,
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { },
                         DirectoryPath = @"Z:\Archive",
@@ -195,7 +183,7 @@ namespace Archivist.Utilities
                 result.AddError($"AESCrypt executable '{appSettings.AESEncryptPath}' does not exist");
             }
 
-            string jobsNamesDefined = appSettings.Jobs.Any()
+            string? jobsNamesDefined = appSettings.Jobs is not null && appSettings.Jobs.Any()
                 ? string.Join(',', appSettings.Jobs.Select(_ => _.Name))
                 : null;
 
@@ -239,14 +227,14 @@ namespace Archivist.Utilities
         {
             Result result = new("ValidateJobSpecification", false);
 
-            if (string.IsNullOrEmpty(job.PrimaryArchiveDirectoryName))
+            if (string.IsNullOrEmpty(job.PrimaryArchiveDirectoryPath))
             {
                 result.AddError("PrimaryArchiveDirectoryName is empty");
             }
 
-            if (!Directory.Exists(job.PrimaryArchiveDirectoryName))
+            if (!Directory.Exists(job.PrimaryArchiveDirectoryPath))
             {
-                result.AddError($"PrimaryArchiveDirectoryName '{job.PrimaryArchiveDirectoryName}' does not exist");
+                result.AddError($"PrimaryArchiveDirectoryName '{job.PrimaryArchiveDirectoryPath}' does not exist");
             }
 
             foreach (var dup in job.SourceDirectories.Where(_ => _.IsEnabled).GroupBy(_ => _.VolumeLabel + " " + _.DirectoryPath).Where(g => g.Count() > 1).Select(y => y).ToList())
@@ -256,7 +244,25 @@ namespace Archivist.Utilities
 
             foreach (var src in job.SourceDirectories.Where(_ => _.IsToBeProcessed(job)))
             {
-                if (string.IsNullOrEmpty(src.DirectoryPath))
+                if (src.OverrideOutputFileName.NotEmpty())
+                {
+                    if (src.OverrideOutputFileName!.Length > 256)
+                    {
+                        result.AddError("SourceDirectories.OutputFileName is insanely long, maximum 256 characters");
+                    }
+
+                    var invalidCharacters = Path.GetInvalidFileNameChars();
+
+                    foreach (var ch in src.OverrideOutputFileName.ToCharArray())
+                    {
+                        if (invalidCharacters.Contains(ch))
+                        {
+                            result.AddError($"SourceDirectories.OutputFileName contains invalid character '{ch}'");
+                        }
+                    }
+                }
+
+                if (src.DirectoryPath.IsEmpty())
                 {
                     result.AddError("SourceDirectories.DirectoryPath is empty");
                 }
@@ -264,16 +270,6 @@ namespace Archivist.Utilities
                 if (!Directory.Exists(src.DirectoryPath) && !src.IsRemovable)
                 {
                     result.AddError($"SourceDirectories.DirectoryPath '{src.DirectoryPath}' does not exist");
-                }
-
-                if (src.RetainMinimumVersions > Constants.RETAIN_VERSIONS_MINIMUM && !src.AddVersionSuffix)
-                {
-                    result.AddWarning($"SourceDirectories.RetainMinimumVersions = {src.RetainMinimumVersions} is ignored with AddVersionSuffix false for source '{src.DirectoryPath}'");
-                }
-
-                if (src.RetainMaximumVersions > Constants.RETAIN_VERSIONS_MINIMUM && !src.AddVersionSuffix)
-                {
-                    result.AddWarning($"SourceDirectories.RetainMaximumVersions = {src.RetainMaximumVersions} is ignored with AddVersionSuffix false for source '{src.DirectoryPath}'");
                 }
 
                 if (src.RetainMinimumVersions > src.RetainMaximumVersions)
@@ -336,15 +332,23 @@ namespace Archivist.Utilities
             return result;
         }
 
-        internal static AppSettings LoadAppSettings(string fileName)
+        internal static AppSettings? LoadAppSettings(string fileName)
         {
             if (File.Exists(fileName))
             {
                 string json = File.ReadAllText(fileName);
 
-                var appSettings = JsonSerializer.Deserialize<AppSettings>(json);
+                var options = new JsonSerializerOptions
+                {
+                    // err, nothing right now thanks
+                };
 
-                appSettings.LoadedFromFile = fileName;
+                var appSettings = JsonSerializer.Deserialize<AppSettings>(json, options);
+
+                if (appSettings is not null)
+                {
+                    appSettings.LoadedFromFile = fileName;
+                }
 
                 return appSettings;
             }
