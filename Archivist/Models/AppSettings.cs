@@ -299,7 +299,7 @@ namespace Archivist.Models
         /// Retain files that were written less than this many days ago, this overrides
         /// the RetainMaximumVersions setting. Zero disables this function.
         /// </summary>
-        public int RetainYoungerThanDays { get; set; } = 0;
+        public int RetainYoungerThanDays { get; set; } = Constants.RETAIN_DAYS_OLD_MINIMUM;
 
         /// <summary>
         /// A list of file specs to include, eg "*.txt', 'thing.*', abc???de.jpg' etc.

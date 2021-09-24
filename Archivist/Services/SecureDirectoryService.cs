@@ -159,7 +159,7 @@ namespace Archivist.Services
                 result.AddWarning($"ProcessSecureDirectoryAsync found secure directory {secureDirectory.DirectoryPath} does not exist");
             }
 
-            await _logService.ProcessResult(result, reportItemCounts: true, reportCompletion: true);
+            await _logService.ProcessResult(result, reportItemCounts: true, reportCompletion: false);
 
             return result;
         }

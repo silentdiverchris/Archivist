@@ -9,6 +9,8 @@
         /// </summary>
         internal const int RETAIN_VERSIONS_MINIMUM = 1;
 
+        internal const int RETAIN_DAYS_OLD_MINIMUM = 1;
+
         internal const int DB_TIMEOUT_SECONDS = 10;
 
         internal const string DATE_FORMAT_DATE_TIME_LONG_SECONDS = "d MMM yyyy HH:mm:ss";

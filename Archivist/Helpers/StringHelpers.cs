@@ -31,31 +31,65 @@ namespace Archivist.Helpers
                     : ifBothEmpty;
         }
 
+        /// <summary>
+        /// Doesn't add much but a lot more readable in use
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         internal static bool NotEmpty(this string? value)
         {
             return !string.IsNullOrEmpty(value);
         }
 
+        /// <summary>
+        /// Doesn't add much but a lot more readable in use
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         internal static bool IsEmpty(this string? value)
         {
             return string.IsNullOrEmpty(value);
         }
 
+        /// <summary>
+        /// Add the specified prefix if the string is not empty
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="prefix"></param>
+        /// <returns></returns>
         internal static string PrefixIfNotEmpty(this string? text, string prefix = " ")
         {
             return $"{(string.IsNullOrEmpty(text) ? null : prefix)}{text}";
         }
 
+        /// <summary>
+        /// Add the specified suffix if the string is not empty
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="suffix"></param>
+        /// <returns></returns>
         internal static string SuffixIfNotEmpty(this string? text, string suffix = " ")
         {
             return $"{text}{(string.IsNullOrEmpty(text) ? suffix : null)}";
         }
 
+        /// <summary>
+        /// Make a presentable list from an enumerable of strings 
+        /// </summary>
+        /// <param name="strings"></param>
+        /// <param name="delimiter"></param>
+        /// <param name="quote"></param>
+        /// <returns></returns>
         internal static string ConcatenateToDelimitedList(this IEnumerable<string> strings, string delimiter = ";", string quote = "'")
         {
             return quote + string.Join(delimiter, strings) + quote;
         }
 
+        /// <summary>
+        /// Is the string comprised solely of digits
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
         internal static bool IsDigits(this string text)
         {
             foreach (var c in text)
@@ -71,10 +105,11 @@ namespace Archivist.Helpers
 
         /// <summary>
         /// A decidedly primitive implementation, not intended to work for everything, to be
-        /// fixed each time a new case it doesn't handle comes up
+        /// fixed each time a new case it doesn't handle comes up.
         /// </summary>
         /// <param name="str"></param>
         /// <param name="number"></param>
+        /// <param name="addSuffixIfNotEmpty"></param>
         /// <returns></returns>
         internal static string Pluralise(this string str, int number, string? addSuffixIfNotEmpty = null)
         {
@@ -102,6 +137,13 @@ namespace Archivist.Helpers
             }
         }
 
+        /// <summary>
+        /// Cut off the string at a certain length, adding '..' if something is removed.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="length">Cut off at this length</param>
+        /// <param name="strictLength">Don't allow the ellipsis to make the string longer than the max length</param>
+        /// <returns></returns>
         internal static string TruncateWithEllipsis(this string text, int length, bool strictLength = false)
         {
             if (string.IsNullOrEmpty(text))

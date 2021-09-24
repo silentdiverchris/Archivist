@@ -99,126 +99,129 @@ namespace Archivist.Services
                 }
             }
 
-            if (needToArchive && sourceDirectory.IsAvailable)
+            if (needToArchive)
             {
-                foreach (var tempFile in new DirectoryInfo(archiveDirectoryPath!).GetFiles("*.compressing"))
+                if (sourceDirectory.IsAvailable)
                 {
-                    result.AddInfo($"Deleting old temporary file '{tempFile.Name}'");
-                    tempFile.Delete();
-                }
-
-                Result generateOutputFileNameResult = PrepareFileNames(
-                    sourceDirectory: sourceDirectory,
-                    archiveDirectoryPath: archiveDirectoryPath,
-                    baseOutputFileName: out string baseOutputFileName,
-                    existingFilePathZipped: out string? existingFilePathZipped,
-                    existingFilePathEncrypted: out string? existingFilePathEncrypted,
-                    nextFilePathZipped: out string? nextFilePathZipped,
-                    nextFilePathEncrypted: out string? nextFilePathEncrypted,
-                    latestLastWriteUtc: out DateTime? latestArchiveWriteUtc);
-
-                result.SubsumeResult(generateOutputFileNameResult);
-
-                if (generateOutputFileNameResult.HasNoErrors)
-                {
-                    if (latestArchiveWriteUtc is not null)
+                    foreach (var tempFile in new DirectoryInfo(archiveDirectoryPath!).GetFiles("*.compressing"))
                     {
-                        // We have an existign archive, does it need updating ?
-
-                        var lastWriteThreshold = (DateTime)latestArchiveWriteUtc + new TimeSpan(0, sourceDirectory.MinutesOldThreshold, 0);
-
-                        result.AddDebug($"Processing archive '{baseOutputFileName}' last written {((DateTime)latestArchiveWriteUtc).ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
-                        result.AddDebug($"Looking for files written after {lastWriteThreshold.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
-
-                        using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
-                        {
-                            var fiLater = FileService.GetLaterFile(sourceDirectory.DirectoryPath!, true, lastWriteThreshold);
-
-                            if (fiLater is not null)
-                            {
-                                result.AddDebug($"Found a later file '{fiLater.FullName}' at {fiLater.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC in '{sourceDirectory.DirectoryPath}'");
-                            }
-                            else
-                            {
-                                result.AddDebug($"Found no later files in '{sourceDirectory.DirectoryPath}'");
-                                needToArchive = false;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        result.AddInfo($"Found no existing archive for '{sourceDirectory.DirectoryPath}'");
+                        result.AddInfo($"Deleting old temporary file '{tempFile.Name}'");
+                        tempFile.Delete();
                     }
 
-                    if (needToArchive)
+                    Result generateOutputFileNameResult = PrepareFileNames(
+                        sourceDirectory: sourceDirectory,
+                        archiveDirectoryPath: archiveDirectoryPath,
+                        baseOutputFileName: out string baseOutputFileName,
+                        existingFilePathZipped: out string? existingFilePathZipped,
+                        existingFilePathEncrypted: out string? existingFilePathEncrypted,
+                        nextFilePathZipped: out string? nextFilePathZipped,
+                        nextFilePathEncrypted: out string? nextFilePathEncrypted,
+                        latestLastWriteUtc: out DateTime? latestArchiveWriteUtc);
+
+                    result.SubsumeResult(generateOutputFileNameResult);
+
+                    if (generateOutputFileNameResult.HasNoErrors)
                     {
-                        result.AddInfo($"Archiving '{sourceDirectory.DirectoryPath}' to '{nextFilePathZipped}' ({sourceDirectory.CompressionLevel})");
-                        await _logService.ProcessResult(result);
-
-                        try
+                        if (latestArchiveWriteUtc is not null)
                         {
-                            string tempDestFileName = nextFilePathZipped + ".compressing";
+                            // We have an existign archive, does it need updating ?
 
-                            if (File.Exists(tempDestFileName))
+                            var lastWriteThreshold = (DateTime)latestArchiveWriteUtc + new TimeSpan(0, sourceDirectory.MinutesOldThreshold, 0);
+
+                            result.AddDebug($"Processing archive '{baseOutputFileName}' last written {((DateTime)latestArchiveWriteUtc).ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
+                            result.AddDebug($"Looking for files written after {lastWriteThreshold.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
+
+                            using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
                             {
-                                File.Delete(tempDestFileName);
-                            }
+                                var fiLater = FileService.GetLaterFile(sourceDirectory.DirectoryPath!, true, lastWriteThreshold);
 
-                            ZipFile.CreateFromDirectory(sourceDirectory.DirectoryPath!, tempDestFileName, (CompressionLevel)sourceDirectory.CompressionLevel, true);
-
-                            if (File.Exists(tempDestFileName))
-                            {
-                                File.Move(tempDestFileName, nextFilePathZipped!, true);
-                            }
-
-                            var fiOutput = new FileInfo(nextFilePathZipped!);
-
-                            if (fiOutput.Exists)
-                            {
-                                result.AddSuccess($"Zipped {sourceDirectory.DirectoryPath} to {nextFilePathZipped} OK");
-
-                                result.Statistics.FiledAdded(fiOutput.Length);
-                                _jobSpec.PrimaryArchiveStatistics.FiledAdded(fiOutput.Length);
-
-                                if (sourceDirectory.EncryptOutput)
+                                if (fiLater is not null)
                                 {
-                                    using (var encryptionService = new EncryptionService(_jobSpec, _appSettings, _logService))
-                                    {
-                                        Result encryptionResult = await encryptionService.EncryptFileAsync(
-                                            aesEncryptExecutable: _aesEncryptExecutable,
-                                            sourceFileName: nextFilePathZipped!,
-                                            destinationFileName: nextFilePathEncrypted,
-                                            password: _jobSpec.EncryptionPassword);
-
-                                        result.SubsumeResult(encryptionResult, addStatistics: false);
-                                    }
+                                    result.AddDebug($"Found a later file '{fiLater.FullName}' at {fiLater.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC in '{sourceDirectory.DirectoryPath}'");
+                                }
+                                else
+                                {
+                                    result.AddDebug($"Found no later files in '{sourceDirectory.DirectoryPath}'");
+                                    needToArchive = false;
                                 }
                             }
                         }
-                        catch (Exception zipException)
+                        else
                         {
-                            result.AddException(zipException);
+                            result.AddInfo($"Found no existing archive for '{sourceDirectory.DirectoryPath}'");
+                        }
+
+                        if (needToArchive)
+                        {
+                            result.AddInfo($"Archiving '{sourceDirectory.DirectoryPath}' to '{nextFilePathZipped}' ({sourceDirectory.CompressionLevel})");
+                            await _logService.ProcessResult(result);
+
+                            try
+                            {
+                                string tempDestFileName = nextFilePathZipped + ".compressing";
+
+                                if (File.Exists(tempDestFileName))
+                                {
+                                    File.Delete(tempDestFileName);
+                                }
+
+                                ZipFile.CreateFromDirectory(sourceDirectory.DirectoryPath!, tempDestFileName, (CompressionLevel)sourceDirectory.CompressionLevel, true);
+
+                                if (File.Exists(tempDestFileName))
+                                {
+                                    File.Move(tempDestFileName, nextFilePathZipped!, true);
+                                }
+
+                                var fiOutput = new FileInfo(nextFilePathZipped!);
+
+                                if (fiOutput.Exists)
+                                {
+                                    result.AddSuccess($"Zipped {sourceDirectory.DirectoryPath} to {nextFilePathZipped} OK");
+
+                                    result.Statistics.FiledAdded(fiOutput.Length);
+                                    _jobSpec.PrimaryArchiveStatistics.FiledAdded(fiOutput.Length);
+
+                                    if (sourceDirectory.EncryptOutput)
+                                    {
+                                        using (var encryptionService = new EncryptionService(_jobSpec, _appSettings, _logService))
+                                        {
+                                            Result encryptionResult = await encryptionService.EncryptFileAsync(
+                                                aesEncryptExecutable: _aesEncryptExecutable,
+                                                sourceFileName: nextFilePathZipped!,
+                                                destinationFileName: nextFilePathEncrypted,
+                                                password: _jobSpec.EncryptionPassword);
+
+                                            result.SubsumeResult(encryptionResult, addStatistics: false);
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception zipException)
+                            {
+                                result.AddException(zipException);
+                            }
+                        }
+                        else
+                        {
+                            result.AddDebug($"Archive '{baseOutputFileName}' or '{sourceDirectory.DirectoryPath}' does not need updating");
+                        }
+
+                        // Tidy up whether we added new files or not
+                        using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
+                        {
+                            result.SubsumeResult(await fileService.DeleteOldVersions(archiveDirectoryPath, baseOutputFileName, sourceDirectory.RetainMinimumVersions, sourceDirectory.RetainMaximumVersions, sourceDirectory.RetainYoungerThanDays));
                         }
                     }
                     else
                     {
-                        result.AddDebug($"Archive '{baseOutputFileName}' or '{sourceDirectory.DirectoryPath}' does not need updating");
-                    }
-
-                    // Tidy up whether we added new files or not
-                    using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
-                    {
-                        result.SubsumeResult(await fileService.DeleteOldVersions(archiveDirectoryPath, baseOutputFileName, sourceDirectory.RetainMinimumVersions, sourceDirectory.RetainMaximumVersions, sourceDirectory.RetainYoungerThanDays));
+                        result.AddError($"Failed to generate output file name for '{sourceDirectory.DirectoryPath}'");
                     }
                 }
                 else
                 {
-                    result.AddError($"Failed to generate output file name for '{sourceDirectory.DirectoryPath}'");
+                    result.AddError($"CompressSource found directory '{sourceDirectory.DirectoryPath}' does not exist");
                 }
-            }
-            else
-            {
-                result.AddError($"CompressSourceDirectoryAsync found directory '{sourceDirectory.DirectoryPath}' does not exist");
             }
 
             await _logService.ProcessResult(result, reportItemCounts: false, reportAllStatistics: true);
@@ -250,7 +253,7 @@ namespace Archivist.Services
             nextFilePathZipped = null;
             nextFilePathEncrypted = null;
             latestLastWriteUtc = null;
-            
+
             baseOutputFileName = FileUtilities.GenerateBaseOutputFileName(sourceDirectory);
 
             try

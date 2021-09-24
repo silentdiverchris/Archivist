@@ -203,7 +203,7 @@ namespace Archivist.Services
 
             if (reportCompletion)
             {
-                addBlankLine = true;
+                addBlankLine = false;
 
                 if (result.HasErrors)
                 {

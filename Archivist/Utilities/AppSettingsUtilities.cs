@@ -282,7 +282,7 @@ namespace Archivist.Utilities
                     result.AddError($"ArchiveDirectories.RetainMinimumVersions = {src.RetainMinimumVersions} is invalid for archive '{src.DirectoryPath}'");
                 }
 
-                if (src.RetainYoungerThanDays < 0)
+                if (src.RetainYoungerThanDays < Constants.RETAIN_DAYS_OLD_MINIMUM)
                 {
                     result.AddError($"ArchiveDirectories.RetainYoungerThanDays = {src.RetainYoungerThanDays} is invalid for archive '{src.DirectoryPath}'");
                 }

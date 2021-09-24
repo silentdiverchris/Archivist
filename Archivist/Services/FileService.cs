@@ -52,50 +52,60 @@ namespace Archivist.Services
             return result;
         }
 
-        internal async Task<Result> DeleteOldVersions(string directoryPath, string baseFileName, int retainMinimumVersions, int retainMaximumVersions, int retainDaysOld)
+        internal async Task<Result> DeleteOldVersions(
+            string directoryPath, 
+            string baseFileName, 
+            int retainMinimumVersions, 
+            int retainMaximumVersions, 
+            int retainYoungerThanDays)
         {
             Result result = new("DeleteOldVersions");
 
             try
             {
-                // We shouldn't be in here if RetainVersions isn't at least the minimum, but just in case...
+                // The below should get caught on startup, but just in case...
 
                 if (retainMinimumVersions < Constants.RETAIN_VERSIONS_MINIMUM)
                 {
-                    throw new Exception($"DeleteOldVersions invalid retainMinimumVersions {retainMinimumVersions} for '{baseFileName}'");
+                    throw new Exception($"DeleteOldVersions invalid retainMinimumVersions {retainMinimumVersions} for '{directoryPath}'");
+                }
+
+                if (retainYoungerThanDays < Constants.RETAIN_DAYS_OLD_MINIMUM)
+                {
+                    throw new Exception($"DeleteOldVersions invalid retainYoungerThanDays {retainYoungerThanDays} for '{directoryPath}'");
                 }
 
                 // Handy for debugging, a bit excessive otherwise
-                string retainStr = $"DeleteOldVersions for '{baseFileName}' in '{directoryPath}' retaining min/max {retainMinimumVersions}/{retainMaximumVersions} versions and all files under {retainDaysOld} days old";
-
-                result.AddDebug(retainStr);
-                await _logService.ProcessResult(result);
+                //string retainStr = $"DeleteOldVersions for '{baseFileName}' in '{directoryPath}' retaining min/max {retainMinimumVersions}/{retainMaximumVersions} versions and all files under {retainYoungerThanDays} day{retainYoungerThanDays.PluralSuffix()} old";
+                //result.AddInfo(retainStr);
+                //await _logService.ProcessResult(result);
 
                 var existingFiles = directoryPath.GetVersionedFiles(baseFileName);
 
                 if (existingFiles.Any())
                 {
-                    if (existingFiles.Count() >= retainMaximumVersions)
+                    if (existingFiles.Count >= retainMaximumVersions)
                     {
                         // They should already be ordered by ascending file name, but just in case...
 
-                        var filesToDelete = existingFiles.OrderBy(_ => _).Take(existingFiles.Count() - retainMaximumVersions).ToList();
+                        var filesToDelete = existingFiles.OrderBy(_ => _).Take(existingFiles.Count - retainMaximumVersions).ToList();
 
                         if (filesToDelete.Any())
                         {
-                            // Sanity checks, abundance of caution, the above code should be making the right
+                            // Sanity checks / abundance of caution, the above code should be making the right
                             // decisions but check again in case a bug is introduced above
 
-                            if (filesToDelete.Count() < existingFiles.Count())
+                            if (filesToDelete.Count < existingFiles.Count)
                             {
-                                int numberToRetain = existingFiles.Count() - filesToDelete.Count();
+                                int numberToRetain = existingFiles.Count - filesToDelete.Count;
+
                                 if (numberToRetain >= retainMinimumVersions && numberToRetain >= Constants.RETAIN_VERSIONS_MINIMUM)
                                 {
                                     foreach (var fileName in filesToDelete)
                                     {
-                                        // Never delete anything that is younger than RetainDaysOld regardless of other settings
+                                        // Never delete anything that is younger than retainYoungerThanDays regardless of other settings
 
-                                        if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld, out DateTime lastWriteTimeLocal))
+                                        if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainYoungerThanDays, out DateTime lastWriteTimeLocal))
                                         {
                                             FileInfo fi = new(fileName);
 
@@ -104,10 +114,10 @@ namespace Archivist.Services
 
                                             result.Statistics.FileDeleted(fi.Length);
                                         }
-                                        else
-                                        {
-                                            result.AddDebug($"Retaining version '{fileName}', last written under {retainDaysOld} days ago ({lastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
-                                        }
+                                        //else
+                                        //{
+                                        //    result.AddDebug($"Retaining version '{fileName}', last written under {retainYoungerThanDays} days ago ({lastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
+                                        //}
                                     }
                                 }
                                 else
@@ -117,13 +127,13 @@ namespace Archivist.Services
                             }
                             else
                             {
-                                result.AddError($"DeleteOldVersions somehow decided that all {filesToDelete.Count()} versions should be deleted, not deleting anything");
+                                result.AddError($"DeleteOldVersions somehow decided that all {filesToDelete.Count} versions should be deleted, not deleting anything");
                             }
                         }
                     }
                     else
                     {
-                        result.AddDebug($"DeleteOldVersions found {existingFiles.Count()} version{existingFiles.Count().PluralSuffix()}, which is OK");
+                        result.AddDebug($"DeleteOldVersions found {existingFiles.Count} version{existingFiles.Count.PluralSuffix()}, which is OK");
                     }
                 }
             }
@@ -512,7 +522,7 @@ namespace Archivist.Services
 
                 // OK, we have a bit of a code smell coming up, we want to detect where files will be copied over from the 
                 // source directory to the archive directory then immediately be deleted because the RetainVersions setting for
-                // the source is larger than that for the destiation, assuming the RetainDaysOld setting allows it.
+                // the source is larger than that for the destiation, assuming the retainYoungerThanDays setting allows it.
 
                 // Because we are processing the folder as a whole, we're not looking at them in terms of a bunch of versioned
                 // sets, but as a list of file names, which makes things awkward.
@@ -711,9 +721,9 @@ namespace Archivist.Services
         /// <param name="fileNameList"></param>
         /// <param name="retainMinimumVersions"></param>
         /// <param name="retainMaximumVersions"></param>
-        /// <param name="retainDaysOld"></param>
+        /// <param name="retainYoungerThanDays"></param>
         /// <returns></returns>
-        private List<string> RemoveFilesThatWouldJustGetDeletedAnyway(List<string> fileNameList, int retainMinimumVersions, int retainMaximumVersions, int retainDaysOld)
+        private List<string> RemoveFilesThatWouldJustGetDeletedAnyway(List<string> fileNameList, int retainMinimumVersions, int retainMaximumVersions, int retainYoungerThanDays)
         {
             // Named sets of file name lists, one for each base file name
             Dictionary<string, List<string>> versionedFileSets = new();
@@ -758,7 +768,7 @@ namespace Archivist.Services
 
                     // Regardless of other criteria, always retain files under X days old
 
-                    if (idx >= keepVersionFromIdx || FileUtilities.IsLastWrittenLessThanDaysAgo(takeFileName, retainDaysOld, out _))
+                    if (idx >= keepVersionFromIdx || FileUtilities.IsLastWrittenLessThanDaysAgo(takeFileName, retainYoungerThanDays, out _))
                     {
                         filesToProcess.Add(takeFileName);
                     }
