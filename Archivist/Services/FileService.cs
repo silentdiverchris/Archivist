@@ -71,18 +71,11 @@ namespace Archivist.Services
                 result.AddDebug(retainStr);
                 await _logService.ProcessResult(result);
 
-                // Get all files whose names that match the versioned format
-
-                var fileSpec = baseFileName + "*.*";
-
-                var existingFiles = Directory.GetFiles(directoryPath, fileSpec)
-                    .Where(_ => _.Length == baseFileName.Length + 9)
-                    .Where(_ => _.IsVersionedFileName())
-                    .OrderBy(_ => _);
+                var existingFiles = directoryPath.GetVersionedFiles(baseFileName);
 
                 if (existingFiles.Any())
                 {
-                    if (existingFiles.Count() >= retainMinimumVersions)
+                    if (existingFiles.Count() >= retainMaximumVersions)
                     {
                         // They should already be ordered by ascending file name, but just in case...
 

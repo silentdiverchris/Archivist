@@ -161,23 +161,13 @@ namespace Archivist.Services
                 if (result.Statistics.FilesAdded > 0)
                 {
                     addBlankLine = true;
-
                     result.AddInfo($"{FileUtilities.GetByteSizeAsText(result.Statistics.BytesAdded)} added to {result.Statistics.FilesAdded:N0} file{result.Statistics.FilesAdded.PluralSuffix()} by {result.FunctionName}");
-                }
-                else
-                {
-                    result.AddDebug($"No files were added by {result.FunctionName}");
                 }
 
                 if (result.Statistics.FilesDeleted > 0)
                 {
                     addBlankLine = true;
-
                     result.AddInfo($"{FileUtilities.GetByteSizeAsText(result.Statistics.BytesDeleted)} deleted from {result.Statistics.FilesDeleted:N0} file{result.Statistics.FilesDeleted.PluralSuffix()} by {result.FunctionName}");
-                }
-                else
-                {
-                    result.AddDebug($"No files were deleted by {result.FunctionName}");
                 }
             }
 

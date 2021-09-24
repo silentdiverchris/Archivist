@@ -190,16 +190,13 @@ namespace Archivist.Services
                                             destinationFileName: nextFilePathEncrypted,
                                             password: _jobSpec.EncryptionPassword);
 
-                                        result.SubsumeResult(encryptionResult);
+                                        result.SubsumeResult(encryptionResult, addStatistics: false);
                                     }
                                 }
 
-                                if (sourceDirectory.RetainMinimumVersions >= Constants.RETAIN_VERSIONS_MINIMUM)
+                                using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
                                 {
-                                    using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
-                                    {
-                                        result.SubsumeResult(await fileService.DeleteOldVersions(archiveDirectoryPath, baseOutputFileName, sourceDirectory.RetainMinimumVersions, sourceDirectory.RetainMaximumVersions, sourceDirectory.RetainYoungerThanDays));
-                                    }
+                                    result.SubsumeResult(await fileService.DeleteOldVersions(archiveDirectoryPath, baseOutputFileName, sourceDirectory.RetainMinimumVersions, sourceDirectory.RetainMaximumVersions, sourceDirectory.RetainYoungerThanDays));
                                 }
                             }
                         }
@@ -257,16 +254,7 @@ namespace Archivist.Services
 
             try
             {
-                // The suffix is of the form -nnnn.zip, so for file abcde.zip we are looking for abcde-nnnnn.zip
-
-                int expectedFileNameLength = archiveDirectoryPath.Length + 1 + baseOutputFileName.Length + 9;
-
-                string fileSpec = baseOutputFileName + "*.*";
-
-                var existingFiles = Directory.GetFiles(archiveDirectoryPath, fileSpec)
-                    .Where(_ => _.Length == expectedFileNameLength)
-                    .Where(_ => _.IsVersionedFileName())
-                    .OrderBy(_ => _);
+                var existingFiles = archiveDirectoryPath.GetVersionedFiles(baseOutputFileName);
 
                 int currentVersionNumber = 0;
 

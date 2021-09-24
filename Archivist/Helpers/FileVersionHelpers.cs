@@ -1,7 +1,9 @@
 ﻿using Archivist.Classes;
 using Archivist.Models;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Archivist.Helpers
 {
@@ -11,6 +13,20 @@ namespace Archivist.Helpers
     /// </summary>
     public static class FileVersionHelpers
     {
+        internal static List<string> GetVersionedFiles(this string directoryPath, string baseFileName)
+        {
+            int expectedFileNameLength = directoryPath.Length + 1 + baseFileName.Length + 9;
+
+            string fileSpec = baseFileName + "*.*";
+
+            var fileList = Directory.GetFiles(directoryPath, fileSpec)
+                .Where(_ => _.Length == expectedFileNameLength)
+                .Where(_ => _.IsVersionedFileName())
+                .OrderBy(_ => _);
+
+            return fileList.ToList() ?? new List<string>();
+        }
+
         internal static Result GenerateNextVersionedFileNames(
             this string baseFileName, 
             SourceDirectory sourceDirectory,
