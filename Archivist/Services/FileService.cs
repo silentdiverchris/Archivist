@@ -58,7 +58,7 @@ namespace Archivist.Services
 
             try
             {
-                // We shouldn't even be in here if RetainVersions isn't at least the minimum, but just in case...
+                // We shouldn't be in here if RetainVersions isn't at least the minimum, but just in case...
 
                 if (retainMinimumVersions < Constants.RETAIN_VERSIONS_MINIMUM)
                 {
@@ -79,24 +79,45 @@ namespace Archivist.Services
                     {
                         // They should already be ordered by ascending file name, but just in case...
 
-                        var filesToDelete = existingFiles.OrderBy(_ => _).Take(existingFiles.Count() - retainMaximumVersions);
+                        var filesToDelete = existingFiles.OrderBy(_ => _).Take(existingFiles.Count() - retainMaximumVersions).ToList();
 
-                        foreach (var fileName in filesToDelete)
+                        if (filesToDelete.Any())
                         {
-                            // Never delete anything that is younger than RetainDaysOld regardless of other settings
+                            // Sanity checks, abundance of caution, the above code should be making the right
+                            // decisions but check again in case a bug is introduced above
 
-                            if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld, out DateTime lastWriteTimeLocal))
+                            if (filesToDelete.Count() < existingFiles.Count())
                             {
-                                FileInfo fi = new(fileName);
+                                int numberToRetain = existingFiles.Count() - filesToDelete.Count();
+                                if (numberToRetain >= retainMinimumVersions && numberToRetain >= Constants.RETAIN_VERSIONS_MINIMUM)
+                                {
+                                    foreach (var fileName in filesToDelete)
+                                    {
+                                        // Never delete anything that is younger than RetainDaysOld regardless of other settings
 
-                                result.AddWarning($"Deleting file version '{fileName}' ({FileUtilities.GetByteSizeAsText(fi.Length)}, last write {fi.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
-                                File.Delete(fileName);
+                                        if (FileUtilities.IsLastWrittenMoreThanDaysAgo(fileName, retainDaysOld, out DateTime lastWriteTimeLocal))
+                                        {
+                                            FileInfo fi = new(fileName);
 
-                                result.Statistics.FileDeleted(fi.Length);
+                                            result.AddWarning($"Deleting file version '{fileName}' ({FileUtilities.GetByteSizeAsText(fi.Length)}, last write {fi.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
+                                            File.Delete(fileName);
+
+                                            result.Statistics.FileDeleted(fi.Length);
+                                        }
+                                        else
+                                        {
+                                            result.AddDebug($"Retaining version '{fileName}', last written under {retainDaysOld} days ago ({lastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    result.AddError($"DeleteOldVersions somehow decided to leave fewer than retainMinimumVersions ({numberToRetain}/{retainMinimumVersions}/{Constants.RETAIN_VERSIONS_MINIMUM}), not deleting anything");
+                                }
                             }
                             else
                             {
-                                result.AddDebug($"Retaining version '{fileName}', last written under {retainDaysOld} days ago ({lastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
+                                result.AddError($"DeleteOldVersions somehow decided that all {filesToDelete.Count()} versions should be deleted, not deleting anything");
                             }
                         }
                     }
@@ -646,15 +667,16 @@ namespace Archivist.Services
                                 LastWriteTimeUtc = fiSrc.LastWriteTimeUtc,
                                 CreationTimeUtc = fiSrc.CreationTimeUtc
                             };
-
-                            var baseFileName = FileVersionHelpers.GetBaseFileName(fileName);
-                            result.SubsumeResult(await DeleteOldVersions(destination.DirectoryPath!, baseFileName, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays));
                         }
                         else
                         {
                             result.AddError($"Failed to copy to {destinationFileName}");
                         }
                     }
+
+                    // Tidy up whether we added new files or not
+                    var baseFileName = FileVersionHelpers.GetBaseFileName(fileName);
+                    result.SubsumeResult(await DeleteOldVersions(destination.DirectoryPath!, baseFileName, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays));
                 }
 
                 if (result.Statistics.ItemsProcessed > 0)
@@ -703,7 +725,7 @@ namespace Archivist.Services
             {
                 if (fileName.IsVersionedFileName())
                 {
-                    var baseFileName = FileVersionHelpers.GetBaseFileName(fileName);    
+                    var baseFileName = FileVersionHelpers.GetBaseFileName(fileName);
 
                     if (versionedFileSets.ContainsKey(baseFileName))
                     {
