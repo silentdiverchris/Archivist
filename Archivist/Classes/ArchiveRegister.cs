@@ -1,13 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using static Archivist.Enumerations;
 
 namespace Archivist.Classes
 {
     /// <summary>
-    /// Represents the set of files in a primary archive directory and zero or more source and destination 
-    /// directories, and documents what actions need to be taken on them.
+    /// Represents the set of files in a primary archive directory and each source and destination 
+    /// directorie, and determines what actions need to happen to them.
+    /// 
+    /// This is regenerated at each stage, i.e. before compression, copying and deleting old archives. 
+    /// 
+    /// It could be updated as we go along, which would be more efficient but a lot more complicated and 
+    /// thus prone to bugs and frankly too much like hard work just for the sake of being clever, especially 
+    /// when nobody is paying me by the day to write this :). 
+    /// 
+    /// In the end we're spending minutes at a time compressing and copying gigabytes of archive data all over 
+    /// the place; saving a fraction of a second of CPU time along the way really isn't worth the effort, so 
+    /// we just regenerate it before each stage, nice and simple.
     /// </summary>
 
     public class ArchiveRegister
@@ -59,7 +68,7 @@ namespace Archivist.Classes
 
         /// <summary>
         /// Determine what needs to be done to which files, currently this just handles the file copying. 
-        /// Extended this to the deleting and compresisng actions too.
+        /// Extend this to the deleting and compresisng actions too.
         /// </summary>
         private void AssignActions()
         {

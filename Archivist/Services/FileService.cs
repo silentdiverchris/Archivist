@@ -4,10 +4,8 @@ using Archivist.Models;
 using Archivist.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Archivist.Enumerations;
 
@@ -341,7 +339,9 @@ namespace Archivist.Services
         }
 
         /// <summary>
-        /// Dig around to try to discover which source directory resulted in this archive file
+        /// Dig around to try to discover which source directory resulted in this archive file, we'll removve 
+        /// the need for this slightly embarrassing functionality when the new ArchiveRegister functionality 
+        /// implements the compression actions.
         /// </summary>
         /// <param name="baseFileName"></param>
         /// <returns></returns>
@@ -392,6 +392,26 @@ namespace Archivist.Services
             }
         }
 
+        internal async Task<Result> ExecuteFileDeleteActions(ArchiveRegister archiveRegister)
+        {
+            Result result = new("ExecuteFileDeleteActions", false);
+
+            var filesToDelete = archiveRegister.Actions
+                .Where(_ => _.Type == enArchiveActionType.DeleteFromPrimary || _.Type == enArchiveActionType.DeleteFromDestination)
+                .OrderBy(_ => _.SourceFile!.FullName)
+                .Select(_ => _.SourceFile);
+
+            foreach (var file in filesToDelete)
+            {
+                result.AddWarning($"Deleting file '{file!.FullName}' ({FileUtilities.GetByteSizeAsText(file.Length)}");
+                File.Delete(file.FullName);
+            }
+
+            await _logService.ProcessResult(result);
+
+            return result;
+        }
+
         internal async Task<Result> ExecuteFileCopyActions(ArchiveRegister archiveRegister)
         {
             Result result = new("ExecuteFileCopyActions", false);
@@ -418,7 +438,7 @@ namespace Archivist.Services
                 }
                 else
                 {
-                    Result copyResult = await CopyFile(act.SourceFile, act.DestinationDirectory, justTesting: true);
+                    Result copyResult = await CopyFile(act.SourceFile, act.DestinationDirectory);
                     result.SubsumeResult(copyResult);
                 }
             }
@@ -450,46 +470,17 @@ namespace Archivist.Services
             return result;
         }
 
-
-        internal async Task<Result> CopyToArchives()
-        {
-            Result result = new("CopyToArchives", false);
-
-            foreach (var destination in _jobSpec.ArchiveDirectories
-                .Where(_ => _.IsToBeProcessed(_jobSpec))
-                .OrderBy(_ => _.Priority)
-                .ThenBy(_ => _.DirectoryPath))
-            {
-                result.SubsumeResult(await DeleteTemporaryFiles(destination.DirectoryPath!, false));
-
-                Result copyResult = await CopyPrimaryArchives(destination);
-
-                result.SubsumeResult(copyResult);
-
-                await _logService.ProcessResult(result);
-
-                if (result.HasErrors)
-                    break;
-            }
-
-            await _logService.ProcessResult(result, reportCompletion: true);
-
-            await _logService.ProcessResult(result);
-
-            return result;
-        }
-
-        internal async Task<Result> CopyFile(ArchiveFileInstance srcFil, ArchiveDestinationDirectory dstDir, bool justTesting)
+        internal async Task<Result> CopyFile(ArchiveFileInstance srcFil, ArchiveDestinationDirectory dstDir)
         {
             Result result = new($"CopyFile {srcFil.FullName} to {dstDir.Path}");
 
             string dstFullName = Path.Combine(dstDir.Path, srcFil.FileName);
 
-            if (justTesting)
-            {
-                result.AddInfo($"Pretending to copy {srcFil.FullName} to {dstFullName}{(srcFil.IslatestVersion ? " (latest)" : null)}");
-                return result;
-            }
+            //if (Constants.JUST_TESTING)
+            //{
+            //    result.AddInfo($"Pretending to copy {srcFil.FullName} to {dstFullName}{(srcFil.IslatestVersion ? " (latest)" : null)}");
+            //    return result;
+            //}
 
             try
             {
@@ -576,568 +567,6 @@ namespace Archivist.Services
             {
                 result.AddException(ex);
                 await _logService.ProcessResult(result);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Copies from primary archive directory to specified destination, NOT RECURSIVE
-        /// </summary>
-        /// <param name="sourceDirectoryName"></param>
-        /// <param name="destination"></param>
-        /// <returns></returns>
-        internal async Task<Result> CopyPrimaryArchives(ArchiveDirectory destination)
-        {
-            string destDirName = string.IsNullOrEmpty(destination.VolumeLabel)
-                ? $"'{destination.DirectoryPath}'"
-                : $"volume '{destination.VolumeLabel}', path '{destination.DirectoryPath}'";
-
-            Result result = new(
-                functionName: "CopyPrimaryArchives",
-                addStartingItem: true,
-                functionQualifier: $"from '{_jobSpec.PrimaryArchiveDirectoryPath}' to {destDirName}");
-
-            try
-            {
-                result.AddInfo($"Including {destination.IncludeSpecificationsText}, excluding { destination.ExcludeSpecificationsText}");
-
-                result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath!, destination.VolumeLabel));
-
-                var diSrc = new DirectoryInfo(_jobSpec.PrimaryArchiveDirectoryPath!);
-                var diDest = new DirectoryInfo(destination.DirectoryPath!);
-
-                foreach (var tempFile in diDest.GetFiles("*.copying"))
-                {
-                    result.AddInfo($"Deleting old temporary file '{tempFile.Name}'");
-                    tempFile.Delete();
-                }
-
-                if (destination.IsRemovable)
-                {
-                    string drive = Path.GetPathRoot(destination.DirectoryPath)!;
-
-                    if (!Directory.Exists(drive))
-                    {
-                        result.AddInfo($"Removable destination drive {drive.Substring(0, 1)} is not mounted, skipping");
-                        await _logService.ProcessResult(result);
-                        return result;
-                    }
-                }
-
-                if (!diDest.Exists)
-                {
-                    Directory.CreateDirectory(destination.DirectoryPath!);
-                    diDest = new DirectoryInfo(destination.DirectoryPath!);
-
-                    if (!diDest.Exists)
-                    {
-                        if (destination.IsRemovable)
-                        {
-                            result.AddWarning($"Removable destination directory {destination.DirectoryPath} does not exist and cannot be created");
-                        }
-                        else
-                        {
-                            result.AddError($"Non-removable destination directory {destination.DirectoryPath} does not exist and cannot be created");
-                        }
-                    }
-                }
-
-                if (diSrc.Exists)
-                {
-                    // NOT RECURSIVE
-
-                    result.Statistics.FileFound(Directory.GetFiles(_jobSpec.PrimaryArchiveDirectoryPath!, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length);
-
-                    var fileNameList = destination.IncludeSpecifications
-                        .SelectMany(_ => Directory.GetFiles(_jobSpec.PrimaryArchiveDirectoryPath!, _, SearchOption.TopDirectoryOnly))
-                        .ToArray()
-                        .OrderBy(_ => _)
-                        .ToList();
-
-                    List<Regex> excludeRegexList = new();
-
-                    foreach (var excludeSpec in destination.ExcludeSpecifications)
-                    {
-                        excludeRegexList.Add(excludeSpec.GenerateRegexForFileMask());
-                    }
-
-                    // Iterate backwards through the list so we can change it while iterating
-
-                    for (int i = fileNameList.Count - 1; i >= 0; i--)
-                    {
-                        foreach (var excludeRegex in excludeRegexList.ToList())
-                        {
-                            // If we specifically exclude this file name
-
-                            if (excludeRegex.IsMatch(fileNameList[i]))
-                            {
-                                fileNameList.RemoveAt(i);
-                                break;
-                            }
-                        }
-                    }
-
-                    result.AddDebug($"Checking {fileNameList.Count} files of {result.Statistics.ItemsFound}");
-
-                    fileNameList = GenerateVersionedFileSets(fileNameList, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays, out Dictionary<string, List<string>> versionedFileSets);
-
-                    var stopwatch = Stopwatch.StartNew();
-
-                    foreach (var fileName in fileNameList.OrderBy(_ => _))
-                    {
-                        var fiSrc = new FileInfo(fileName);
-                        string destinationFileName = Path.Combine(destination.DirectoryPath!, fiSrc.Name);
-
-                        var fiDest = new FileInfo(destinationFileName);
-
-                        bool doCopy = true;
-
-                        //result.AddDebug($"Processing source {fileName}, destination {destinationFileName}");
-
-                        if (fiDest.Exists)
-                        {
-                            if (fiSrc.LastWriteTimeUtc.CompareTo(fiDest.LastWriteTimeUtc) == 0)
-                            {
-                                doCopy = false;
-                                //result.AddDebug($"Source and destination for '{fiSrc.Name}' have identical last write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
-                            }
-                            else
-                            {
-                                var howStale = fiSrc.LastWriteTimeUtc - fiDest.LastWriteTimeUtc;
-
-                                if (howStale.TotalMinutes < 5)
-                                {
-                                    doCopy = false;
-                                    //result.AddDebug($"Source and destination for '{fiSrc.Name}' have close enough write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
-                                }
-                            }
-
-                            //    if (doCopy)
-                            //    {
-                            //        result.AddDebug($"Source and destination for '{fiSrc.Name}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
-                            //    }
-                            //}
-                            //else
-                            //{
-                            //    result.AddDebug($"Destination '{destinationFileName}' does not exist");
-                        }
-
-                        if (doCopy)
-                        {
-                            double spaceAvailable = FileUtilities.GetAvailableDiskSpace(destination.DirectoryPath!);
-
-                            if (spaceAvailable < fiSrc.Length)
-                            {
-                                doCopy = false;
-                                result.AddWarning($"Insufficient space to copy {fiSrc.Name} to {destination.DirectoryPath}");
-                            }
-                        }
-
-                        if (doCopy)
-                        {
-                            string tempDestFileName = destinationFileName + ".copying";
-
-                            // Don't write this to the console, it gets it's own snazzy progress indicator
-                            result.AddDebug($"Copying {fileName} to {destinationFileName} {FileUtilities.GetByteSizeAsText(fiSrc.Length)}");
-                            await _logService.ProcessResult(result);
-
-                            try
-                            {
-                                if (File.Exists(tempDestFileName))
-                                {
-                                    File.Delete(tempDestFileName);
-                                }
-
-                                decimal percentageComplete = 0;
-
-                                Progress<KeyValuePair<long, long>> progressReporter = new();
-
-                                LogEntry progressLogEntry = new(
-                                    percentComplete: 0,
-                                    prefix: $"Copying {fiSrc.Name}", // {fileName} to {destination.DirectoryPath}",
-                                    suffix: $"of {FileUtilities.GetByteSizeAsText(fiSrc.Length)}" // complete"
-                                );
-
-                                progressReporter.ProgressChanged += delegate (object? obj, KeyValuePair<long, long> progressValue)
-                                {
-                                    if (progressValue.Key == 0)
-                                    {
-                                        progressLogEntry.PercentComplete = 0;
-                                        _logService.LogToConsole(progressLogEntry);
-                                    }
-                                    else if (progressValue.Key == progressValue.Value)
-                                    {
-                                        progressLogEntry.PercentComplete = 100;
-                                        _logService.LogToConsole(progressLogEntry);
-                                    }
-                                    else
-                                    {
-                                        decimal thisPercentage = ((decimal)progressValue.Key / (decimal)progressValue.Value) * 100;
-
-                                        if (thisPercentage > (percentageComplete + 1))
-                                        {
-                                            percentageComplete = thisPercentage;
-                                            progressLogEntry.PercentComplete = (short)percentageComplete;
-                                            _logService.LogToConsole(progressLogEntry);
-                                        }
-                                    }
-                                };
-
-                                using (FileStream sourceStream = File.Open(fileName, FileMode.Open))
-                                {
-                                    using (FileStream destinationStream = File.Create(tempDestFileName))
-                                    {
-                                        await sourceStream.CopyToAsyncProgress(sourceStream.Length, destinationStream, progressReporter, default);
-                                    }
-                                }
-
-                                if (File.Exists(tempDestFileName))
-                                {
-                                    result.AddSuccess($"Copied {fiSrc.Name} to {destination.DirectoryPath} ({FileUtilities.GetByteSizeAsText(fiSrc.Length)}) OK");
-                                    await _logService.ProcessResult(result);
-                                    File.Move(tempDestFileName, destinationFileName, true);
-                                }
-
-                                result.Statistics.FiledAdded(fiSrc.Length);
-                                destination.Statistics.FiledAdded(fiSrc.Length);
-                            }
-                            catch (Exception fileException)
-                            {
-                                result.AddException(fileException);
-                                await _logService.ProcessResult(result);
-                            }
-
-                            if (File.Exists(destinationFileName))
-                            {
-                                TotalBytesCopied += fiSrc.Length;
-                                TotalFilesCopied++;
-
-                                fiDest = new FileInfo(destinationFileName)
-                                {
-                                    LastWriteTimeUtc = fiSrc.LastWriteTimeUtc,
-                                    CreationTimeUtc = fiSrc.CreationTimeUtc
-                                };
-                            }
-                            else
-                            {
-                                result.AddError($"Failed to copy to {destinationFileName}");
-                            }
-                        }
-                    }
-
-                    foreach (var fileSet in versionedFileSets)
-                    {
-                        var baseFileName = fileSet.Key;
-                        result.SubsumeResult(await DeleteOldVersions(destination.DirectoryPath!, baseFileName, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays));
-                    }
-
-                    if (result.Statistics.ItemsProcessed > 0)
-                    {
-                        stopwatch.Stop();
-
-                        double mbps = result.Statistics.BytesProcessed / stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
-
-                        result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{_jobSpec.PrimaryArchiveDirectoryPath}' to {destDirName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
-
-                        result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath!, destination.VolumeLabel));
-                    }
-                    else
-                    {
-                        result.AddInfo($"No files needed copying from '{_jobSpec.PrimaryArchiveDirectoryPath}' to {destDirName}");
-                    }
-                }
-                else
-                {
-                    result.AddError($"Source directory does not exist");
-                }
-
-                await _logService.ProcessResult(result, reportItemCounts: true, reportCompletion: true, reportAllStatistics: true);
-            }
-            catch (Exception ex)
-            {
-                result.AddException(ex);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Copies from primary archive directory to specified destination, NOT RECURSIVE
-        /// </summary>
-        /// <param name="sourceDirectoryName"></param>
-        /// <param name="destination"></param>
-        /// <returns></returns>
-        internal async Task<Result> CopyPrimaryArchives2(ArchiveDirectory destination)
-        {
-            string destDirName = string.IsNullOrEmpty(destination.VolumeLabel)
-                ? $"'{destination.DirectoryPath}'"
-                : $"volume '{destination.VolumeLabel}', path '{destination.DirectoryPath}'";
-
-            Result result = new(
-                functionName: "CopyPrimaryArchives",
-                addStartingItem: true,
-                functionQualifier: $"from '{_jobSpec.PrimaryArchiveDirectoryPath}' to {destDirName}");
-
-            try
-            {
-                result.AddInfo($"Including {destination.IncludeSpecificationsText}, excluding { destination.ExcludeSpecificationsText}");
-
-                result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath!, destination.VolumeLabel));
-
-                var diSrc = new DirectoryInfo(_jobSpec.PrimaryArchiveDirectoryPath!);
-                var diDest = new DirectoryInfo(destination.DirectoryPath!);
-
-                foreach (var tempFile in diDest.GetFiles("*.copying"))
-                {
-                    result.AddInfo($"Deleting old temporary file '{tempFile.Name}'");
-                    tempFile.Delete();
-                }
-
-                if (destination.IsRemovable)
-                {
-                    string drive = Path.GetPathRoot(destination.DirectoryPath)!;
-
-                    if (!Directory.Exists(drive))
-                    {
-                        result.AddInfo($"Removable destination drive {drive.Substring(0, 1)} is not mounted, skipping");
-                        await _logService.ProcessResult(result);
-                        return result;
-                    }
-                }
-
-                if (!diDest.Exists)
-                {
-                    Directory.CreateDirectory(destination.DirectoryPath!);
-                    diDest = new DirectoryInfo(destination.DirectoryPath!);
-
-                    if (!diDest.Exists)
-                    {
-                        if (destination.IsRemovable)
-                        {
-                            result.AddWarning($"Removable destination directory {destination.DirectoryPath} does not exist and cannot be created");
-                        }
-                        else
-                        {
-                            result.AddError($"Non-removable destination directory {destination.DirectoryPath} does not exist and cannot be created");
-                        }
-                    }
-                }
-
-                if (diSrc.Exists)
-                {
-                    // NOT RECURSIVE
-
-                    result.Statistics.FileFound(Directory.GetFiles(_jobSpec.PrimaryArchiveDirectoryPath!, searchPattern: "*.*", searchOption: SearchOption.TopDirectoryOnly).Length);
-
-                    var fileNameList = destination.IncludeSpecifications
-                        .SelectMany(_ => Directory.GetFiles(_jobSpec.PrimaryArchiveDirectoryPath!, _, SearchOption.TopDirectoryOnly))
-                        .ToArray()
-                        .OrderBy(_ => _)
-                        .ToList();
-
-                    List<Regex> excludeRegexList = new();
-
-                    foreach (var excludeSpec in destination.ExcludeSpecifications)
-                    {
-                        excludeRegexList.Add(excludeSpec.GenerateRegexForFileMask());
-                    }
-
-                    // Iterate backwards through the list so we can change it while iterating
-
-                    for (int i = fileNameList.Count - 1; i >= 0; i--)
-                    {
-                        foreach (var excludeRegex in excludeRegexList.ToList())
-                        {
-                            // If we specifically exclude this file name
-
-                            if (excludeRegex.IsMatch(fileNameList[i]))
-                            {
-                                fileNameList.RemoveAt(i);
-                                break;
-                            }
-                        }
-                    }
-
-                    result.AddDebug($"Checking {fileNameList.Count} files of {result.Statistics.ItemsFound}");
-
-                    fileNameList = GenerateVersionedFileSets(fileNameList, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays, out Dictionary<string, List<string>> versionedFileSets);
-
-                    var stopwatch = Stopwatch.StartNew();
-
-                    foreach (var fileName in fileNameList.OrderBy(_ => _))
-                    {
-                        var fiSrc = new FileInfo(fileName);
-                        string destinationFileName = Path.Combine(destination.DirectoryPath!, fiSrc.Name);
-
-                        var fiDest = new FileInfo(destinationFileName);
-
-                        bool doCopy = true;
-
-                        //result.AddDebug($"Processing source {fileName}, destination {destinationFileName}");
-
-                        if (fiDest.Exists)
-                        {
-                            if (fiSrc.LastWriteTimeUtc.CompareTo(fiDest.LastWriteTimeUtc) == 0)
-                            {
-                                doCopy = false;
-                                //result.AddDebug($"Source and destination for '{fiSrc.Name}' have identical last write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
-                            }
-                            else
-                            {
-                                var howStale = fiSrc.LastWriteTimeUtc - fiDest.LastWriteTimeUtc;
-
-                                if (howStale.TotalMinutes < 5)
-                                {
-                                    doCopy = false;
-                                    //result.AddDebug($"Source and destination for '{fiSrc.Name}' have close enough write times, skipping ({fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)})");
-                                }
-                            }
-
-                            //    if (doCopy)
-                            //    {
-                            //        result.AddDebug($"Source and destination for '{fiSrc.Name}' differ, dates {fiSrc.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} and {fiDest.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} (lengths {fiSrc.Length:N0} / {fiDest.Length:N0})");
-                            //    }
-                            //}
-                            //else
-                            //{
-                            //    result.AddDebug($"Destination '{destinationFileName}' does not exist");
-                        }
-
-                        if (doCopy)
-                        {
-                            double spaceAvailable = FileUtilities.GetAvailableDiskSpace(destination.DirectoryPath!);
-
-                            if (spaceAvailable < fiSrc.Length)
-                            {
-                                doCopy = false;
-                                result.AddWarning($"Insufficient space to copy {fiSrc.Name} to {destination.DirectoryPath}");
-                            }
-                        }
-
-                        if (doCopy)
-                        {
-                            string tempDestFileName = destinationFileName + ".copying";
-
-                            // Don't write this to the console, it gets it's own snazzy progress indicator
-                            result.AddDebug($"Copying {fileName} to {destinationFileName} {FileUtilities.GetByteSizeAsText(fiSrc.Length)}");
-                            await _logService.ProcessResult(result);
-
-                            try
-                            {
-                                if (File.Exists(tempDestFileName))
-                                {
-                                    File.Delete(tempDestFileName);
-                                }
-
-                                decimal percentageComplete = 0;
-
-                                Progress<KeyValuePair<long, long>> progressReporter = new();
-
-                                LogEntry progressLogEntry = new(
-                                    percentComplete: 0,
-                                    prefix: $"Copying {fiSrc.Name}", // {fileName} to {destination.DirectoryPath}",
-                                    suffix: $"of {FileUtilities.GetByteSizeAsText(fiSrc.Length)}" // complete"
-                                );
-
-                                progressReporter.ProgressChanged += delegate (object? obj, KeyValuePair<long, long> progressValue)
-                                {
-                                    if (progressValue.Key == 0)
-                                    {
-                                        progressLogEntry.PercentComplete = 0;
-                                        _logService.LogToConsole(progressLogEntry);
-                                    }
-                                    else if (progressValue.Key == progressValue.Value)
-                                    {
-                                        progressLogEntry.PercentComplete = 100;
-                                        _logService.LogToConsole(progressLogEntry);
-                                    }
-                                    else
-                                    {
-                                        decimal thisPercentage = ((decimal)progressValue.Key / (decimal)progressValue.Value) * 100;
-
-                                        if (thisPercentage > (percentageComplete + 1))
-                                        {
-                                            percentageComplete = thisPercentage;
-                                            progressLogEntry.PercentComplete = (short)percentageComplete;
-                                            _logService.LogToConsole(progressLogEntry);
-                                        }
-                                    }
-                                };
-
-                                using (FileStream sourceStream = File.Open(fileName, FileMode.Open))
-                                {
-                                    using (FileStream destinationStream = File.Create(tempDestFileName))
-                                    {
-                                        await sourceStream.CopyToAsyncProgress(sourceStream.Length, destinationStream, progressReporter, default);
-                                    }
-                                }
-
-                                if (File.Exists(tempDestFileName))
-                                {
-                                    result.AddSuccess($"Copied {fiSrc.Name} to {destination.DirectoryPath} ({FileUtilities.GetByteSizeAsText(fiSrc.Length)}) OK");
-                                    await _logService.ProcessResult(result);
-                                    File.Move(tempDestFileName, destinationFileName, true);
-                                }
-
-                                result.Statistics.FiledAdded(fiSrc.Length);
-                                destination.Statistics.FiledAdded(fiSrc.Length);
-                            }
-                            catch (Exception fileException)
-                            {
-                                result.AddException(fileException);
-                                await _logService.ProcessResult(result);
-                            }
-
-                            if (File.Exists(destinationFileName))
-                            {
-                                TotalBytesCopied += fiSrc.Length;
-                                TotalFilesCopied++;
-
-                                fiDest = new FileInfo(destinationFileName)
-                                {
-                                    LastWriteTimeUtc = fiSrc.LastWriteTimeUtc,
-                                    CreationTimeUtc = fiSrc.CreationTimeUtc
-                                };
-                            }
-                            else
-                            {
-                                result.AddError($"Failed to copy to {destinationFileName}");
-                            }
-                        }
-                    }
-
-                    foreach (var fileSet in versionedFileSets)
-                    {
-                        var baseFileName = fileSet.Key;
-                        result.SubsumeResult(await DeleteOldVersions(destination.DirectoryPath!, baseFileName, destination.RetainMinimumVersions, destination.RetainMaximumVersions, destination.RetainYoungerThanDays));
-                    }
-
-                    if (result.Statistics.ItemsProcessed > 0)
-                    {
-                        stopwatch.Stop();
-
-                        double mbps = result.Statistics.BytesProcessed / stopwatch.Elapsed.TotalSeconds / 1024 / 1024;
-
-                        result.AddSuccess($"Copied {result.Statistics.ItemsProcessed} files from '{_jobSpec.PrimaryArchiveDirectoryPath}' to {destDirName}, total {FileUtilities.GetByteSizeAsText(result.Statistics.BytesProcessed)} in {stopwatch.Elapsed.TotalSeconds:N0}s ({mbps:N0}MB/s)");
-
-                        result.SubsumeResult(FileUtilities.CheckDiskSpace(destination.DirectoryPath!, destination.VolumeLabel));
-                    }
-                    else
-                    {
-                        result.AddInfo($"No files needed copying from '{_jobSpec.PrimaryArchiveDirectoryPath}' to {destDirName}");
-                    }
-                }
-                else
-                {
-                    result.AddError($"Source directory does not exist");
-                }
-
-                await _logService.ProcessResult(result, reportItemCounts: true, reportCompletion: true, reportAllStatistics: true);
-            }
-            catch (Exception ex)
-            {
-                result.AddException(ex);
             }
 
             return result;

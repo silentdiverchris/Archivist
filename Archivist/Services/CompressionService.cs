@@ -36,7 +36,7 @@ namespace Archivist.Services
 
         internal async Task<Result> CompressSources()
         {
-            Result result = new("CompressSources", true);
+            Result result = new("CompressSources", false);
 
             await _logService.ProcessResult(result);
 

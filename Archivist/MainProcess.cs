@@ -125,6 +125,12 @@ namespace Archivist
                 {
                     Result compressionResult = await compressionService.CompressSources();
                     result.SubsumeResult(compressionResult);
+
+                    // To be implemented soon
+                    //var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
+                    //_logService.DumpArchiveRegistry(archiveRegister);
+                    //Result executeResult = await fileService.ExecuteFileCompressActions(archiveRegister);
+                    //result.SubsumeResult(executeResult);
                 }
 
                 if (!result.HasErrors)
@@ -134,16 +140,17 @@ namespace Archivist
 
                     using (var fileService = new FileService(_appSettings.SelectedJob, _appSettings, _logService))
                     {
-                        // While we're testing the archiveRegistry, don't do any real copying to give it something to report on
-
-                        //Result copyArchivesResult = await fileService.CopyToArchives();
-                        //result.SubsumeResult(copyArchivesResult);
-
                         Result executeResult = await fileService.ExecuteFileCopyActions(archiveRegister);
                         result.SubsumeResult(executeResult);
 
-                        //Result reportResult = await fileService.GenerateFileReport();
-                        //result.SubsumeResult(reportResult);
+                        // To be implemented soon
+                        //var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
+                        //_logService.DumpArchiveRegistry(archiveRegister);
+                        //Result executeResult = await fileService.ExecuteFileDeleteActions(archiveRegister);
+                        //result.SubsumeResult(executeResult);
+
+                        Result reportResult = await fileService.GenerateFileReport();
+                        result.SubsumeResult(reportResult);
                     }
                 }
             }
@@ -194,7 +201,7 @@ namespace Archivist
 
             foreach (var dir in _appSettings.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable).OrderBy(_ => _.DirectoryPath))
             {
-                dir.VerifyVolume(); 
+                dir.VerifyVolume();
                 result.SubsumeResult(FileUtilities.CheckDiskSpace(dir.DirectoryPath!, dir.VolumeLabel));
             }
 

@@ -128,6 +128,8 @@ namespace Archivist.Services
             {
                 LogToConsole(new LogEntry(act.Description));
             }
+
+            LogToConsole(new LogEntry(""));
         }
 
         /// <summary>
