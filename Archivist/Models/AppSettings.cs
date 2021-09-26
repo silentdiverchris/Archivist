@@ -207,12 +207,6 @@ namespace Archivist.Models
         public short DisabledAtHour { get; set; } = 0;
 
         /// <summary>
-        /// Marks this directory as one to process when the backup type has ProcessTestOnly set, this
-        /// is just used for developing the code
-        /// </summary>
-        public bool IsForTesting { get; set; } = false;
-
-        /// <summary>
         /// Whether this is a slow volume, used in conjunction with config WriteToSlowVolumes so
         /// backup jobs that only read from and write to fast drives can be set up by setting job 
         /// setting ProcessSlowVolumes to false.
@@ -281,9 +275,6 @@ namespace Archivist.Models
                 return false;
 
             if (IsSlowVolume && jobSpec.ProcessSlowVolumes == false)
-                return false;
-
-            if (jobSpec.ProcessTestOnly && IsForTesting == false)
                 return false;
 
             if (EnabledAtHour != 0 || DisabledAtHour != 0)
@@ -429,11 +420,6 @@ namespace Archivist.Models
         /// Whether the console window will wait for a key to be pressed before closing
         /// </summary>
         public bool PauseBeforeExit { get; set; } = false;
-
-        /// <summary>
-        /// Only process those directories that are marked as test ones, for development testing
-        /// </summary>
-        public bool ProcessTestOnly { get; set; } = false;
 
         /// <summary>
         /// Use the IsSlowVolume setting on archive directories to decide whether to process 

@@ -42,7 +42,6 @@ namespace Archivist.Utilities
                         Description = "An example of a job specification, you will need to edit this to point it at a primary archive directory, and any other changes you want to make.",
                         WriteToConsole = true,
                         PauseBeforeExit = true,
-                        ProcessTestOnly = true,
                         ProcessSlowVolumes = false,
                         PrimaryArchiveDirectoryPath = @"M:\PrimaryArchiveDirectoryName"
                     },
@@ -71,7 +70,6 @@ namespace Archivist.Utilities
                 GlobalSourceDirectories = new List<SourceDirectory> {
                     new SourceDirectory {
                         IsEnabled = true,
-                        IsForTesting = false,
                         DirectoryPath = @"C:\ProbablyDoesntExist",
                         RetainMaximumVersions = 3,
                         EncryptOutput = false
@@ -79,14 +77,12 @@ namespace Archivist.Utilities
                     new SourceDirectory {
                         Priority = 3,
                         IsEnabled = true,
-                        IsForTesting = false,
                         DirectoryPath = @"C:\ProbablyDoesntExistEither",
                         RetainMaximumVersions = 5,
                         EncryptOutput = true
                     },
                     new SourceDirectory {
                         IsEnabled = true,
-                        IsForTesting = true,
                         DirectoryPath = @"D:\Temp",
                         CompressionLevel = CompressionLevel.Fastest,
                         RetainMaximumVersions = 2,
@@ -118,7 +114,6 @@ namespace Archivist.Utilities
                         Description = "External SSD connected on demand",
                         IsSlowVolume = true,
                         IsEnabled = true,
-                        IsForTesting = true,
                         IsRemovable = true,
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
@@ -132,7 +127,6 @@ namespace Archivist.Utilities
                         Description = "External HDD connected on demand just for latest versions of all media",
                         IsSlowVolume = true,
                         IsEnabled = true,
-                        IsForTesting = true,
                         IsRemovable = true,
                         IncludeSpecifications = new List<string> { "Media*.*" },
                         ExcludeSpecifications = new List<string> { },
@@ -145,7 +139,6 @@ namespace Archivist.Utilities
                         Description = "Internal massive HDD",
                         IsSlowVolume = true,
                         IsEnabled = true,
-                        IsForTesting = true,
                         IsRemovable = true,
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { },

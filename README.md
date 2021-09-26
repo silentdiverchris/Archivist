@@ -487,278 +487,9 @@ You may well end up deleting most of it, but it seems a good idea to give a full
 The first few lines are basic setup details, then it goes into describing two example jobs and the directories that they will process.
 
 ```json
-{
-  "DefaultJobName": "ExampleJob1",
-  "LogDirectoryPath": "Log",
-  "AESEncryptPath": "",
-  "SqlConnectionString": "",
-  "VerboseConsole": false,
-  "VerboseEventLog": false,
-  "Jobs": [
-    {
-      "Name": "ExampleJob1",
-      "Description": "An example of a job specification, you will need to edit this",
-      "AutoViewLogFile": false,
-      "WriteToConsole": true,
-      "PauseBeforeExit": true,
-      "ProcessTestOnly": true,
-      "ProcessSlowVolumes": false,
-      "ArchiveFairlyStatic": false,
-      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveDirectoryName",
-      "EncryptionPassword": null,
-      "EncryptionPasswordFile": null,
-      "SourceDirectories": [],
-      "ArchiveDirectories": [],
-      "SecureDirectories": []
-    },
-    {
-      "Name": "ExampleJob2",
-      "Description": "Another example of a job specification",
-      "AutoViewLogFile": false,
-      "WriteToConsole": true,
-      "PauseBeforeExit": true,
-      "ProcessTestOnly": false,
-      "ProcessSlowVolumes": false,
-      "ArchiveFairlyStatic": false,
-      "PrimaryArchiveDirectoryName": "M:\\PrimaryArchiveDirectoryName",
-      "EncryptionPassword": null,
-      "EncryptionPasswordFile": "C:\\InvalidDirectoryName\\PasswordInTextFile.txt",
-      "SourceDirectories": [],
-      "ArchiveDirectories": [],
-      "SecureDirectories": []
-    }
-  ],
-  "GlobalSourceDirectories": [
-    {
-      "MinutesOldThreshold": 0,
-      "CheckTaskNameIsNotRunning": null,
-      "IsFairlyStatic": false,
-      "CompressionLevel": 0,
-      "ReplaceExisting": true,
-      "EncryptOutput": false,
-      "DeleteArchiveAfterEncryption": true,
-      "AddVersionSuffix": true,
-      "OutputFileName": null,
-      "RetainMaximumVersions": 2,
-      "RetainYoungerThanDays": 7,
-      "IncludeSpecifications": null,
-      "ExcludeSpecifications": null,
-      "VolumeLabel": null,
-      "DirectoryPath": "C:\\ProbablyDoesntExist",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "Priority": 99,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "IsSlowVolume": false
-    },
-    {
-      "MinutesOldThreshold": 0,
-      "CheckTaskNameIsNotRunning": null,
-      "IsFairlyStatic": false,
-      "CompressionLevel": 0,
-      "ReplaceExisting": true,
-      "EncryptOutput": true,
-      "DeleteArchiveAfterEncryption": true,
-      "AddVersionSuffix": true,
-      "OutputFileName": null,
-      "RetainMaximumVersions": 2,
-      "RetainYoungerThanDays": 7,
-      "IncludeSpecifications": null,
-      "ExcludeSpecifications": null,
-      "VolumeLabel": null,
-      "DirectoryPath": "C:\\ProbablyDoesntExistEither",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "Priority": 3,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "IsSlowVolume": false
-    },
-    {
-      "MinutesOldThreshold": 60,
-      "CheckTaskNameIsNotRunning": null,
-      "IsFairlyStatic": false,
-      "CompressionLevel": 1,
-      "ReplaceExisting": true,
-      "EncryptOutput": false,
-      "DeleteArchiveAfterEncryption": false,
-      "AddVersionSuffix": true,
-      "OutputFileName": null,
-      "RetainMaximumVersions": 2,
-      "RetainYoungerThanDays": 7,
-      "IncludeSpecifications": null,
-      "ExcludeSpecifications": null,
-      "VolumeLabel": null,
-      "DirectoryPath": "D:\\Temp",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "Priority": 99,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": true,
-      "IsSlowVolume": false
-    },
-    {
-      "MinutesOldThreshold": 0,
-      "CheckTaskNameIsNotRunning": null,
-      "IsFairlyStatic": true,
-      "CompressionLevel": 2,
-      "ReplaceExisting": true,
-      "EncryptOutput": false,
-      "DeleteArchiveAfterEncryption": false,
-      "AddVersionSuffix": false,
-      "OutputFileName": null,
-      "RetainMaximumVersions": 1,
-      "RetainYoungerThanDays": 7,
-      "IncludeSpecifications": null,
-      "ExcludeSpecifications": null,
-      "VolumeLabel": null,
-      "DirectoryPath": "M:\\Media\\Movies",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "Priority": 99,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "IsSlowVolume": false
-    }
-  ],
-  "GlobalArchiveDirectories": [
-    {
-      "RetainMaximumVersions": 2,
-      "RetainYoungerThanDays": 90,
-      "IncludeSpecifications": [
-        "*.zip"
-      ],
-      "ExcludeSpecifications": [
-        "Media-*.*",
-        "Temp*.*",
-        "Incoming*.*"
-      ],
-      "VolumeLabel": "BigMicroSD-01",
-      "DirectoryPath": "ArchivedFiles",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": "A very slow but big and cheap MicroSD card",
-      "IsEnabled": true,
-      "IsRemovable": true,
-      "Priority": 3,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "IsSlowVolume": true
-    },
-    {
-      "RetainMaximumVersions": 5,
-      "RetainYoungerThanDays": 90,
-      "IncludeSpecifications": [
-        "*.zip"
-      ],
-      "ExcludeSpecifications": [
-        "Media-*.*",
-        "Temp*.*",
-        "Incoming*.*"
-      ],
-      "VolumeLabel": "ExternalSSD-01",
-      "DirectoryPath": "ArchivedFileDirectoryName",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": "External SSD connected on demand",
-      "IsEnabled": true,
-      "IsRemovable": true,
-      "Priority": 1,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": true,
-      "IsSlowVolume": true
-    },
-    {
-      "RetainMaximumVersions": 1,
-      "RetainYoungerThanDays": 7,
-      "IncludeSpecifications": [
-        "Media*.*"
-      ],
-      "ExcludeSpecifications": [],
-      "VolumeLabel": "ExternalHDD-01",
-      "DirectoryPath": "ArchivedFileDirectoryName",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": "External HDD connected on demand just for latest versions of all media",
-      "IsEnabled": true,
-      "IsRemovable": true,
-      "Priority": 1,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": true,
-      "IsSlowVolume": true
-    },
-    {
-      "RetainMaximumVersions": 10,
-      "RetainYoungerThanDays": 365,
-      "IncludeSpecifications": [
-        "*.zip"
-      ],
-      "ExcludeSpecifications": [],
-      "VolumeLabel": null,
-      "DirectoryPath": "Z:\\Archive",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": "Internal massive HDD",
-      "IsEnabled": true,
-      "IsRemovable": true,
-      "Priority": 2,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": true,
-      "IsSlowVolume": true
-    }
-  ],
-  "GlobalSecureDirectories": [
-    {
-      "VolumeLabel": null,
-      "DirectoryPath": "C:\\Something\\Secure",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "Priority": 99,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "IsSlowVolume": false
-    },
-    {
-      "VolumeLabel": null,
-      "DirectoryPath": "C:\\SomethingElse\\AlsoSecure",
-      "SynchoniseFileTimestamps": true,
-      "DeleteSourceAfterEncrypt": false,
-      "Description": null,
-      "IsEnabled": true,
-      "IsRemovable": false,
-      "Priority": 99,
-      "EnabledAtHour": 0,
-      "DisabledAtHour": 0,
-      "IsForTesting": false,
-      "IsSlowVolume": false
-    }
-  ]
-}
+
+re-add sample appsettings.json
+
 ```
 
 ## Running the code in debug mode
@@ -775,9 +506,7 @@ In this section of the settings you can, well, must define at least one job, for
 |-----|-----|
 |Name|The name of the job to run, give this as the first parameter when calling Archiver.exe or specify it in the application settings RunJobName, the parameter will override the application settings. Job name cannot contain spaces.|
 |Description|A text description of what this job does, not validated, just for human consumption.|
-|ProcessTestOnly|For development only really, you can mark directories as ForTesting, and setting this to true will only process those.|
 |ProcessSlowVolumes|You can mark directories as IsSlowVolume, setting this to true will make it process those, if false, it'll not process slow volumes.|
-|ArchiveFairlyStatic|You can set directories as IsFairlyStatic and setting this allows you to tell a job whether to process it or not, it's intended to allow you to make a backup that only processes directories containing files that change or are added frequently, such as source code or documents, as opposed to those that don't, like a movie library.|
 |PrimaryArchiveDirectoryName|Here is where the initial zip files of each source directory are created, as such it should ideally be fairly fast and large, and on a different drive to where the source files are.<br><br>Files are copied from here to the archive directories.|
 |EncryptionPassword|The password to be used for encryption, see the [Plain text password](#PlainTextPassword) section above.<br><br>This value is overwritten if a value is provided in EncryptionPasswordFile, this will also generate a warning.|
 |EncryptionPasswordFile|Loads the encryption password from this file, overwrites any value specified in EncryptionPassword. The password should be the only thing in the file.|
@@ -794,12 +523,10 @@ These settings apply to both archive and source directories.
 |Priority|Process directories in this order, lowest number first (then by directory name alpha).|
 |EnabledAtHour|Only process this directory after this hour starts, zero disables.|
 |DisabledAtHour|Only process this directory after this hour starts, zero disables.|
-|IsForTesting|Marks this directory as one to process when the backup type has ProcessTestOnly set, this is just used for developing the code.|
 |Description|A human description of what this directory is, or what drive it's on - e.g... '128gb USB Key' or 'Where my photos are', this doesn't make anything work or break anything if left undefined, it's just a reminder for the human.|
 |IsEnabled|Whether to process this directory in any way. If it is false, this directory will be ignored.|
 |IsRemovable|Whether this is on a volume that is removable, mainly determining whether it should be considered an error if the volume it's on can't be found. If it can't be found it won't even be considered as a warning if this is true.|
 |IsSlowVolume|Whether this is a slow volume, used in conjunction with configuration WriteToSlowVolumes so backup jobs that only read from and write to fast drives can be set up by setting job setting ProcessSlowVolumes to false.|
-|RetainMinimumVersions|If a file has a version suffix (created by setting source directory setting AddVersionSuffix to true) it will always retain this many of them in this directory.|
 |RetainMaximumVersions|Only this number of versions will be retained, this is overridden by the RetainYoungerThanDays setting.|
 |RetainYoungerThanDays|Specifies the minimum age at which an archive file can be deleted, regardless of any version numbering. The age is determined by the last write time, not the creation time.<br><br>Zero disables this function. This can be sued to ensure that however many versions of the archive are created, it will not delete any file that is younger than this number of days.<br><br>This does not cause files to be deleted after that number of days, it just stops younger files being deleted.|
 |VolumeLabel|Allows the directory to be identified by the volume label rather than a drive designation, for removable drives which aren't always F:\ or whatever.<br><br>Set this to a valid volume label and ensure the DirectoryPath has no drive designation.<br><br>For example, VolumeLabel '1TB HDD' and DirectoryPath 'Archive' will map to 'F:\Archive' when that volume is mounted as drive 'F' and 'E:\Archive' when it is mounted as 'E'.|
@@ -818,14 +545,10 @@ Here you define the set of directories you want zipping up into files in the pri
 |-----|-----|
 |MinutesOldThreshold|Only process this directory if the latest file was updated or created this number of minutes ago, i.e. let files get this stale before archiving, prevents repeatedly archiving a folder if files are updated often and the archiver runs frequently.|
 |CheckTaskNameIsNotRunning|Don't process this source if a task with this name is running, e.g. I use Thunderbird for email which holds on to the files email are stored in, so I have this set to 'Thunderbird' for that source directory.<br><br>Any running task found with this string in the name will prevent this directory being processed and generate a warning.|
-|IsFairlyStatic|Indicates whether this source is something that changes a lot, e.g... source code as opposed to sets of files that are occasionally added to but not often changed like movies and photos.<br><br>This doesn't stop it being archived, but means you can set up archive jobs to choose whether to process this source based on the job ArchiveFairlyStatic setting.|
 |CompressionLevel|What type of compression to use on creating zip files, options are;<br>0: Optimal<br>1: Fastest<br>2: NoCompression<br>3: SmallestSize<br>For full details see the [Microsoft documentation](https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.zipfile.createfromdirectory?view=net-5.0).|
 |ReplaceExisting|Overwrite any output files with the same name as one being created.|
 |EncryptOutput|Encrypt the output file after zipping, uses AESEncrypt at the moment, see the [AESCrypt](#AESCrypt) section above for setup instructions.<br><br>You need to install it manually and put the path to the exe in the AESEncryptPath setting in appsettings.json.<br><br>The reason it doesn't use built-in .Net encryption is because I use the AESEncrypt Explorer extension so want to encrypt files with the same code.|
 |DeleteArchiveAfterEncryption|Delete the unencrypted zip archive after successful encryption.|
-|OutputFileName|The name of the zipped output file (no path), if not specified it uses the path to generate the name so directory 'C:\AbC\DeF\GhI' will be archived to 'AbC-DeF-GhI.zip'.<br><br>For ease of use and clarity it's best to default this unless you really want to set the name to something else.|
-|AddVersionSuffix|Adds a suffix to the file name of the form '-nnnn' before the extension, each new file adds 1 to the number. Archiving 'C:\Blah' with the default OutputFileName setting results in files 'Blah-0001.zip', 'Blah-0002.zip' etc..<br><br>This works alongside RetainMinimumVersions, RetainMaximumVersions and RetainYoungerThanDays to control the number of versions that are retained.|
-|MinutesOldThreshold|Set this to more than zero to have the system ignore new and altered files until they are this old. This allows you to stop the system making many archives of files that change frequently if you run archiver often.<br><br>For example, you might set a directory to 60 so it only archives files in there that were created or changed over an hour ago.|
 
 ## Archive directories
 
