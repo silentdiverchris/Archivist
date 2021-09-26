@@ -312,14 +312,6 @@ namespace Archivist.Models
         }
 
         /// <summary>
-        /// Retain at least this many versions of each archive in this directory, zero means we keep all versions, which
-        /// will eventually fill the volume. One gotcha is that if you set this lower on an archive directory
-        /// than on the source directory the system will keep copying over older versions and then deleting 
-        /// them, watch out for that.
-        /// </summary>
-        public int RetainMinimumVersions { get; set; } = Constants.RETAIN_VERSIONS_MINIMUM;
-
-        /// <summary>
         /// Retain a maximum of this many versions in this directory, zero means we keep all versions, which
         /// will eventually fill the volume. One gotcha is that if you set this lower on an archive directory
         /// than on the source directory the system will keep copying over older versions and then deleting 

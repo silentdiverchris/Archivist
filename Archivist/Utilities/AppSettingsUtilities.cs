@@ -73,7 +73,6 @@ namespace Archivist.Utilities
                         IsEnabled = true,
                         IsForTesting = false,
                         DirectoryPath = @"C:\ProbablyDoesntExist",
-                        RetainMinimumVersions = 1,
                         RetainMaximumVersions = 3,
                         EncryptOutput = false
                     },
@@ -82,7 +81,6 @@ namespace Archivist.Utilities
                         IsEnabled = true,
                         IsForTesting = false,
                         DirectoryPath = @"C:\ProbablyDoesntExistEither",
-                        RetainMinimumVersions = 1,
                         RetainMaximumVersions = 5,
                         EncryptOutput = true
                     },
@@ -91,7 +89,6 @@ namespace Archivist.Utilities
                         IsForTesting = true,
                         DirectoryPath = @"D:\Temp",
                         CompressionLevel = CompressionLevel.Fastest,
-                        RetainMinimumVersions = 1,
                         RetainMaximumVersions = 2,
                         MinutesOldThreshold = 60
                     },
@@ -113,7 +110,6 @@ namespace Archivist.Utilities
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         VolumeLabel = "BigMicroSD-01",
                         DirectoryPath = "ArchivedFiles",
-                        RetainMinimumVersions = 1,
                         RetainMaximumVersions = 2,
                         RetainYoungerThanDays = 90
                     },
@@ -128,7 +124,6 @@ namespace Archivist.Utilities
                         ExcludeSpecifications = new List<string> { "Media-*.*", "Temp*.*", "Incoming*.*" },
                         VolumeLabel = "ExternalSSD-01",
                         DirectoryPath = "ArchivedFileDirectoryName",
-                        RetainMinimumVersions = 1,
                         RetainMaximumVersions = 5,
                         RetainYoungerThanDays = 90
                     },
@@ -143,7 +138,6 @@ namespace Archivist.Utilities
                         ExcludeSpecifications = new List<string> { },
                         VolumeLabel = "ExternalHDD-01",
                         DirectoryPath = "ArchivedFileDirectoryName",
-                        RetainMinimumVersions = 1,
                         RetainMaximumVersions = 10,
                     },
                     new ArchiveDirectory {
@@ -156,7 +150,6 @@ namespace Archivist.Utilities
                         IncludeSpecifications = new List<string> { "*.zip" },
                         ExcludeSpecifications = new List<string> { },
                         DirectoryPath = @"Z:\Archive",
-                        RetainMinimumVersions = 1,
                         RetainMaximumVersions = 10,
                         RetainYoungerThanDays = 365
                     }
@@ -250,14 +243,9 @@ namespace Archivist.Utilities
                     result.AddError($"SourceDirectories.DirectoryPath '{src.DirectoryPath}' does not exist");
                 }
 
-                if (src.RetainMinimumVersions > src.RetainMaximumVersions)
+                if (src.RetainMaximumVersions < Constants.RETAIN_VERSIONS_MINIMUM)
                 {
-                    result.AddError($"ArchiveDirectories.RetainMinimumVersions {src.RetainMinimumVersions} is more than ArchiveDirectories.RetainMaximumVersions {src.RetainMaximumVersions} invalid for archive '{src.DirectoryPath}'");
-                }
-
-                if (src.RetainMinimumVersions < Constants.RETAIN_VERSIONS_MINIMUM)
-                {
-                    result.AddError($"ArchiveDirectories.RetainMinimumVersions = {src.RetainMinimumVersions} is invalid for archive '{src.DirectoryPath}'");
+                    result.AddError($"ArchiveDirectories.RetainMaximumVersions = {src.RetainMaximumVersions} is invalid for archive '{src.DirectoryPath}'");
                 }
 
                 if (src.RetainYoungerThanDays < Constants.RETAIN_DAYS_OLD_MINIMUM)
@@ -278,14 +266,9 @@ namespace Archivist.Utilities
                     result.AddError($"ArchiveDirectories.DirectoryPath '{arc.DirectoryPath}' does not exist");
                 }
 
-                if (arc.RetainMinimumVersions > arc.RetainMaximumVersions)
+                if (arc.RetainMaximumVersions < Constants.RETAIN_VERSIONS_MINIMUM)
                 {
-                    result.AddError($"ArchiveDirectories.RetainMinimumVersions {arc.RetainMinimumVersions} is more than ArchiveDirectories.RetainMaximumVersions {arc.RetainMaximumVersions} invalid for archive '{arc.DirectoryPath}'");
-                }
-
-                if (arc.RetainMinimumVersions < Constants.RETAIN_VERSIONS_MINIMUM)
-                {
-                    result.AddError($"ArchiveDirectories.RetainMinimumVersions = {arc.RetainMinimumVersions} is invalid for archive '{arc.DirectoryPath}'");
+                    result.AddError($"ArchiveDirectories.RetainMaximumVersions = {arc.RetainMaximumVersions} is invalid for archive '{arc.DirectoryPath}'");
                 }
 
                 if (arc.RetainYoungerThanDays < 0)

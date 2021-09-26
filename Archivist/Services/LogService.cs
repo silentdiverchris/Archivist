@@ -126,7 +126,7 @@ namespace Archivist.Services
                 ? type.ToString()!.ToLower().SuffixIfNotEmpty()
                 : null;
 
-            LogToConsole(new LogEntry($"There are {actions.Count().NumberOrNo()} outstanding {actionText}actions", consoleBlankLineBefore: true));
+            LogToConsole(new LogEntry($"There are {actions.Count().NumberOrNo()} {actionText}actions to process", consoleBlankLineBefore: true));
             
             foreach (var act in actions.OrderBy(_ => _.Type))
             {
