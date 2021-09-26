@@ -25,7 +25,7 @@ namespace Archivist.Services
 
         internal async Task<Result> DeleteTemporaryFilesInDirectory(string directoryPath, bool zeroLengthOnly)
         {
-            Result result = new("DeleteTemporaryFiles", functionQualifier: directoryPath);
+            Result result = new("DeleteTemporaryFilesInDirectory", functionQualifier: directoryPath);
 
             try
             {
@@ -259,12 +259,7 @@ namespace Archivist.Services
         {
             try
             {
-                var matches = _jobSpec.SourceDirectories.Where(_ => _.IsEnabled && _.OverrideOutputFileName == baseFileName);
-
-                if (matches.Any() == false)
-                {
-                    matches = _jobSpec.SourceDirectories.Where(_ => _.IsEnabled && _.DirectoryPath!.EndsWith(baseFileName));
-                }
+                var matches = _jobSpec.SourceDirectories.Where(_ => _.IsEnabled && _.DirectoryPath!.EndsWith(baseFileName));
 
                 if (matches.Any())
                 {

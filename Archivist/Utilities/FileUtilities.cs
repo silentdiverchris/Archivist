@@ -18,23 +18,16 @@ namespace Archivist.Utilities
         /// <returns></returns>
         internal static string GenerateBaseOutputFileName(SourceDirectory sourceDirectory)
         {
-            if (string.IsNullOrEmpty(sourceDirectory.OverrideOutputFileName))
-            {
-                var dirNames = sourceDirectory.DirectoryPath!.Split(Path.DirectorySeparatorChar);
+            var dirNames = sourceDirectory.DirectoryPath!.Split(Path.DirectorySeparatorChar);
 
-                if (dirNames.Length > 1)
-                {
-                    var fileName = string.Join("-", dirNames[1..]);
-                    return fileName;
-                }
-                else
-                {
-                    throw new Exception($"GenerateFileNameFromPath found path {sourceDirectory.DirectoryPath} too short");
-                }
+            if (dirNames.Length > 1)
+            {
+                var fileName = string.Join("-", dirNames[1..]);
+                return fileName;
             }
             else
             {
-                return sourceDirectory.OverrideOutputFileName;
+                throw new Exception($"GenerateFileNameFromPath found path {sourceDirectory.DirectoryPath} too short");
             }
         }
 

@@ -377,14 +377,6 @@ namespace Archivist.Models
         public string? CheckTaskNameIsNotRunning { get; set; }
 
         /// <summary>
-        /// Indicates whether this source is something that changes a lot, eg source code
-        /// as opposed to sets of files that are occasionally added to but not often changed
-        /// like movies and photos. This doesn't stop it being archived, but means you can set up 
-        /// archive jobs to choose whether to process this source based on the job ArchiveFairlyStatic setting
-        /// </summary>
-        public bool IsFairlyStatic { get; set; }
-
-        /// <summary>
         /// What compresison to use, see Microsoft System.IO.Compression docs for details at
         /// https://docs.microsoft.com/en-us/dotnet/api/system.io.compression.zipfile.createfromdirectory?view=net-5.0
         /// </summary>
@@ -399,13 +391,6 @@ namespace Archivist.Models
         /// unencrypted version will not be deleted.
         /// </summary>
         public bool EncryptOutput { get; set; } = false;
-
-        /// <summary>
-        /// The name of the output file to be created, with no path or extension, if not specified it uses 
-        /// the path to generate the name so directory 'C:\AbC\DeF\GhI' will be 
-        /// archived to file name 'AbC-DeF-GhI' with a .zip or .aes extension
-        /// </summary>
-        public string? OverrideOutputFileName { get; set; } = null;
     }
 
     /// <summary>
@@ -463,11 +448,6 @@ namespace Archivist.Models
         /// them or not for this job
         /// </summary>
         public bool ProcessSlowVolumes { get; set; } = false;
-
-        /// <summary>
-        /// Whether this configuation archives sources with the IsFairlyStatic setting as true
-        /// </summary>
-        public bool ArchiveFairlyStatic { get; set; } = false;
 
         /// <summary>
         /// The place where the primary archives are created according to the set of source directories, which 

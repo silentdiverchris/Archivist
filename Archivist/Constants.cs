@@ -2,7 +2,7 @@
 {
     internal class Constants
     {
-        internal const bool JUST_TESTING = true;
+        //internal const bool JUST_TESTING = true;
 
         internal const int STREAM_BUFFER_SIZE = 81920;
 

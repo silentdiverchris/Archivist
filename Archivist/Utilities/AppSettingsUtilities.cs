@@ -13,9 +13,10 @@ namespace Archivist.Utilities
     internal static class AppSettingsUtilities
     {
         /// <summary>
-        /// Creates a default, and invalid by design appsettings file that must be 
+        /// Creates a default, and invalid-by-design appsettings file that must be 
         /// customised. This will be created on first run (or if the file does not exist), the
-        /// errors will be reported and the program will terminate without doing anything.
+        /// errors will be reported, the program will terminate without doing anything and the 
+        /// settings can be adjusted.
         /// </summary>
         /// <param name="fileName"></param>
         internal static void CreateDefaultAppSettings(string fileName)
@@ -43,7 +44,6 @@ namespace Archivist.Utilities
                         PauseBeforeExit = true,
                         ProcessTestOnly = true,
                         ProcessSlowVolumes = false,
-                        ArchiveFairlyStatic = false,
                         PrimaryArchiveDirectoryPath = @"M:\PrimaryArchiveDirectoryName"
                     },
                     new Job
@@ -52,7 +52,6 @@ namespace Archivist.Utilities
                         Description = "Another example of a job specification",
                         PauseBeforeExit = true,
                         ProcessSlowVolumes = false,
-                        ArchiveFairlyStatic = false,
                         PrimaryArchiveDirectoryPath = @"M:\PrimaryArchiveDirectoryName",
                         EncryptionPasswordFile = @"C:\InvalidDirectoryName\PasswordInTextFile.txt",
                     }
@@ -74,7 +73,6 @@ namespace Archivist.Utilities
                         IsEnabled = true,
                         IsForTesting = false,
                         DirectoryPath = @"C:\ProbablyDoesntExist",
-                        OverrideOutputFileName = null,
                         RetainMinimumVersions = 1,
                         RetainMaximumVersions = 3,
                         EncryptOutput = false
@@ -91,7 +89,6 @@ namespace Archivist.Utilities
                     new SourceDirectory {
                         IsEnabled = true,
                         IsForTesting = true,
-                        IsFairlyStatic = false,
                         DirectoryPath = @"D:\Temp",
                         CompressionLevel = CompressionLevel.Fastest,
                         RetainMinimumVersions = 1,
@@ -100,7 +97,6 @@ namespace Archivist.Utilities
                     },
                     new SourceDirectory {
                         IsEnabled = true,
-                        IsFairlyStatic = true,
                         DirectoryPath = @"M:\Media\Movies",
                         CompressionLevel = CompressionLevel.NoCompression
                     }
@@ -244,24 +240,6 @@ namespace Archivist.Utilities
 
             foreach (var src in job.SourceDirectories.Where(_ => _.IsToBeProcessed(job)))
             {
-                if (src.OverrideOutputFileName.NotEmpty())
-                {
-                    if (src.OverrideOutputFileName!.Length > 256)
-                    {
-                        result.AddError("SourceDirectories.OutputFileName is insanely long, maximum 256 characters");
-                    }
-
-                    var invalidCharacters = Path.GetInvalidFileNameChars();
-
-                    foreach (var ch in src.OverrideOutputFileName.ToCharArray())
-                    {
-                        if (invalidCharacters.Contains(ch))
-                        {
-                            result.AddError($"SourceDirectories.OutputFileName contains invalid character '{ch}'");
-                        }
-                    }
-                }
-
                 if (src.DirectoryPath.IsEmpty())
                 {
                     result.AddError("SourceDirectories.DirectoryPath is empty");

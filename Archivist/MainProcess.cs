@@ -125,7 +125,7 @@ namespace Archivist
                         result.SubsumeResult(compressionResult);
 
                         var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob, _appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
-                        _logService.DumpArchiveRegistry(archiveRegister);
+                        _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Compress);
 
                         // Doesn't do anything yet...
                         Result executeResult = await compressionService.ExecuteFileCompressionActions(archiveRegister);
