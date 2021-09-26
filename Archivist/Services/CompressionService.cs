@@ -8,6 +8,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
+using static Archivist.Enumerations;
 
 namespace Archivist.Services
 {
@@ -55,7 +56,7 @@ namespace Archivist.Services
                 {
                     if (sourceDirectory.IsAvailable)
                     {
-                        Result compressResult = await CompressSource(sourceDirectory, _jobSpec.PrimaryArchiveDirectoryPath);
+                        Result compressResult = await MaybeCompressSource(sourceDirectory, _jobSpec.PrimaryArchiveDirectoryPath);
 
                         result.SubsumeResult(compressResult);
                     }
@@ -77,8 +78,29 @@ namespace Archivist.Services
 
             return result;
         }
+        /// <summary>
+        /// Doesn't do anything yet...
+        /// </summary>
+        /// <param name="archiveRegister"></param>
+        /// <returns></returns>
+        internal async Task<Result> ExecuteFileCompressionActions(ArchiveRegister archiveRegister)
+        {
+            Result result = new("ExecuteFileCompressionActions", false);
 
-        internal async Task<Result> CompressSource(SourceDirectory sourceDirectory, string archiveDirectoryPath)
+            var dirsToCompress = archiveRegister.Actions
+                .Where(_ => _.Type == enArchiveActionType.Compress);
+
+            foreach (var file in dirsToCompress)
+            {
+
+            }
+
+            await _logService.ProcessResult(result);
+
+            return result;
+        }
+
+        internal async Task<Result> MaybeCompressSource(SourceDirectory sourceDirectory, string archiveDirectoryPath)
         {
             Result result = new("CompressSource", true, $"'{sourceDirectory.DirectoryPath}'");
 
@@ -227,7 +249,7 @@ namespace Archivist.Services
             await _logService.ProcessResult(result, reportItemCounts: false, reportAllStatistics: true);
 
             return result;
-        }
+        }       
 
         /// <summary>
         /// Determine the output file names that this directory should create (encrypted and not), the name of the 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Archivist.Models;
+using System.Collections.Generic;
 using System.Linq;
 using static Archivist.Enumerations;
 
@@ -22,13 +23,15 @@ namespace Archivist.Classes
     public class ArchiveRegister
     {
         private readonly ArchivePrimaryDirectory _primary;
+        private readonly Job _job;
         private List<ArchiveDestinationDirectory> _destinations { get; set; } = new();
         private List<ArchiveSourceDirectory> _sources { get; set; } = new();
 
         private readonly List<ArchiveAction> _actions = new();
 
-        public ArchiveRegister(string primaryDirectoryPath, List<Models.SourceDirectory> sources, List<Models.ArchiveDirectory> destinations)
+        public ArchiveRegister(Job jobSpec, string primaryDirectoryPath, List<Models.SourceDirectory> sources, List<Models.ArchiveDirectory> destinations)
         {
+            _job = jobSpec;
             _primary = new(primaryDirectoryPath);
 
             foreach (var src in sources)
@@ -57,11 +60,23 @@ namespace Archivist.Classes
         }
 
         /// <summary>
-        /// Determine what needs to be done to which files, currently this just handles the file copying. 
-        /// Extend this to the deleting and compresisng actions too.
+        /// Determine what needs to be done to which files, currently this just handles the file copying
+        /// and deleting. 
+        /// Extend this to add compressification actions too.
         /// </summary>
         private void AssignActions()
         {
+            // Determine source folders to be compressed
+
+            var activeSources = _sources
+                .Where(_ => _.IsEnabledAndAvailable)
+                .Where(_ => _.BaseDirectory!.IsToBeProcessed(_job));
+
+            foreach (var srcDir in activeSources)
+            {
+                
+            }
+
             // Determine files to be copied
 
             // Versioned files, only copy those versions that are more recent than

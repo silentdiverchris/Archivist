@@ -141,7 +141,7 @@ namespace Archivist.Classes
                 }
             }
 
-            if (IsEnabled)
+            if (IsEnabledAndAvailable)
             {
                 // Don't use any file specification here, take them all, we want to catalogue all the files 
                 // even though we might then ignore some of them for whatever reason.
@@ -317,35 +317,6 @@ namespace Archivist.Classes
             }
 
             return matchesIncludes && !matchesExcludes;
-        }
-
-    }
-
-    internal class ArchivePrimaryDirectory : ArchiveDirectoryBase
-    {
-        internal ArchivePrimaryDirectory(string path) : base(enDirectoryType.Primary, path: path)
-        {
-        }
-    }
-
-    internal class ArchiveSourceDirectory : ArchiveDirectoryBase
-    {
-        private readonly Models.SourceDirectory _sourceDirectory;
-        private readonly string _baseArchiveFileName;
-
-        internal ArchiveSourceDirectory(Models.SourceDirectory dir) : base(enDirectoryType.Source, dir.GetBase())
-        {
-            _sourceDirectory = dir;
-            _baseArchiveFileName = FileUtilities.GenerateBaseOutputFileName(dir);
-        }
-
-        public string BaseFileName => _baseArchiveFileName;
-    }
-
-    internal class ArchiveDestinationDirectory : ArchiveDirectoryBase
-    {
-        internal ArchiveDestinationDirectory(BaseDirectoryFiles dir) : base(enDirectoryType.Destination, dir.GetBase())
-        {
         }
     }
 }
