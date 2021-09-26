@@ -121,27 +121,8 @@ namespace Archivist.Helpers
         }
 
         /// <summary>
-        /// Get whether this is a versioned file name and optionally get the base file name
+        /// Get whether this is a versioned file
         /// </summary>
-        /// <param name="fileName">Full path or just file name</param>
-        /// <param name="baseFileName"></param>
-        /// <returns></returns>
-        //internal static bool IsVersionedFileName(this string fileName, out string baseFileName)
-        //{
-        //    try
-        //    {
-        //        bool isVersioned = fileName.IsVersionedFileName();
-                
-        //        baseFileName = GetBaseFileName(fileName); 
-
-        //        return isVersioned;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception($"IsVersionedFileName file '{fileName}' exception {ex.Message}", ex);
-        //    }
-        //}
-
         internal static bool IsVersionedFile(this FileInfo fi)
         {
             return fi.Name.IsVersionedFileName();

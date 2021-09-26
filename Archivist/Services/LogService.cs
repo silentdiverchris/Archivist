@@ -118,6 +118,18 @@ namespace Archivist.Services
             }
         }
 
+        internal void DumpArchiveRegistry(ArchiveRegister archiveRegistry)
+        {
+            var actions = archiveRegistry.Actions;
+
+            LogToConsole(new LogEntry($"There are {actions.Count().NumberOrNo()} outstanding actions", consoleBlankLineBefore: true));
+            
+            foreach (var act in actions.OrderBy(_ => _.Type))
+            {
+                LogToConsole(new LogEntry(act.Description));
+            }
+        }
+
         /// <summary>
         /// Send each unprocessed message in the result to the configured log destinations and optionally
         /// log statistics and completion messages.

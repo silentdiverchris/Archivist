@@ -130,6 +130,9 @@ namespace Archivist.Models
     /// </summary>
     public class BaseDirectory
     {
+        private bool _pathInitialised = false;
+        private string? _directoryPath = null;
+
         /// <summary>
         /// If non-null, find a drive with this label and combine with the DirectoryPath 
         /// to determine the directory to be used. Allows for removable dribes that get 
@@ -141,9 +144,33 @@ namespace Archivist.Models
         public string? VolumeLabel { get; set; }
 
         /// <summary>
-        /// The path of this directory
+        /// The path of this directory, soem directories are identified by a path name 
+        /// and volume label rather than drive letter, so this sets up the drive letter 
+        /// on first use where necessary
         /// </summary>
-        public string? DirectoryPath { get; set; }
+        /// 
+        public string? DirectoryPath
+        {            
+            get
+            {
+                if (!_pathInitialised)
+                {
+                    // Set this first or the VerifyVolume call will recurse
+                    _pathInitialised = true;
+
+                    if (VolumeLabel is not null)
+                    {
+                        VerifyVolume();
+                    }
+                }
+
+                return _directoryPath;
+            }
+            set
+            {
+                _directoryPath = value;
+            }
+        }
 
         /// <summary>
         /// A human description of what this directory is, or what drive it's 
@@ -279,6 +306,11 @@ namespace Archivist.Models
     /// </summary>
     public class BaseDirectoryFiles : BaseDirectory
     {
+        public BaseDirectoryFiles GetBase()
+        {
+            return this;
+        }
+
         /// <summary>
         /// Retain at least this many versions of each archive in this directory, zero means we keep all versions, which
         /// will eventually fill the volume. One gotcha is that if you set this lower on an archive directory

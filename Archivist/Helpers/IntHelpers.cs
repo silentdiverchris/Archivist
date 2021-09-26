@@ -8,5 +8,12 @@
                 ? ""
                 : "s";
         }
+
+        internal static string NumberOrNo(this int value, string noString = "no")
+        {
+            return value == 0
+                ? noString
+                : value.ToString();
+        }
     }
 }

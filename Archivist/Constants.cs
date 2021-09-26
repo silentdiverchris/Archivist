@@ -16,5 +16,7 @@
         internal const string DATE_FORMAT_DATE_TIME_LONG_SECONDS = "d MMM yyyy HH:mm:ss";
         internal const string DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH = "dd MMM yyyy HH:mm:ss";
         internal const string DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS = "yyyyMMddHHmmss";
+
+        internal const int STALE_SECONDS_THRESHOLD = 60 * 5;
     }
 }

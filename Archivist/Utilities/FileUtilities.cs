@@ -163,25 +163,36 @@ namespace Archivist.Utilities
             return result;
         }
 
-        internal static bool IsLastWrittenMoreThanDaysAgo(string filePath, int daysAgo, out DateTime lastWriteTimeLocal)
+        /// <summary>
+        /// We have a couple of out parrameters, since we have to get a FileInfo here and at least 
+        /// one caller wants the last write and the length just after the call, we might as well get 
+        /// the data for them rather than they create another FileInfo
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="daysAgo"></param>
+        /// <param name="lastWriteTimeLocal"></param>
+        /// <param name="fileLength"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        internal static bool IsYoungerThanDays(string filePath, int daysAgo, out DateTime lastWriteTimeLocal, out long fileLength)
         {
             if (File.Exists(filePath))
             {
                 var fi = new FileInfo(filePath);
 
                 lastWriteTimeLocal = fi.LastWriteTime;
+                fileLength = fi.Length;
 
-                return fi.LastWriteTime < DateTime.Now.AddDays(-1 * daysAgo);
+                var thresholdLocal = DateTime.Now.AddDays(-1 * daysAgo);
+
+                bool younger = lastWriteTimeLocal > thresholdLocal;
+
+                return younger;
             }
             else
             {
-                throw new Exception($"IsLastWrittenMoreThanDaysAgo given non-existant file {filePath}");
+                throw new Exception($"IsYoungerThanDays given non-existant file {filePath}");
             }
-        }
-
-        internal static bool IsLastWrittenLessThanDaysAgo(string fileName, int daysAgo, out DateTime lastWriteTime)
-        {
-            return !IsLastWrittenMoreThanDaysAgo(fileName, daysAgo, out lastWriteTime);
         }
     }
 }

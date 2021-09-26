@@ -106,6 +106,10 @@ namespace Archivist
 
             RecordStatistics(true);
 
+            // instantiate one here just for testign to precded any compressioning
+            //var archiveRegistry = new ArchiveRegistry(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
+            //_logService.DumpArchiveRegistry(archiveRegistry);
+
             if (_appSettings.AESEncryptPath is not null)
             {
                 using (var secureDirectoryService = new SecureDirectoryService(_appSettings.SelectedJob, _appSettings, _logService, _appSettings.AESEncryptPath))
@@ -125,13 +129,21 @@ namespace Archivist
 
                 if (!result.HasErrors)
                 {
+                    var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
+                    _logService.DumpArchiveRegistry(archiveRegister);
+
                     using (var fileService = new FileService(_appSettings.SelectedJob, _appSettings, _logService))
                     {
-                        Result copyArchivesResult = await fileService.CopyToArchives();
-                        result.SubsumeResult(copyArchivesResult);
+                        // While we're testing the archiveRegistry, don't do any real copying to give it something to report on
 
-                        Result reportResult = await fileService.GenerateFileReport();
-                        result.SubsumeResult(reportResult);
+                        //Result copyArchivesResult = await fileService.CopyToArchives();
+                        //result.SubsumeResult(copyArchivesResult);
+
+                        Result executeResult = await fileService.ExecuteFileCopyActions(archiveRegister);
+                        result.SubsumeResult(executeResult);
+
+                        //Result reportResult = await fileService.GenerateFileReport();
+                        //result.SubsumeResult(reportResult);
                     }
                 }
             }

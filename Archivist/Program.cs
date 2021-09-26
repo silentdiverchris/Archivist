@@ -49,15 +49,13 @@ namespace Archivist
                     }
                     else
                     {
-                        result.AddError("Program.Main could not find a job name to run");
+                        throw new Exception("Program.Main could not find a job name to run");
                     }
                 }
                 else
                 {
-
+                    throw new Exception("Program.Main could not generate an AppSettings object");
                 }
-
-                // The result has been processed within MainProcess, no need to log or display anything here
             }
             catch (Exception ex)
             {
@@ -67,11 +65,13 @@ namespace Archivist
                 result.AddException(ex);
             }
 
+#if DEBUG
             if (result.HasErrors)
             {
                 Console.WriteLine("Press any key to exit");
                 Console.ReadLine();
             }
+#endif
         }
     }
 }

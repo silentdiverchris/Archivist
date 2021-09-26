@@ -207,11 +207,11 @@ namespace Archivist.Services
                             result.AddDebug($"Archive '{baseOutputFileName}' or '{sourceDirectory.DirectoryPath}' does not need updating");
                         }
 
-                        // Tidy up whether we added new files or not
-                        using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
-                        {
-                            result.SubsumeResult(await fileService.DeleteOldVersions(archiveDirectoryPath, baseOutputFileName, sourceDirectory.RetainMinimumVersions, sourceDirectory.RetainMaximumVersions, sourceDirectory.RetainYoungerThanDays));
-                        }
+                        // Tidy up
+                        //using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
+                        //{
+                        //    result.SubsumeResult(await fileService.DeleteOldVersions(archiveDirectoryPath, baseOutputFileName, sourceDirectory.RetainMinimumVersions, sourceDirectory.RetainMaximumVersions, sourceDirectory.RetainYoungerThanDays));
+                        //}
                     }
                     else
                     {

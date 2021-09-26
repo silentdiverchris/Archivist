@@ -52,7 +52,7 @@ namespace Archivist.Classes
 
         internal List<ResultMessage> UnprocessedMessages => Messages.Where(_ => _.HasBeenProcessed == false).ToList();
 
-        internal enSeverity HighestSeverity => Messages.OrderBy(_ => _.Severity).First().Severity;
+        internal enSeverity HighestSeverity => Messages.OrderBy(_ => _.Severity).First()?.Severity ?? enSeverity.Debug;
 
         internal bool HasErrors => Messages.Any(_ => _.Severity == enSeverity.Error);
         internal bool HasWarnings => Messages.Any(_ => _.Severity == enSeverity.Warning);
