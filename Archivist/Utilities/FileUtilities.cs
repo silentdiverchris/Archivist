@@ -194,5 +194,10 @@ namespace Archivist.Utilities
                 throw new Exception($"IsYoungerThanDays given non-existant file {filePath}");
             }
         }
+
+        internal static bool IsOlderThanDays(string filePath, int daysAgo, out DateTime lastWriteTimeLocal, out long fileLength)
+        {
+            return !IsYoungerThanDays(filePath, daysAgo, out lastWriteTimeLocal, out fileLength);
+        }
     }
 }

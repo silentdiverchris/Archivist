@@ -39,6 +39,7 @@ namespace Archivist.Classes
 
         internal bool IsAvailable => _isAvailable;
         internal bool IsEnabledAndAvailable => _isAvailable && IsEnabled;
+        internal BaseDirectoryFiles? BaseDirectory => _baseDirectory;
 
         internal ArchiveDirectoryBase(enDirectoryType type, BaseDirectoryFiles? bdf = null, string? path = null)
         {
@@ -114,7 +115,6 @@ namespace Archivist.Classes
 
             if (_type == enDirectoryType.Source || _type == enDirectoryType.Destination)
             {
-
                 if (_baseDirectory is not null)
                 {
                     sourcePriority = _baseDirectory.Priority;
@@ -202,7 +202,7 @@ namespace Archivist.Classes
                         }
                     }
 
-                    _existingFiles.Add(new ArchiveFileInstance(filePath: filePath, ignored: !include, isLatestVersion: false, sourcePriority: sourcePriority, result));
+                    _existingFiles.Add(new ArchiveFileInstance(filePath: filePath, directory: _baseDirectory, ignored: !include, isLatestVersion: false, result));
                 }
 
                 // Build a representation of the versioned file sets for primary and destination

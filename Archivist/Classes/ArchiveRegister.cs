@@ -25,6 +25,8 @@ namespace Archivist.Classes
         private List<ArchiveDestinationDirectory> _destinations { get; set; } = new();
         private List<ArchiveSourceDirectory> _sources { get; set; } = new();
 
+        private readonly List<ArchiveAction> _actions = new();
+
         public ArchiveRegister(string primaryDirectoryPath, List<Models.SourceDirectory> sources, List<Models.ArchiveDirectory> destinations)
         {
             _primary = new(primaryDirectoryPath);
@@ -47,23 +49,11 @@ namespace Archivist.Classes
             AssignActions();
         }
 
-        internal IEnumerable<ArchiveFileAction> Actions
-        {
-            get
-            {
-                List<ArchiveFileAction> actions = new();
-                
-                var priActions = _primary.Files.Where(_ => _.Actions.Any()).SelectMany(_ => _.Actions);
-                actions.AddRange(priActions);
-                
-                foreach (var dst in _destinations)
-                {
-                    var dstActions = dst.Files.Where(_ => _.Actions.Any()).SelectMany(_ => _.Actions);
-                    actions.AddRange(dstActions);
-                }
+        internal IEnumerable<ArchiveAction> Actions => _actions.OrderBy(_ => (int)_.Type);
 
-                return actions;
-            }
+        internal void AddAction(ArchiveAction action)
+        {
+            _actions.Add(action);
         }
 
         /// <summary>
@@ -72,6 +62,8 @@ namespace Archivist.Classes
         /// </summary>
         private void AssignActions()
         {
+            // Determine files to be copied
+
             // Versioned files, only copy those versions that are more recent than
             // those which already exist in the destination
 
@@ -87,7 +79,7 @@ namespace Archivist.Classes
                         {
                             if (dstArchive.IsAbsent(priArcFil.FileName))
                             {
-                                priArcFil.AddAction(new ArchiveFileAction(enArchiveActionType.CopyToDestination, fileInstance: priArcFil, destinationDirectory: dstArchive));
+                                AddAction(new ArchiveAction(enArchiveActionType.Copy, fileInstance: priArcFil, destinationDirectory: dstArchive));
                             }
                         }
                     }
@@ -105,7 +97,34 @@ namespace Archivist.Classes
                     {
                         if (dstArchive.IsAbsentOrStale(priArcFil.FileName, priArcFil.LastWriteTimeLocal))
                         {
-                            priArcFil.AddAction(new ArchiveFileAction(enArchiveActionType.CopyToDestination, fileInstance: priArcFil, destinationDirectory: dstArchive));
+                            AddAction(new ArchiveAction(enArchiveActionType.Copy, fileInstance: priArcFil, destinationDirectory: dstArchive));
+                        }
+                    }
+                }
+            }
+
+            // Determine files to be deleted
+
+            foreach (var dstArchive in _destinations.Where(_ => _.IsEnabledAndAvailable))
+            {
+                foreach (string baseFileName in dstArchive.VersionedFileSets.BaseFileNames)
+                {
+                    var versions = dstArchive.VersionedFileSets.VersionsOfFile(baseFileName);
+
+                    int removeCount = versions.Count() - dstArchive.BaseDirectory!.RetainMaximumVersions;
+
+                    if (removeCount > 0)
+                    { 
+                        var versionsToDelete = versions.OrderBy(_ => _).Take(removeCount);
+
+                        foreach (var fileName in versionsToDelete)
+                        {
+                            var filInst = dstArchive.AllFiles.Single(_ => _.FileName == fileName);
+
+                            if (filInst.IsOlderThanDays(dstArchive.BaseDirectory.RetainYoungerThanDays))
+                            {
+                                AddAction(new ArchiveAction(enArchiveActionType.Delete, fileInstance: filInst));                            
+                            }
                         }
                     }
                 }
@@ -124,6 +143,6 @@ namespace Archivist.Classes
             _sources.Add(new ArchiveSourceDirectory(directory));
         }
 
-        
+
     }
 }

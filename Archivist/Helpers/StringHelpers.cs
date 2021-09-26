@@ -70,7 +70,7 @@ namespace Archivist.Helpers
         /// <returns></returns>
         internal static string SuffixIfNotEmpty(this string? text, string suffix = " ")
         {
-            return $"{text}{(string.IsNullOrEmpty(text) ? suffix : null)}";
+            return $"{text}{(string.IsNullOrEmpty(text) ? null : suffix)}";
         }
 
         /// <summary>

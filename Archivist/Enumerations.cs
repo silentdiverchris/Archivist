@@ -20,10 +20,9 @@ namespace Archivist
         // Make sure deletes are the last ones, they get exectuted in numeric order
         internal enum enArchiveActionType
         {
-            CompressToPrimary = 1,
-            CopyToDestination = 2,
-            DeleteFromPrimary = 3,
-            DeleteFromDestination = 4
+            Compress = 1,
+            Copy = 2,
+            Delete = 3
         }
 
         internal enum enDirectoryType

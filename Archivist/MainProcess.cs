@@ -107,8 +107,8 @@ namespace Archivist
             RecordStatistics(true);
 
             // instantiate one here just for testign to precded any compressioning
-            //var archiveRegistry = new ArchiveRegistry(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
-            //_logService.DumpArchiveRegistry(archiveRegistry);
+            //var archiveRegister = new ArchiveRegistry(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
+            //_logService.DumpArchiveRegistry(archiveRegister);
 
             if (_appSettings.AESEncryptPath is not null)
             {
@@ -135,19 +135,21 @@ namespace Archivist
 
                 if (!result.HasErrors)
                 {
-                    var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
-                    _logService.DumpArchiveRegistry(archiveRegister);
-
                     using (var fileService = new FileService(_appSettings.SelectedJob, _appSettings, _logService))
                     {
+                        // Regenerate the register for the copy actions
+                        var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
+                        _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Copy);
+
                         Result executeResult = await fileService.ExecuteFileCopyActions(archiveRegister);
                         result.SubsumeResult(executeResult);
 
-                        // To be implemented soon
-                        //var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
-                        //_logService.DumpArchiveRegistry(archiveRegister);
-                        //Result executeResult = await fileService.ExecuteFileDeleteActions(archiveRegister);
-                        //result.SubsumeResult(executeResult);
+                        // Regenerate the register for the delete actions
+                        archiveRegister = new ArchiveRegister(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
+                        _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Delete);
+
+                        Result deleteResult = await fileService.ExecuteFileDeleteActions(archiveRegister);
+                        result.SubsumeResult(deleteResult);
 
                         Result reportResult = await fileService.GenerateFileReport();
                         result.SubsumeResult(reportResult);

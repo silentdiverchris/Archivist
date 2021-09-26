@@ -118,18 +118,20 @@ namespace Archivist.Services
             }
         }
 
-        internal void DumpArchiveRegistry(ArchiveRegister archiveRegistry)
+        internal void DumpArchiveRegistry(ArchiveRegister archiveRegistry, enArchiveActionType? type = null)
         {
-            var actions = archiveRegistry.Actions;
+            var actions = archiveRegistry.Actions.Where(_ => (type == null || _.Type == type));
 
-            LogToConsole(new LogEntry($"There are {actions.Count().NumberOrNo()} outstanding actions", consoleBlankLineBefore: true));
+            string? actionText = type is not null
+                ? type.ToString()!.ToLower().SuffixIfNotEmpty()
+                : null;
+
+            LogToConsole(new LogEntry($"There are {actions.Count().NumberOrNo()} outstanding {actionText}actions", consoleBlankLineBefore: true));
             
             foreach (var act in actions.OrderBy(_ => _.Type))
             {
                 LogToConsole(new LogEntry(act.Description));
             }
-
-            LogToConsole(new LogEntry(""));
         }
 
         /// <summary>

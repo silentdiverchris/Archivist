@@ -1,4 +1,6 @@
 ﻿using Archivist.Helpers;
+using Archivist.Models;
+using Archivist.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,20 +15,23 @@ namespace Archivist.Classes
         private readonly FileInfo _fileInfo;
         private readonly bool _isVersioned = false;
         private readonly int? _versionNumber = null;
-        private readonly short _sourcePriority = 99;
-        private readonly string? _baseFileName = null;
-        private readonly List<ArchiveFileAction> _actions = new();
+        private readonly string? _baseFileName = null;        
+        private readonly BaseDirectoryFiles? _directory = null;
 
         private readonly bool _ignored = false;
 
         // This was an afterthought so tacked on late in the day, ought to be determined on the fly rather than updated later TODO
         private bool _isLatestVersion = false;
         
-        internal ArchiveFileInstance(string filePath, bool ignored, bool isLatestVersion, short sourcePriority, Result result)
+        internal ArchiveFileInstance(string filePath, BaseDirectoryFiles? directory, bool ignored, bool isLatestVersion, Result result)
         {
             _result = result;
             _isLatestVersion = isLatestVersion;
-            _sourcePriority = sourcePriority;
+
+            if (directory is not null)
+            {
+                _directory = directory;
+            }
 
             if (filePath.Contains(System.IO.Path.DirectorySeparatorChar))
             {
@@ -62,23 +67,25 @@ namespace Archivist.Classes
         internal long Length => _fileInfo.Length;
         internal string? BaseFileName => _baseFileName;
         internal int? VersionNumber => _versionNumber;
-        internal short SourcePriority => _sourcePriority;
+        internal BaseDirectoryFiles? BaseDirectory => _directory;
+        internal short DirectoryPriority => _directory?.Priority ?? 99;
         internal bool IsVersioned => _isVersioned;
+        internal bool IsOnSlowVolume => _directory?.IsSlowVolume ?? false;
         internal bool IslatestVersion => _isLatestVersion;
         internal DateTime LastWriteTimeUtc => _fileInfo.LastWriteTimeUtc;
         internal DateTime CreationTimeUtc => _fileInfo.CreationTimeUtc;
         internal Result Result => _result;
 
-        internal IEnumerable<ArchiveFileAction> Actions => _actions.OrderBy(_ => (int)_.Type);
-
-        internal void AddAction(ArchiveFileAction action)
-        {
-            _actions.Add(action);
-        }
-
         internal void SetIsLatestVersion()
         {
             _isLatestVersion = true;
         }
+
+        internal bool IsOlderThanDays(int days)
+        {
+            return FileUtilities.IsOlderThanDays(_fileInfo.FullName, days, out _, out _);
+        }
+
     }
+
 }

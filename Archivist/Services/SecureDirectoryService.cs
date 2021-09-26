@@ -126,11 +126,11 @@ namespace Archivist.Services
 
                             if (doEncryption)
                             {
-                                result.AddInfo($"Securing file {fullFileName}");
+                                result.AddInfo($"Securing file {fiSrc.FullName}");
 
                                 Result encryptResult = await encryptionService.EncryptFileAsync(
                                     aesEncryptExecutable:  _aesEncryptExecutable,
-                                    sourceFileName: fullFileName,
+                                    sourceFileName: fiSrc.FullName,
                                     destinationFileName: null,
                                     password: _jobSpec.EncryptionPassword);
 
@@ -140,10 +140,9 @@ namespace Archivist.Services
 
                                 if (encryptResult.HasNoErrors)
                                 {
-                                    result.AddInfo($"Deleting unencrypted source {fullFileName}");
-                                    File.Delete(fullFileName);
-
                                     result.Statistics.FileDeleted(fiSrc.Length);
+                                    result.AddInfo($"Deleting unencrypted source {fiSrc.FullName}");
+                                    fiSrc.Delete();
                                 }
                             }
                         }

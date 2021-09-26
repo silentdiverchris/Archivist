@@ -23,7 +23,7 @@ namespace Archivist.Services
         {
         }
 
-        internal async Task<Result> DeleteTemporaryFiles(string directoryPath, bool zeroLengthOnly)
+        internal async Task<Result> DeleteTemporaryFilesInDirectory(string directoryPath, bool zeroLengthOnly)
         {
             Result result = new("DeleteTemporaryFiles", functionQualifier: directoryPath);
 
@@ -38,97 +38,6 @@ namespace Archivist.Services
                     {
                         result.AddWarning($"Deleting old temporary file '{fileName}'");
                         File.Delete(fileName);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                result.AddException(ex);
-            }
-
-            await _logService.ProcessResult(result);
-
-            return result;
-        }
-
-        internal async Task<Result> DeleteOldVersions(
-            string directoryPath,
-            string baseFileName,
-            int retainMinimumVersions,
-            int retainMaximumVersions,
-            int retainYoungerThanDays)
-        {
-            Result result = new("DeleteOldVersions");
-
-            try
-            {
-                // The below should get caught on startup, but just in case...
-
-                if (retainMinimumVersions < Constants.RETAIN_VERSIONS_MINIMUM)
-                {
-                    throw new Exception($"DeleteOldVersions invalid retainMinimumVersions {retainMinimumVersions} for '{directoryPath}'");
-                }
-
-                if (retainYoungerThanDays < Constants.RETAIN_DAYS_OLD_MINIMUM)
-                {
-                    throw new Exception($"DeleteOldVersions invalid retainYoungerThanDays {retainYoungerThanDays} for '{directoryPath}'");
-                }
-
-                // Handy for debugging, a bit excessive otherwise
-                //string retainStr = $"DeleteOldVersions for '{baseFileName}' in '{directoryPath}' retaining min/max {retainMinimumVersions}/{retainMaximumVersions} versions and all files under {retainYoungerThanDays} day{retainYoungerThanDays.PluralSuffix()} old";
-                //result.AddInfo(retainStr);
-                //await _logService.ProcessResult(result);
-
-                var existingFiles = directoryPath.GetVersionedFiles(baseFileName);
-
-                if (existingFiles.Any())
-                {
-                    if (existingFiles.Count >= retainMaximumVersions)
-                    {
-                        // They should already be ordered by ascending file name, but just in case...
-
-                        var filesToDelete = existingFiles.OrderBy(_ => _).Take(existingFiles.Count - retainMaximumVersions).ToList();
-
-                        if (filesToDelete.Any())
-                        {
-                            // Sanity checks / abundance of caution, the above code should be making the right
-                            // decisions but check again in case a bug is introduced above
-
-                            if (filesToDelete.Count < existingFiles.Count)
-                            {
-                                int numberToRetain = existingFiles.Count - filesToDelete.Count;
-
-                                if (numberToRetain >= retainMinimumVersions && numberToRetain >= Constants.RETAIN_VERSIONS_MINIMUM)
-                                {
-                                    foreach (var fileName in filesToDelete)
-                                    {
-                                        // Never delete anything that is younger than retainYoungerThanDays regardless of other settings
-
-                                        if (FileUtilities.IsYoungerThanDays(fileName, retainYoungerThanDays, out DateTime lastWriteTimeLocal, out long fileLength))
-                                        {
-                                            result.AddWarning($"Deleting file version '{fileName}' ({FileUtilities.GetByteSizeAsText(fileLength)}, older than {retainYoungerThanDays} days, last write {lastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local)");
-                                            File.Delete(fileName);
-                                        }
-                                        //else
-                                        //{
-                                        //    result.AddInfo($"Retaining version '{fileName}', last written under {retainYoungerThanDays} days ago ({lastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC)");
-                                        //}
-                                    }
-                                }
-                                else
-                                {
-                                    result.AddError($"DeleteOldVersions somehow decided to leave fewer than retainMinimumVersions ({numberToRetain}/{retainMinimumVersions}/{Constants.RETAIN_VERSIONS_MINIMUM}), not deleting anything");
-                                }
-                            }
-                            else
-                            {
-                                result.AddError($"DeleteOldVersions somehow decided that all {filesToDelete.Count} versions should be deleted, not deleting anything");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        result.AddDebug($"DeleteOldVersions found {existingFiles.Count} version{existingFiles.Count.PluralSuffix()}, which is OK");
                     }
                 }
             }
@@ -397,13 +306,13 @@ namespace Archivist.Services
             Result result = new("ExecuteFileDeleteActions", false);
 
             var filesToDelete = archiveRegister.Actions
-                .Where(_ => _.Type == enArchiveActionType.DeleteFromPrimary || _.Type == enArchiveActionType.DeleteFromDestination)
+                .Where(_ => _.Type == enArchiveActionType.Delete)
                 .OrderBy(_ => _.SourceFile!.FullName)
                 .Select(_ => _.SourceFile);
 
             foreach (var file in filesToDelete)
             {
-                result.AddWarning($"Deleting file '{file!.FullName}' ({FileUtilities.GetByteSizeAsText(file.Length)}");
+                result.AddWarning($"Deleting file '{file!.FullName}' ({FileUtilities.GetByteSizeAsText(file.Length)})");
                 File.Delete(file.FullName);
             }
 
@@ -422,9 +331,9 @@ namespace Archivist.Services
             // several of the latest, high priority and smallest archives in than fill the lot with one large archive
 
             var actions = archiveRegister.Actions
-                .Where(_ => _.Type == enArchiveActionType.CopyToDestination)
+                .Where(_ => _.Type == enArchiveActionType.Copy)
                 .OrderByDescending(_ => _.SourceFile!.IslatestVersion)
-                .OrderBy(_ => _.SourceFile!.SourcePriority)
+                .OrderBy(_ => _.SourceFile!.DirectoryPriority)
                 .OrderBy(_ => _.SourceFile!.Length)
                 .ThenBy(_ => _.DestinationDirectory!.Path);
 
@@ -457,7 +366,7 @@ namespace Archivist.Services
                 .OrderBy(_ => _.Priority)
                 .ThenBy(_ => _.DirectoryPath))
             {
-                result.SubsumeResult(await DeleteTemporaryFiles(destination.DirectoryPath!, false));
+                result.SubsumeResult(await DeleteTemporaryFilesInDirectory(destination.DirectoryPath!, false));
 
                 await _logService.ProcessResult(result);
 
@@ -497,38 +406,44 @@ namespace Archivist.Services
 
                 decimal percentageComplete = 0;
 
+                // Don't bother with the snazzy progress display for small files
+                bool showProgress = srcFil.Length > (srcFil.IsOnSlowVolume ? 1 * 1024 * 1024 : 5 * 1024 * 1024);
+
                 Progress<KeyValuePair<long, long>> progressReporter = new();
 
-                LogEntry progressLogEntry = new(
-                    percentComplete: 0,
-                    prefix: $"Copying {srcFil.FullName}",
-                    suffix: $"of {FileUtilities.GetByteSizeAsText(srcFil.Length)}"
-                );
-
-                progressReporter.ProgressChanged += delegate (object? obj, KeyValuePair<long, long> progressValue)
+                if (showProgress)
                 {
-                    if (progressValue.Key == 0)
-                    {
-                        progressLogEntry.PercentComplete = 0;
-                        _logService.LogToConsole(progressLogEntry);
-                    }
-                    else if (progressValue.Key == progressValue.Value)
-                    {
-                        progressLogEntry.PercentComplete = 100;
-                        _logService.LogToConsole(progressLogEntry);
-                    }
-                    else
-                    {
-                        decimal thisPercentage = ((decimal)progressValue.Key / (decimal)progressValue.Value) * 100;
+                    LogEntry progressLogEntry = new(
+                        percentComplete: 0,
+                        prefix: $"Copying {srcFil.FullName}",
+                        suffix: $"of {FileUtilities.GetByteSizeAsText(srcFil.Length)}"
+                    );
 
-                        if (thisPercentage > (percentageComplete + 1))
+                    progressReporter.ProgressChanged += delegate (object? obj, KeyValuePair<long, long> progressValue)
+                    {
+                        if (progressValue.Key == 0)
                         {
-                            percentageComplete = thisPercentage;
-                            progressLogEntry.PercentComplete = (short)percentageComplete;
+                            progressLogEntry.PercentComplete = 0;
                             _logService.LogToConsole(progressLogEntry);
                         }
-                    }
-                };
+                        else if (progressValue.Key == progressValue.Value)
+                        {
+                            progressLogEntry.PercentComplete = 100;
+                            _logService.LogToConsole(progressLogEntry);
+                        }
+                        else
+                        {
+                            decimal thisPercentage = ((decimal)progressValue.Key / (decimal)progressValue.Value) * 100;
+
+                            if (thisPercentage > (percentageComplete + 1))
+                            {
+                                percentageComplete = thisPercentage;
+                                progressLogEntry.PercentComplete = (short)percentageComplete;
+                                _logService.LogToConsole(progressLogEntry);
+                            }
+                        }
+                    };
+                }
 
                 using (FileStream sourceStream = File.Open(srcFil.FullName, FileMode.Open))
                 {
@@ -570,71 +485,6 @@ namespace Archivist.Services
             }
 
             return result;
-        }
-
-        /// <summary>
-        /// This is a temporary cure for the bug where files get copied to archive, then are immediately deleted due 
-        /// to the RetainVersions being larger on the source than the destination. This works just fine but should 
-        /// be refactored out at some point.      
-        /// </summary>
-        /// <param name="fileNameList"></param>
-        /// <param name="retainMinimumVersions"></param>
-        /// <param name="retainMaximumVersions"></param>
-        /// <param name="retainYoungerThanDays"></param>
-        /// <returns></returns>
-        private List<string> GenerateVersionedFileSets(List<string> fileNameList, int retainMinimumVersions, int retainMaximumVersions, int retainYoungerThanDays, out Dictionary<string, List<string>> versionedFileSets)
-        {
-            // Named sets of file name lists, one for each base file name
-            versionedFileSets = new();
-
-            // What we will hand back to the caller
-            List<string> filesToProcess = new();
-
-            foreach (var fileName in fileNameList.OrderBy(_ => _))
-            {
-                if (fileName.IsVersionedFileName())
-                {
-                    var baseFileName = FileVersionHelpers.GetBaseFileName(fileName);
-
-                    if (versionedFileSets.ContainsKey(baseFileName))
-                    {
-                        var existingFileSet = versionedFileSets[baseFileName];
-                        existingFileSet.Add(fileName);
-                    }
-                    else
-                    {
-                        versionedFileSets.Add(baseFileName, new List<string> { fileName });
-                    }
-                }
-                else
-                {
-                    // Non-versioned file, not created by Archivist, we always copy these
-                    filesToProcess.Add(fileName);
-                }
-            }
-
-            // Each versioned file set now has a list of files in alpha order of name, so
-            // oldest generation first, newest last.
-
-            foreach (var fileSet in versionedFileSets)
-            {
-                int idx = 1;
-                int copyTheFirstX = fileSet.Value.Count - retainMaximumVersions;
-
-                foreach (var takeFileName in fileSet.Value.OrderByDescending(_ => _))
-                {
-                    // Regardless of other criteria, always copy files under X days old
-
-                    if (idx <= copyTheFirstX || FileUtilities.IsYoungerThanDays(takeFileName, retainYoungerThanDays, out _, out _))
-                    {
-                        filesToProcess.Add(takeFileName);
-                    }
-
-                    idx++;
-                }
-            }
-
-            return filesToProcess;
         }
 
         /// <summary>        
