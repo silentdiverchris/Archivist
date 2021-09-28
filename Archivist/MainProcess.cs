@@ -121,15 +121,17 @@ namespace Archivist
                 {
                     using (var compressionService = new CompressionService(_appSettings.SelectedJob, _appSettings, _logService, _appSettings.AESEncryptPath!))
                     {
-                        Result compressionResult = await compressionService.CompressSources();
-                        result.SubsumeResult(compressionResult);
-
                         var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob, _appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
                         _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Compress);
 
+                        // This will be replaced by the commented out action-based version below
+                        Result compressionResult = await compressionService.CompressSources();
+                        result.SubsumeResult(compressionResult);
+
+
                         // Doesn't do anything yet...
-                        Result executeResult = await compressionService.ExecuteFileCompressionActions(archiveRegister);
-                        result.SubsumeResult(executeResult);
+                        //Result executeResult = await compressionService.ExecuteFileCompressionActions(archiveRegister);
+                        //result.SubsumeResult(executeResult);
                     }
 
                     if (!result.HasErrors)

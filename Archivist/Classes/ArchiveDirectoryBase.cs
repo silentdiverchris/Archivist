@@ -12,33 +12,15 @@ namespace Archivist.Classes
     internal class ArchiveDirectoryBase
     {
         private readonly enDirectoryType _type;
-        private readonly BaseDirectoryFiles? _baseDirectory;
-        private readonly string _path;
-        private readonly bool _isAvailable;
+        private readonly BaseDirectoryFiles _baseDirectory;
         private readonly List<ArchiveFileInstance> _existingFiles = new();
         private readonly VersionedFileSets _versionedFileSets = new();
 
         private List<Regex> _includeRegexList = new();
         private List<Regex> _excludeRegexList = new();
 
-        internal bool IsEnabled
-        {
-            get
-            {
-                bool isEnabled = _type switch
-                {
-                    enDirectoryType.Primary => true,
-                    enDirectoryType.Source => _baseDirectory!.IsEnabled && _baseDirectory.IsAvailable,
-                    enDirectoryType.Destination => _baseDirectory!.IsEnabled && _baseDirectory.IsAvailable,
-                    _ => throw new Exception($"DirectoryBase.Initialise found unsupported type {_type}")
-                };
-
-                return isEnabled;
-            }
-        }
-
-        internal bool IsAvailable => _isAvailable;
-        internal bool IsEnabledAndAvailable => _isAvailable && IsEnabled;
+        internal bool IsAvailable => _baseDirectory.IsAvailable; 
+        internal bool IsEnabledAndAvailable => _baseDirectory.IsAvailable && _baseDirectory.IsEnabled; 
         internal BaseDirectoryFiles? BaseDirectory => _baseDirectory;
 
         internal ArchiveDirectoryBase(enDirectoryType type, BaseDirectoryFiles? bdf = null, string? path = null)
@@ -59,16 +41,15 @@ namespace Archivist.Classes
                             throw new Exception($"DirectoryBase constructor for type {type} for null path");
                         }
 
-                        _path = path!;
+                        if (!Directory.Exists(path))
+                        { 
+                            throw new ArgumentException($"DirectoryBase constructor for type {type} given non-existant path '{path}'");
+                        }
 
-                        if (Directory.Exists(_path))
+                        _baseDirectory = new BaseDirectoryFiles()
                         {
-                            _isAvailable = true;
-                        }
-                        else
-                        {
-                            throw new ArgumentException($"DirectoryBase constructor for type {type} given non-existant path '{_path}'");
-                        }
+                            DirectoryPath = path
+                        };
 
                         break;
                     }
@@ -82,10 +63,7 @@ namespace Archivist.Classes
 
                         if (bdf is not null)
                         {
-                            _baseDirectory = bdf;
-                            _isAvailable = bdf.IsAvailable;
-
-                            _path = bdf.DirectoryPath!;
+                            _baseDirectory = bdf;                            
                         }
                         else
                         {
@@ -100,7 +78,7 @@ namespace Archivist.Classes
                     }
             }
 
-            if (_isAvailable)
+            if (IsEnabledAndAvailable)
             {
                 Initialise();
             }
@@ -137,7 +115,7 @@ namespace Archivist.Classes
                 }
                 else
                 {
-                    throw new Exception($"DirectoryBase.Initialise found source or destination directory {_path} with no base directory");
+                    throw new Exception($"DirectoryBase.Initialise found null source or destination directory");
                 }
             }
 
@@ -157,7 +135,7 @@ namespace Archivist.Classes
                     _ => throw new Exception($"DirectoryBaswe.Initialise found unsupported type {_type}")
                 };
 
-                var filePathList = Directory.GetFiles(_path, "*.*", searchOption);
+                var filePathList = Directory.GetFiles(_baseDirectory.DirectoryPath!, "*.*", searchOption);
 
                 foreach (var filePath in filePathList)
                 {
@@ -198,7 +176,7 @@ namespace Archivist.Classes
                         }
                         else
                         {
-                            throw new Exception($"DirectoryBase.Initialise found source or destination directory {_path} with no base directory");
+                            throw new Exception($"DirectoryBase.Initialise found source or destination directory with no base directory");
                         }
                     }
 
@@ -241,7 +219,7 @@ namespace Archivist.Classes
             }
         }
 
-        internal string Path => _path;
+        internal string Path => _baseDirectory.DirectoryPath!;
 
         internal IEnumerable<ArchiveFileInstance> AllFiles => _existingFiles;
         internal IEnumerable<ArchiveFileInstance> Files => _existingFiles.Where(_ => _.Ignored == false);
@@ -294,14 +272,14 @@ namespace Archivist.Classes
                 if (spec.IsMatch(filInst.FileName))
                 {
                     matchesIncludes = true;
-                    filInst.Result.AddInfo($"Destination '{_path}' wants include spec '{spec}'");
+                    filInst.Result.AddInfo($"Destination '{_baseDirectory.DirectoryPath}' wants include spec '{spec}'");
                     break;
                 }
             }
 
             if (matchesIncludes == false)
             {
-                filInst.Result.AddInfo($"Destination '{_path}' found no matching include spec");
+                filInst.Result.AddInfo($"Destination '{_baseDirectory.DirectoryPath}' found no matching include spec");
             }
             else
             {
@@ -310,7 +288,7 @@ namespace Archivist.Classes
                     if (spec.IsMatch(filInst.FileName))
                     {
                         matchesExcludes = true;
-                        filInst.Result.AddInfo($"Destination '{_path}' doesn't want exclude spec '{spec}'");
+                        filInst.Result.AddInfo($"Destination '{_baseDirectory.DirectoryPath}' doesn't want exclude spec '{spec}'");
                         break;
                     }
                 }

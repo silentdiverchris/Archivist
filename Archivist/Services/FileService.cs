@@ -380,12 +380,6 @@ namespace Archivist.Services
 
             string dstFullName = Path.Combine(dstDir.Path, srcFil.FileName);
 
-            //if (Constants.JUST_TESTING)
-            //{
-            //    result.AddInfo($"Pretending to copy {srcFil.FullName} to {dstFullName}{(srcFil.IslatestVersion ? " (latest)" : null)}");
-            //    return result;
-            //}
-
             try
             {
                 string tempDestFileName = dstFullName + ".copying";
@@ -410,8 +404,8 @@ namespace Archivist.Services
                 {
                     LogEntry progressLogEntry = new(
                         percentComplete: 0,
-                        prefix: $"Copying {srcFil.FullName}",
-                        suffix: $"of {FileUtilities.GetByteSizeAsText(srcFil.Length)}"
+                        prefix: $"Copying {srcFil.FileName}",
+                        suffix: $"of {FileUtilities.GetByteSizeAsText(srcFil.Length)} to {dstDir.BaseDirectory!.DirectoryPath}"
                     );
 
                     progressReporter.ProgressChanged += delegate (object? obj, KeyValuePair<long, long> progressValue)

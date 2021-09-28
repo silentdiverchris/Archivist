@@ -72,20 +72,21 @@ namespace Archivist.Models
                     SelectedJob.ArchiveDirectories.AddRange(GlobalArchiveDirectories);
                     SelectedJob.SecureDirectories.AddRange(GlobalSecureDirectories);
 
-                    foreach (var dir in SelectedJob.SourceDirectories)
-                    {
-                        dir.VerifyVolume();
-                    }
+                    // VerifyVolume now gets called first time the DirectoryPath property is used
+                    //foreach (var dir in SelectedJob.SourceDirectories)
+                    //{
+                    //    dir.VerifyVolume();
+                    //}
 
-                    foreach (var dir in SelectedJob.ArchiveDirectories)
-                    {
-                        dir.VerifyVolume();
-                    }
+                    //foreach (var dir in SelectedJob.ArchiveDirectories)
+                    //{
+                    //    dir.VerifyVolume();
+                    //}
 
-                    foreach (var dir in SelectedJob.SecureDirectories)
-                    {
-                        dir.VerifyVolume();
-                    }
+                    //foreach (var dir in SelectedJob.SecureDirectories)
+                    //{
+                    //    dir.VerifyVolume();
+                    //}
 
                     if (!string.IsNullOrEmpty(SelectedJob.EncryptionPasswordFile))
                     {
@@ -213,8 +214,6 @@ namespace Archivist.Models
         /// </summary>
         public bool IsSlowVolume { get; set; } = false;
 
-        private bool _isAvailable = false;
-
         /// <summary>
         /// Whether this directory was found to exist and be readable
         /// </summary>
@@ -223,14 +222,12 @@ namespace Archivist.Models
         {
             get
             {
-                return _isAvailable;
+                return Directory.Exists(DirectoryPath);
             }
         }
 
         public void VerifyVolume()
         {
-            _isAvailable = false; // That's the default but just in case
-
             if (!string.IsNullOrEmpty(VolumeLabel))
             {
                 if (DirectoryPath!.Contains(@":\") == false)
@@ -240,8 +237,6 @@ namespace Archivist.Models
                     if (drive is not null)
                     {
                         DirectoryPath = Path.Join(drive.Name, DirectoryPath);
-
-                        _isAvailable = Directory.Exists(DirectoryPath);
                     }
                     else
                     {
@@ -259,10 +254,6 @@ namespace Archivist.Models
                 //{
                 //    throw new Exception($"IdentifyVolume found VolumeLabel '{VolumeLabel}' but DirectoryPath '{DirectoryPath}' has a nominated drive");
                 //}
-            }
-            else
-            {
-                _isAvailable = Directory.Exists(DirectoryPath);
             }
         }
 

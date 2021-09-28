@@ -7,12 +7,12 @@ namespace Archivist.Classes
 {
     /// <summary>
     /// Represents the set of files in a primary archive directory and each source and destination 
-    /// directorie, and determines what actions need to happen to them.
+    /// directory, and determines what actions need to happen to them.
     /// 
     /// This is regenerated at each stage, i.e. before compression, copying and deleting old archives. 
     /// 
-    /// It could be updated as we go along, which would be more efficient but a lot more complicated and 
-    /// thus prone to bugs and frankly too much like hard work just for the sake of being clever, especially 
+    /// It could be updated as we go along, which would be more efficient but more complicated, 
+    /// prone to bugs and frankly too much like hard work just for the sake of being clever, especially 
     /// when nobody is paying me by the day to write this :). 
     /// 
     /// In the end we're spending minutes at a time compressing and copying gigabytes of archive data all over 
@@ -22,12 +22,12 @@ namespace Archivist.Classes
 
     public class ArchiveRegister
     {
-        private readonly ArchivePrimaryDirectory _primary;
         private readonly Job _job;
-        private List<ArchiveDestinationDirectory> _destinations { get; set; } = new();
-        private List<ArchiveSourceDirectory> _sources { get; set; } = new();
+        private readonly ArchivePrimaryDirectory _primary;
 
         private readonly List<ArchiveAction> _actions = new();
+        private readonly List<ArchiveSourceDirectory> _sources = new();
+        private readonly List<ArchiveDestinationDirectory> _destinations = new();
 
         public ArchiveRegister(Job jobSpec, string primaryDirectoryPath, List<Models.SourceDirectory> sources, List<Models.ArchiveDirectory> destinations)
         {
@@ -72,14 +72,15 @@ namespace Archivist.Classes
                 .Where(_ => _.IsEnabledAndAvailable)
                 .Where(_ => _.BaseDirectory!.IsToBeProcessed(_job));
 
+            // Determine source directories that need to be compressed into archives in the primary archive directory
             foreach (var srcDir in activeSources)
             {
-                
+                // TODO
             }
 
-            // Determine files to be copied
+            // Determine files to be copied from the primary archive directory to other archive directories
 
-            // Versioned files, only copy those versions that are more recent than
+            // Versioned files first, only copy those versions that are more recent than
             // those which already exist in the destination
 
             foreach (var priArcFil in _primary.VersionedFileInstances)
@@ -118,7 +119,37 @@ namespace Archivist.Classes
                 }
             }
 
-            // Determine files to be deleted
+            // Determine which versioned files need to be deleted in the primary archive directory, we don't ever
+            // delete non-versioned files, we didn't create them, we just copy them around.
+
+            foreach (string baseFileName in _primary.VersionedFileSets.BaseFileNames)
+            {
+                var versions = _primary.VersionedFileSets.VersionsOfFile(baseFileName);
+
+                // TODO need to get these from the source directories themselves
+                var retainMaximumVersions = 2;
+                var retainYoungerThanDays = 2;
+
+                int removeCount = versions.Count() - retainMaximumVersions;
+
+                if (removeCount > 0)
+                {
+                    var versionsToDelete = versions.OrderBy(_ => _).Take(removeCount);
+
+                    foreach (var fileName in versionsToDelete)
+                    {
+                        var filInst = _primary.AllFiles.Single(_ => _.FileName == fileName);
+
+                        if (filInst.IsOlderThanDays(retainYoungerThanDays))
+                        {
+                            AddAction(new ArchiveAction(enArchiveActionType.Delete, fileInstance: filInst));
+                        }
+                    }
+                }
+            }
+
+            // Determine which versioned files need to be deleted in the destination directories, we don't ever
+            // delete non-versioned files, we didn't create them, we just copy them around.
 
             foreach (var dstArchive in _destinations.Where(_ => _.IsEnabledAndAvailable))
             {
@@ -157,7 +188,5 @@ namespace Archivist.Classes
         {
             _sources.Add(new ArchiveSourceDirectory(directory));
         }
-
-
     }
 }

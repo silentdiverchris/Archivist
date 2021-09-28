@@ -62,7 +62,7 @@ namespace Archivist.Services
                     }
                     else
                     {
-                        result.AddWarning($"CompressSources found source {sourceDirectory.DirectoryPath} does not exist");
+                        result.AddWarning($"CompressSources found source {sourceDirectory.DirectoryPath} is not available");
                     }
 
                     if (result.HasErrors)
@@ -160,7 +160,7 @@ namespace Archivist.Services
 
                                 if (fiLater is not null)
                                 {
-                                    result.AddDebug($"Found a later file '{fiLater.FullName}' at {fiLater.LastWriteTimeUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC in '{sourceDirectory.DirectoryPath}'");
+                                    result.AddDebug($"Found a later file in '{sourceDirectory.DirectoryPath}', '{fiLater.FullName}' last written {fiLater.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
                                 }
                                 else
                                 {
