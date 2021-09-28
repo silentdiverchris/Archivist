@@ -128,7 +128,6 @@ namespace Archivist
                         Result compressionResult = await compressionService.CompressSources();
                         result.SubsumeResult(compressionResult);
 
-
                         // Doesn't do anything yet...
                         //Result executeResult = await compressionService.ExecuteFileCompressionActions(archiveRegister);
                         //result.SubsumeResult(executeResult);
