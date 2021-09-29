@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Text.Json.Serialization;
 
-namespace Archivist.Models
+namespace Archivist.Classes
 {
     /// <summary>
     /// Properties that relate specifically to a directory

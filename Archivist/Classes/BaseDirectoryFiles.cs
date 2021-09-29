@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace Archivist.Models
+namespace Archivist.Classes
 {
     /// <summary>
     /// Properies that relate to archiving and copying files

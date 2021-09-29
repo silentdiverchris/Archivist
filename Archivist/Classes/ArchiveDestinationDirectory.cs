@@ -1,5 +1,4 @@
-﻿using Archivist.Models;
-using static Archivist.Enumerations;
+﻿using static Archivist.Enumerations;
 
 namespace Archivist.Classes
 {

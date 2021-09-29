@@ -1,6 +1,5 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
-using Archivist.Models;
 using Archivist.Utilities;
 using System;
 using System.IO;

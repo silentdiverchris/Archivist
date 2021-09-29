@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace Archivist.Models
+namespace Archivist.Classes
 {
     /// <summary>
     /// The structure that the appsettings.json is loaded into on startup and then referenced 

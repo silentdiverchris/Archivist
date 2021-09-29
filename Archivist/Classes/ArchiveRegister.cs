@@ -1,5 +1,4 @@
-﻿using Archivist.Models;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using static Archivist.Enumerations;
 
@@ -29,7 +28,7 @@ namespace Archivist.Classes
         private readonly List<ArchiveSourceDirectory> _sources = new();
         private readonly List<ArchiveDestinationDirectory> _destinations = new();
 
-        public ArchiveRegister(Job jobSpec, string primaryDirectoryPath, List<Models.SourceDirectory> sources, List<Models.ArchiveDirectory> destinations)
+        public ArchiveRegister(Job jobSpec, string primaryDirectoryPath, List<SourceDirectory> sources, List<ArchiveDirectory> destinations)
         {
             _job = jobSpec;
             _primary = new(primaryDirectoryPath);
@@ -177,14 +176,14 @@ namespace Archivist.Classes
             }
         }
 
-        private void AddDestinationDirectory(Models.ArchiveDirectory directory)
+        private void AddDestinationDirectory(ArchiveDirectory directory)
         {
             var dir = directory.GetBase();
 
             _destinations.Add(new ArchiveDestinationDirectory(dir));
         }
 
-        private void AddSourceDirectory(Models.SourceDirectory directory)
+        private void AddSourceDirectory(SourceDirectory directory)
         {
             _sources.Add(new ArchiveSourceDirectory(directory));
         }

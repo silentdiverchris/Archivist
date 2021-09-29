@@ -1,4 +1,4 @@
-﻿using Archivist.Models;
+﻿using Archivist.Classes;
 
 namespace Archivist
 {

@@ -1,7 +1,7 @@
 ﻿using Archivist.Classes;
 using System.Text.Json.Serialization;
 
-namespace Archivist.Models
+namespace Archivist.Classes
 {
     /// <summary>
     /// Directories for archived files to be copied to from 

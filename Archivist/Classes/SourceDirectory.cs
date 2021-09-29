@@ -1,6 +1,6 @@
 ﻿using System.IO.Compression;
 
-namespace Archivist.Models
+namespace Archivist.Classes
 {
     /// <summary>
     /// Directories to be zipped up to the primary archive directory and 

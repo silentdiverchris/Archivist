@@ -1,7 +1,7 @@
 ﻿using System;
 using static Archivist.Enumerations;
 
-namespace Archivist.Models
+namespace Archivist.Classes
 {
     internal class LogEntry
     {

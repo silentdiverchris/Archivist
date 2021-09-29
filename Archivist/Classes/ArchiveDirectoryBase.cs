@@ -1,5 +1,4 @@
-﻿using Archivist.Models;
-using Archivist.Utilities;
+﻿using Archivist.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;

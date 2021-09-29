@@ -1,6 +1,5 @@
 ﻿using Archivist.Classes;
 using Archivist.Helpers;
-using Archivist.Models;
 using Archivist.Services;
 using Archivist.Utilities;
 using System;
@@ -94,14 +93,13 @@ namespace Archivist
 
             if (_logService.LoggingToFile && (_appSettings.SelectedJob!.AutoViewLogFile))
             {
-                var proc = new Process
+                new Process
                 {
                     StartInfo = new ProcessStartInfo(_logService.LogFileName!)
                     {
                         UseShellExecute = true
                     }
-                };
-                proc.Start();
+                }.Start();
             }
 
             RecordStatistics(true);
@@ -223,8 +221,6 @@ namespace Archivist
 
             foreach (var dir in _appSettings.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable))
             {
-                //dir.VerifyVolume();
-
                 if (initial)
                 {
                     dir.Statistics.BytesFreeInitial = FileUtilities.GetAvailableDiskSpace(dir.DirectoryPath!);

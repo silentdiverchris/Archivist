@@ -1,7 +1,7 @@
 ﻿using Archivist.Classes;
 using System.Collections.Generic;
 
-namespace Archivist.Models
+namespace Archivist.Classes
 {
     public class Job
     {
