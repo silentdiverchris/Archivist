@@ -105,18 +105,21 @@ namespace Archivist.Services
 
             bool needToArchive = true;
 
-            if (sourceDirectory.CheckTaskNameIsNotRunning is not null)
+            if (sourceDirectory.CheckTasksNotRunning is not null)
             {
-                var procList = Process.GetProcessesByName(sourceDirectory.CheckTaskNameIsNotRunning);
+                foreach (var taskName in sourceDirectory.CheckTasksNotRunning)
+                {
+                    var procList = Process.GetProcessesByName(taskName);
 
-                if (procList.Any())
-                {
-                    result.AddWarning($"{sourceDirectory.CheckTaskNameIsNotRunning} is running, skipping archive");
-                    needToArchive = false;
-                }
-                else
-                {
-                    result.AddDebug($"{sourceDirectory.CheckTaskNameIsNotRunning} is not running");
+                    if (procList.Any())
+                    {
+                        result.AddWarning($"{taskName} is running, skipping archive");
+                        needToArchive = false;
+                    }
+                    else
+                    {
+                        result.AddDebug($"{taskName} is not running");
+                    }
                 }
             }
 
@@ -242,7 +245,7 @@ namespace Archivist.Services
             await _logService.ProcessResult(result, reportItemCounts: false, reportAllStatistics: true);
 
             return result;
-        }       
+        }
 
         /// <summary>
         /// Determine the output file names that this directory should create (encrypted and not), the name of the 

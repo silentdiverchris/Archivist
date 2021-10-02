@@ -1,4 +1,5 @@
-﻿using System.IO.Compression;
+﻿using System.Collections.Generic;
+using System.IO.Compression;
 
 namespace Archivist.Classes
 {
@@ -20,7 +21,7 @@ namespace Archivist.Classes
         /// the files email are stored in, so have this set to 'Thunderbird' for that sourec directory. Any running task
         /// found with this string in the name will prevent this directory being processed.
         /// </summary>
-        public string? CheckTaskNameIsNotRunning { get; set; }
+        public List<string>? CheckTasksNotRunning { get; set; } = new();
 
         /// <summary>
         /// What compresison to use, see Microsoft System.IO.Compression docs for details at

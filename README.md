@@ -557,9 +557,9 @@ Settings that only apply to archive directories.
 None, archive directories just have the shared settings, above.
 
 ## Jiminy items
-The list of changes I plan to make, encoded for my [Jiminy](https://github.com/silentdiverchris/Jiminy) todo/gtd system.
+The list of changes I plan to make, encoded for the [Jiminy](https://github.com/silentdiverchris/Jiminy) todo/gtd system.
 
 =ctx-project:Archivist-p:low=
 
 =b:n-pri:2= Store concerns report thresholds of versions and hours stale as configurable settings
-=pri:1-b:n= Concerns report complains about a stale file when a more up to date encrypted version exists
+
