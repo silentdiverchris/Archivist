@@ -22,6 +22,7 @@ namespace Archivist.Services
             string sourceFileName,
             string? destinationFileName = null,
             string? password = null,
+            bool deleteSourceFile = true,
             bool synchroniseTimestamps = true)
         {
             Result result = new("EncryptFileAsync", false);
@@ -32,7 +33,7 @@ namespace Archivist.Services
 
                 if (destinationFileName is null)
                 {
-                    destinationFileName = sourceFileName[0..^4] + ".aes";
+                    destinationFileName = sourceFileName + ".aes";
                 }
 
                 ProcessStartInfo procInfo = new()
@@ -53,9 +54,10 @@ namespace Archivist.Services
                     {
                         if (result.HasNoErrorsOrWarnings && File.Exists(destinationFileName))
                         {
-                            result.Statistics.FiledAdded(fiSrc.Length);
-
                             result.AddSuccess($"Encrypted to {destinationFileName} OK");
+
+                            result.Statistics.FiledAdded(fiSrc.Length);
+                            result.Statistics.FileDeleted(fiSrc.Length);
 
                             if (synchroniseTimestamps)
                             {
@@ -65,7 +67,12 @@ namespace Archivist.Services
                             }
 
                             result.AddInfo($"Deleting unencrypted source {sourceFileName}");
-                            File.Delete(sourceFileName);
+
+                            if (deleteSourceFile)
+							{
+                                result.AddInfo($"Deleting unencrypted source {sourceFileName}");
+                                File.Delete(sourceFileName);
+							}
                         }
                     }
                     else

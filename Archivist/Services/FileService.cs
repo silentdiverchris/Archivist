@@ -247,9 +247,11 @@ namespace Archivist.Services
         }
 
         /// <summary>
-        /// Dig around to try to discover which source directory resulted in this archive file, we'll removve 
-        /// the need for this slightly embarrassing functionality when the new ArchiveRegister functionality 
-        /// implements the compression actions.
+        /// Work out which source directory resulted in this archive file, a slightly embarrassing bit of
+        /// reverse engineering but I don't want to be storing the source directory name in the archive file
+        /// or elsewhere, and this reliably does the job. It could fail if the source directory specification 
+        /// changes but this is only used for reporting how many versions of an archive exist so there are 
+        /// no horrific consequenses if that happens.
         /// </summary>
         /// <param name="baseFileName"></param>
         /// <returns></returns>
@@ -306,7 +308,7 @@ namespace Archivist.Services
 
             foreach (var file in filesToDelete)
             {
-                result.AddWarning($"Deleting file '{file!.FullName}' ({FileUtilities.GetByteSizeAsText(file.Length)})");
+                result.AddWarning($"Deleting file '{file!.FullName}', {FileUtilities.GetByteSizeAsText(file.Length)}, last write {file.LastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
                 File.Delete(file.FullName);
             }
 
@@ -476,8 +478,8 @@ namespace Archivist.Services
         }
 
         /// <summary>        
-        /// We don't need the latest file, or more than one, just the first we find that is last 
-        /// written after the specified time, returns null if no later files exist
+        /// Find any file written after the supplied time, we don't need the latest file, or more 
+        /// than one, just the first one we find that fits. Returns null if no later files exist
         /// </summary>
         /// <param name="directoryName"></param>
         /// <param name="recursive"></param>
@@ -501,12 +503,17 @@ namespace Archivist.Services
             else if (recursive)
             {
                 // Ah well, worth a try, check any subdirectories one by one. Best to do it
-                // this way rather than GetFiles the whole lot, then start looking; we don't need the
-                // full set, just one later file will do.
+                // this way rather than GetFiles the whole lot recursivenly, there could be
+                // thousands of them.
+                
+                // We don't need the full set, just one later file will do.
 
                 foreach (var di in root.GetDirectories())
                 {
-                    var allFiles = di.GetFiles("*.*", SearchOption.AllDirectories); // Now we're recursive
+                    // Recurse below each sub-directory, we could make a recursive function to
+                    // just take each directory's root content one by one, which would be faster 
+
+                    var allFiles = di.GetFiles("*.*", SearchOption.AllDirectories); 
 
                     later = allFiles.FirstOrDefault(_ => _.LastWriteTimeUtc > laterThanUtc);
 

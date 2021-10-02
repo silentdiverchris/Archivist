@@ -7,12 +7,12 @@ namespace Archivist.Helpers
     {
         internal static bool IsExistingFileName(this string? value)
         {
-            return value.NotEmpty() && File.Exists(value);
+            return !string.IsNullOrEmpty(value) && File.Exists(value);
         }
 
         internal static bool NoSuchFileName(this string? value)
         {
-            return value.IsEmpty() || !File.Exists(value);
+            return string.IsNullOrEmpty(value) || !File.Exists(value);
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Archivist.Helpers
         }
 
         /// <summary>
-        /// A decidedly primitive implementation, not intended to work for everything, to be
+        /// A primitive implementation, not intended to work for everything, to be
         /// fixed each time a new case it doesn't handle comes up.
         /// </summary>
         /// <param name="str"></param>
@@ -138,13 +138,14 @@ namespace Archivist.Helpers
         }
 
         /// <summary>
-        /// Cut off the string at a certain length, adding '..' if something is removed.
+        /// Cut off the string at a certain length, adding the ellipsis parameter if something is removed.
         /// </summary>
         /// <param name="text"></param>
         /// <param name="length">Cut off at this length</param>
         /// <param name="strictLength">Don't allow the ellipsis to make the string longer than the max length</param>
+        /// <param name="ellipsis">Add this to the resulting string</param>
         /// <returns></returns>
-        internal static string TruncateWithEllipsis(this string text, int length, bool strictLength = false)
+        internal static string TruncateWithEllipsis(this string text, int length, bool strictLength = false, string ellipsis = "...")
         {
             if (string.IsNullOrEmpty(text))
                 return text;
@@ -158,11 +159,11 @@ namespace Archivist.Helpers
 
             if (strictLength)
             {
-                return text.Substring(0, length - 3).TrimEnd() + "...";
+                return text.Substring(0, length - 3).TrimEnd() + ellipsis;
             }
             else
             {
-                return text.Substring(0, length).TrimEnd() + "...";
+                return text.Substring(0, length).TrimEnd() + ellipsis;
             }
         }
     }

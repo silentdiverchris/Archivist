@@ -8,7 +8,7 @@ namespace Archivist.Helpers
 {
     /// <summary>
     /// Encapsulates the concept of versioned files, these have a fixed file name format 
-    /// of ..\RootFileName-nnnn.zip where nnnn is four digits
+    /// of ...\RootFileName-nnnn.zip where the hyphen is mandatory and nnnn is four digits
     /// </summary>
     public static class FileVersionHelpers
     {
@@ -104,6 +104,7 @@ namespace Archivist.Helpers
         {
             if (string.IsNullOrEmpty(fileName) || fileName.Length <= 9)
             {
+                // File name is empty or not long enough for it to be possible
                 return -1;
             }
 
@@ -115,6 +116,7 @@ namespace Archivist.Helpers
             }
             else
             {
+                // Number part of file name is not numeric
                 return -2;
             }
         }
