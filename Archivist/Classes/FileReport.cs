@@ -22,7 +22,7 @@ namespace Archivist.Classes
 
             var item = Items.SingleOrDefault(_ =>
                 _.FileName == fi.Name &&
-                _.LastWriteUtc == fi.LastWriteTimeUtc &&
+                _.LastWriteLocal == fi.LastWriteTime &&
                 _.Length == fi.Length);
 
             if (item is null)
@@ -30,13 +30,13 @@ namespace Archivist.Classes
                 // Is it almost like one we already have ?
                 // If they are last written within 1 minute on either side, then we consider them to be the same archive;
 
-                DateTime minDate = fi.LastWriteTimeUtc.AddMinutes(-1);
-                DateTime maxDate = fi.LastWriteTimeUtc.AddMinutes(1);
+                DateTime minDate = fi.LastWriteTime.AddMinutes(-1);
+                DateTime maxDate = fi.LastWriteTime.AddMinutes(1);
 
                 item = Items.SingleOrDefault(_ =>
                     _.FileName == fi.Name &&
-                    _.LastWriteUtc >= minDate &&
-                    _.LastWriteUtc <= maxDate);
+                    _.LastWriteLocal >= minDate &&
+                    _.LastWriteLocal <= maxDate);
 
                 fuzzyMatch = true;
             }
@@ -58,7 +58,6 @@ namespace Archivist.Classes
         {
             FileName = fi.Name;
             Length = fi.Length;
-            LastWriteUtc = fi.LastWriteTimeUtc;
             LastWriteLocal = fi.LastWriteTime;
 
             IsVersioned = fi.IsVersionedFile();
@@ -72,7 +71,6 @@ namespace Archivist.Classes
 
         public string FileName { get; set; }
         public long Length { get; set; }
-        public DateTime LastWriteUtc { get; set; }
         public DateTime LastWriteLocal { get; set; }
         public List<FileReportItemInstance> Instances { get; set; }
 
@@ -88,7 +86,6 @@ namespace Archivist.Classes
             IsFuzzyMatch = fuzzyMatch;
             IsInPrimaryArchive = inPrimaryArchive;
             Length = fi.Length;
-            LastWriteUtc = fi.LastWriteTimeUtc;
             LastWriteLocal = fi.LastWriteTime;
             Path = fi.DirectoryName!;
         }
@@ -98,7 +95,6 @@ namespace Archivist.Classes
         public bool IsInPrimaryArchive { get; set; }
         public string Path { get; set; }
         public long Length { get; set; }
-        public DateTime LastWriteUtc { get; set; }
         public DateTime LastWriteLocal { get; set; }
     }
 }

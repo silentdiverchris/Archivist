@@ -68,8 +68,7 @@ namespace Archivist.Classes
         internal bool IsVersioned => _isVersioned;
         internal bool IsOnSlowVolume => _directory?.IsSlowVolume ?? false;
         internal bool IslatestVersion => _isLatestVersion;
-        internal DateTime LastWriteTimeUtc => _fileInfo.LastWriteTimeUtc;
-        internal DateTime CreationTimeUtc => _fileInfo.CreationTimeUtc;
+        internal DateTime CreationTimeLocal => _fileInfo.CreationTime;
         internal Result Result => _result;
 
         internal void SetIsLatestVersion()

@@ -98,17 +98,17 @@ namespace Archivist.Services
                             {
                                 var fiEnc = new FileInfo(encFileName);
 
-                                if (fiSrc.LastWriteTimeUtc > fiEnc.LastWriteTimeUtc)
+                                if (fiSrc.LastWriteTime > fiEnc.LastWriteTime)
                                 {
                                     // Unencrypted version has been changed, make a new encrypt
                                     doEncryption = true;
                                 }
-                                else if (fiSrc.LastWriteTimeUtc == fiEnc.LastWriteTimeUtc)
+                                else if (fiSrc.LastWriteTime == fiEnc.LastWriteTime)
                                 {
                                     // Encrypted version exists, unencrypted has same last write time, just remove the unencrypted one
                                     doEncryption = false;
                                 }
-                                else if (fiSrc.LastWriteTimeUtc <= fiEnc.LastWriteTimeUtc)
+                                else if (fiSrc.LastWriteTime <= fiEnc.LastWriteTime)
                                 {
                                     // Encrypted version is later, must have been done manually, lets recreate it just to be on the safe side
                                     doEncryption = true;

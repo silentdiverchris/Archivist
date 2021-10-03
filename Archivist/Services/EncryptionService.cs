@@ -62,8 +62,8 @@ namespace Archivist.Services
                             if (synchroniseTimestamps)
                             {
                                 FileInfo fiDest = new(destinationFileName);
-                                fiDest.CreationTimeUtc = fiSrc.CreationTimeUtc;
-                                fiDest.LastWriteTimeUtc = fiSrc.LastWriteTimeUtc;
+                                fiDest.CreationTime = fiSrc.CreationTime;
+                                fiDest.LastWriteTime = fiSrc.LastWriteTime;
                             }
 
                             result.AddInfo($"Deleting unencrypted source {sourceFileName}");

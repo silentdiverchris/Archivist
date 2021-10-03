@@ -141,24 +141,24 @@ namespace Archivist.Services
                         existingFilePathEncrypted: out string? existingFilePathEncrypted,
                         nextFilePathZipped: out string? nextFilePathZipped,
                         nextFilePathEncrypted: out string? nextFilePathEncrypted,
-                        latestLastWriteUtc: out DateTime? latestArchiveWriteUtc);
+                        latestLastWriteLocal: out DateTime? latestArchiveWriteLocal);
 
                     result.SubsumeResult(generateOutputFileNameResult);
 
                     if (generateOutputFileNameResult.HasNoErrors)
                     {
-                        if (latestArchiveWriteUtc is not null)
+                        if (latestArchiveWriteLocal is not null)
                         {
                             // We have an existign archive, does it need updating ?
 
-                            var lastWriteThreshold = (DateTime)latestArchiveWriteUtc + new TimeSpan(0, sourceDirectory.MinutesOldThreshold, 0);
+                            var lastWriteThresholdLocal = (DateTime)latestArchiveWriteLocal + new TimeSpan(0, sourceDirectory.MinutesOldThreshold, 0);
 
-                            result.AddDebug($"Processing archive '{baseOutputFileName}' last written {((DateTime)latestArchiveWriteUtc).ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
-                            result.AddDebug($"Looking for files written after {lastWriteThreshold.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
+                            result.AddDebug($"Processing archive '{baseOutputFileName}' last written {((DateTime)latestArchiveWriteLocal).ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
+                            result.AddDebug($"Looking for files written after {lastWriteThresholdLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
 
                             using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
                             {
-                                var fiLater = FileService.GetLaterFile(sourceDirectory.DirectoryPath!, true, lastWriteThreshold);
+                                var fiLater = FileService.GetLaterFile(sourceDirectory.DirectoryPath!, true, lastWriteThresholdLocal);
 
                                 if (fiLater is not null)
                                 {
@@ -262,7 +262,7 @@ namespace Archivist.Services
             out string? existingFilePathEncrypted,
             out string? nextFilePathZipped,
             out string? nextFilePathEncrypted,
-            out DateTime? latestLastWriteUtc)
+            out DateTime? latestLastWriteLocal)
         {
             Result result = new("GenerateOutputFileNames", false);
 
@@ -270,7 +270,7 @@ namespace Archivist.Services
             existingFilePathEncrypted = null;
             nextFilePathZipped = null;
             nextFilePathEncrypted = null;
-            latestLastWriteUtc = null;
+            latestLastWriteLocal = null;
 
             baseOutputFileName = FileUtilities.GenerateBaseOutputFileName(sourceDirectory);
 
@@ -286,7 +286,7 @@ namespace Archivist.Services
 
                     var lastFileName = existingFiles.Last();
 
-                    latestLastWriteUtc = new FileInfo(lastFileName).LastWriteTimeUtc;
+                    latestLastWriteLocal = new FileInfo(lastFileName).LastWriteTime;
 
                     if (lastFileName.EndsWith(".zip"))
                     {

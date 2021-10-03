@@ -79,7 +79,7 @@ namespace Archivist.Services
             foreach (var item in fileReport.Items.OrderBy(_ => _.FileName))
             {
                 var cnt = item.Instances.Count;
-                string msg = $"{item.FileName} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, false)}, last write {item.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC";
+                string msg = $"{item.FileName} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, false)}, last write {item.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local";
 
                 if (cnt >= 3)
                 {
@@ -96,7 +96,7 @@ namespace Archivist.Services
 
                 foreach (var inst in item.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenBy(_ => _.Path))
                 {
-                    result.AddInfo($" {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, false)}, last write {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")})");
+                    result.AddInfo($" {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, false)}, last write {inst.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
                 }
             }
 
@@ -109,7 +109,7 @@ namespace Archivist.Services
             result.AddInfo("File" + new string(' ', fnLen - 1) + "#  Size      Date & time");
             foreach (var item in fileReport.Items.OrderBy(_ => _.FileName))
             {
-                var minDate = item.Instances.Min(_ => _.LastWriteUtc);
+                var minDate = item.Instances.Min(_ => _.LastWriteLocal);
                 var size = FileUtilities.GetByteSizeAsText(item.Length);
                 var cnt = item.Instances.Count;
 
@@ -143,13 +143,13 @@ namespace Archivist.Services
                 {
                     result.AddWarning($"{dup.Key}", consoleBlankLineBefore: true);
 
-                    foreach (var df in fileReport.Items.Where(_ => _.FileName == dup.Key).OrderBy(_ => _.LastWriteUtc))
+                    foreach (var df in fileReport.Items.Where(_ => _.FileName == dup.Key).OrderBy(_ => _.LastWriteLocal))
                     {
-                        result.AddWarning($" {df.Instances.Count} {"instance".Pluralise(df.Instances.Count)} {FileUtilities.GetByteSizeAsText(df.Length, true)}, last write {df.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC");
+                        result.AddWarning($" {df.Instances.Count} {"instance".Pluralise(df.Instances.Count)} {FileUtilities.GetByteSizeAsText(df.Length, true)}, last write {df.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
 
                         foreach (var inst in df.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenByDescending(_ => _.IsFuzzyMatch).ThenBy(_ => _.Path))
                         {
-                            result.AddInfo($"  {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write {inst.LastWriteUtc.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} UTC ({(inst.IsFuzzyMatch ? "Fuzzy" : "Exact")})");
+                            result.AddInfo($"  {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write {inst.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
                         }
                     }
                 }
@@ -167,7 +167,7 @@ namespace Archivist.Services
                 var thresholdHours = 12;
                 var recentThresholdLocal = DateTime.Now.AddHours(-thresholdHours);
                 var instances = fileReport.Items.Where(_ => _.BaseFileName == rootFileName).SelectMany(_ => _.Instances).OrderBy(_ => _.Path);
-                var latestInstance = instances.OrderByDescending(_ => _.LastWriteUtc).FirstOrDefault();
+                var latestInstance = instances.OrderByDescending(_ => _.LastWriteLocal).FirstOrDefault();
                 var latestSize = FileUtilities.GetByteSizeAsText(latestInstance!.Length);
                 var copyCount = instances.Count();
                 var sourceDirectory = FindSourceDirectory(rootFileName);
@@ -184,7 +184,7 @@ namespace Archivist.Services
 
                 if (sourceDirectory is not null && latestInstance.LastWriteLocal < recentThresholdLocal)
                 {
-                    var laterFile = GetLaterFile(sourceDirectory.DirectoryPath!, true, latestInstance.LastWriteUtc);
+                    var laterFile = GetLaterFile(sourceDirectory.DirectoryPath!, true, latestInstance.LastWriteLocal);
 
                     if (laterFile is not null)
                     {
@@ -459,8 +459,8 @@ namespace Archivist.Services
 
                     var fiDest = new FileInfo(dstFullName)
                     {
-                        LastWriteTimeUtc = srcFil.LastWriteTimeUtc,
-                        CreationTimeUtc = srcFil.CreationTimeUtc
+                        LastWriteTime = srcFil.LastWriteTimeLocal,
+                        CreationTime = srcFil.CreationTimeLocal
                     };
                 }
                 else
@@ -485,7 +485,7 @@ namespace Archivist.Services
         /// <param name="recursive"></param>
         /// <param name="laterThanUtc"></param>
         /// <returns></returns>
-        internal static FileInfo? GetLaterFile(string directoryName, bool recursive, DateTime laterThanUtc)
+        internal static FileInfo? GetLaterFile(string directoryName, bool recursive, DateTime laterThanLocal)
         {
             DirectoryInfo root = new(directoryName);
 
@@ -494,7 +494,7 @@ namespace Archivist.Services
 
             var rootFiles = root.GetFiles("*.*", SearchOption.TopDirectoryOnly);
 
-            var later = rootFiles.FirstOrDefault(_ => _.LastWriteTimeUtc > laterThanUtc);
+            var later = rootFiles.FirstOrDefault(_ => _.LastWriteTime > laterThanLocal);
 
             if (later != null)
             {
@@ -515,7 +515,7 @@ namespace Archivist.Services
 
                     var allFiles = di.GetFiles("*.*", SearchOption.AllDirectories); 
 
-                    later = allFiles.FirstOrDefault(_ => _.LastWriteTimeUtc > laterThanUtc);
+                    later = allFiles.FirstOrDefault(_ => _.LastWriteTime > laterThanLocal);
 
                     if (later is not null)
                     {
