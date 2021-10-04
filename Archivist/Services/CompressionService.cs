@@ -149,12 +149,12 @@ namespace Archivist.Services
                     {
                         if (latestArchiveWriteLocal is not null)
                         {
-                            // We have an existign archive, does it need updating ?
+                            // We have an existing archive, does it need updating ?
 
                             var lastWriteThresholdLocal = (DateTime)latestArchiveWriteLocal + new TimeSpan(0, sourceDirectory.MinutesOldThreshold, 0);
 
-                            result.AddDebug($"Processing archive '{baseOutputFileName}' last written {((DateTime)latestArchiveWriteLocal).ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
-                            result.AddDebug($"Looking for files written after {lastWriteThresholdLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
+                            result.AddDebug($"Processing archive '{baseOutputFileName}' last written {((DateTime)latestArchiveWriteLocal).ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
+                            result.AddDebug($"Looking for files written after {lastWriteThresholdLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
 
                             using (var fileService = new FileService(_jobSpec, _appSettings, _logService))
                             {
@@ -162,7 +162,7 @@ namespace Archivist.Services
 
                                 if (fiLater is not null)
                                 {
-                                    result.AddDebug($"Found a later file in '{sourceDirectory.DirectoryPath}', '{fiLater.FullName}' last written {fiLater.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
+                                    result.AddDebug($"Found a later file in '{sourceDirectory.DirectoryPath}', '{fiLater.FullName}' last written {fiLater.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
                                 }
                                 else
                                 {
@@ -202,6 +202,8 @@ namespace Archivist.Services
                                 if (fiOutput.Exists)
                                 {
                                     result.AddSuccess($"Zipped {sourceDirectory.DirectoryPath} to {nextFilePathZipped} OK");
+
+                                    FileUtilities.RoundFileTimes(nextFilePathZipped!);
 
                                     result.Statistics.FiledAdded(fiOutput.Length);
                                     _jobSpec.PrimaryArchiveStatistics.FiledAdded(fiOutput.Length);

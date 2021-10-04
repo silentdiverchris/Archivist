@@ -79,7 +79,7 @@ namespace Archivist.Services
             foreach (var item in fileReport.Items.OrderBy(_ => _.FileName))
             {
                 var cnt = item.Instances.Count;
-                string msg = $"{item.FileName} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, false)}, last write {item.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local";
+                string msg = $"{item.FileName} has {item.Instances.Count} {"instance".Pluralise(cnt)} {FileUtilities.GetByteSizeAsText(item.Length, false)}, last write {item.LastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}";
 
                 if (cnt >= 3)
                 {
@@ -96,7 +96,7 @@ namespace Archivist.Services
 
                 foreach (var inst in item.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenBy(_ => _.Path))
                 {
-                    result.AddInfo($" {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, false)}, last write {inst.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
+                    result.AddInfo($" {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, false)}, last write {inst.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
                 }
             }
 
@@ -143,13 +143,13 @@ namespace Archivist.Services
                 {
                     result.AddWarning($"{dup.Key}", consoleBlankLineBefore: true);
 
-                    foreach (var df in fileReport.Items.Where(_ => _.FileName == dup.Key).OrderBy(_ => _.LastWriteLocal))
+                    foreach (var df in fileReport.Items.Where(_ => _.FileName == dup.Key).OrderBy(_ => _.LastWriteTimeLocal))
                     {
-                        result.AddWarning($" {df.Instances.Count} {"instance".Pluralise(df.Instances.Count)} {FileUtilities.GetByteSizeAsText(df.Length, true)}, last write {df.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
+                        result.AddWarning($" {df.Instances.Count} {"instance".Pluralise(df.Instances.Count)} {FileUtilities.GetByteSizeAsText(df.Length, true)}, last write {df.LastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
 
                         foreach (var inst in df.Instances.OrderByDescending(_ => _.IsInPrimaryArchive).ThenByDescending(_ => _.IsFuzzyMatch).ThenBy(_ => _.Path))
                         {
-                            result.AddInfo($"  {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write {inst.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
+                            result.AddInfo($"  {inst.Path} {FileUtilities.GetByteSizeAsText(inst.Length, true)}, last write {inst.LastWriteLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
                         }
                     }
                 }
@@ -308,7 +308,7 @@ namespace Archivist.Services
 
             foreach (var file in filesToDelete)
             {
-                result.AddWarning($"Deleting file '{file!.FullName}', {FileUtilities.GetByteSizeAsText(file.Length)}, last write {file.LastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)} local");
+                result.AddWarning($"Deleting file '{file!.FullName}', {FileUtilities.GetByteSizeAsText(file.Length)}, last write {file.LastWriteTimeLocal.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
                 File.Delete(file.FullName);
             }
 
@@ -457,11 +457,24 @@ namespace Archivist.Services
                     TotalBytesCopied += srcFil.Length;
                     TotalFilesCopied++;
 
+                    var srcTicks = srcFil.LastWriteTimeLocal.Ticks;
+
                     var fiDest = new FileInfo(dstFullName)
                     {
                         LastWriteTime = srcFil.LastWriteTimeLocal,
                         CreationTime = srcFil.CreationTimeLocal
                     };
+
+                    var dstTicks = fiDest.LastWriteTime.Ticks;
+
+                    // If we copy between different disk formats we can lose some accuracy, eg
+                    // from NTFS to exFAT. We now round to the nearest second, so this should no 
+                    // longer happen
+
+                    if (srcTicks != dstTicks)
+                    {
+                        result.AddWarning($"LastWrite ticks differ {srcTicks} & {dstTicks}");
+                    }
                 }
                 else
                 {

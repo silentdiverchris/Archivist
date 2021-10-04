@@ -8,6 +8,38 @@ namespace Archivist.Utilities
     internal static class FileUtilities
     {
         /// <summary>
+        /// Round the LastWriteTime and CreationTime to the nearest whole second.
+        /// The reason being, when we copy files around we synchronise last write and 
+        /// create timestamps, but with file systems like exFAT we lose some accuracy 
+        /// as compared to NTFS, say. Having the timestamps as exact seconds means 
+        /// files created on NTFS and copied to exFAT have identical timestamps.
+        /// </summary>
+        /// <param name="fullFileName"></param>
+        internal static void RoundFileTimes(string fullFileName)
+        {
+            var fi = new FileInfo(fullFileName);
+
+            if (fi.Exists)
+            {
+                fi.LastWriteTime = new DateTime(fi.LastWriteTime.Ticks - fi.LastWriteTime.Ticks % TimeSpan.TicksPerSecond);
+                fi.CreationTime = new DateTime(fi.CreationTime.Ticks - fi.CreationTime.Ticks % TimeSpan.TicksPerSecond);
+
+                //var lwt = fi.LastWriteTime;
+                //var crt = fi.CreationTime;
+
+                //var lwtr = new DateTime(lwt.Ticks - lwt.Ticks % TimeSpan.TicksPerSecond);
+                //var crtr = new DateTime(crt.Ticks - crt.Ticks % TimeSpan.TicksPerSecond);
+
+                //fi.LastWriteTime = lwtr;
+                //fi.CreationTime = crtr;
+            }
+            else
+            {
+                throw new Exception($"RoundFileTimes file '{fullFileName}' does not exdist");
+            }
+        }
+
+        /// <summary>
         /// Generate the base output file name for this source directory, that is, the
         /// file name without any extension. The final file name will be given 
         /// a .zip or .aes extension as required

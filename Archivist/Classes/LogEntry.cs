@@ -26,7 +26,6 @@ namespace Archivist.Classes
         internal short? PercentComplete { get; set; } = null;
 
         internal bool AlwaysWriteToEventLog { get; set; }
-        internal DateTime CreatedUtc { get; private set; } = DateTime.UtcNow;
         internal DateTime CreatedLocal { get; private set; } = DateTime.Now;
         internal enSeverity Severity { get; set; }
         internal string? Text { get; set; }
@@ -34,9 +33,9 @@ namespace Archivist.Classes
         internal bool ConsoleBlankLineBefore { get; set; }
         internal bool ConsoleBlankLineAfter { get; set; }
 
-        internal string FormatForFile(bool useUtcTime)
+        internal string FormatForFile()
         {
-            return $"{(useUtcTime ? CreatedUtc : CreatedLocal):HH:mm:ss} {Severity.ToString().PadRight(7)} {Text}\r\n";
+            return $"{CreatedLocal:HH:mm:ss} {Severity,-7} {Text}\r\n";
         }
     }
 }

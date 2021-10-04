@@ -18,7 +18,6 @@ namespace Archivist.Classes
             bool consoleBlankLineBefore = false,
             bool consoleBlankLineAfter = false)
         {
-            CreatedUtc = DateTime.UtcNow;
             CreatedLocal = DateTime.Now;
             Text = text;
             Severity = severity;
@@ -30,7 +29,6 @@ namespace Archivist.Classes
         }
 
         internal DateTime CreatedLocal { get; private set; }
-        internal DateTime CreatedUtc { get; private set; }
         internal enSeverity Severity { get; set; }
         internal string Text { get; set; }
         internal Exception? Exception { get; set; }

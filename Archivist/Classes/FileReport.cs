@@ -18,25 +18,31 @@ namespace Archivist.Classes
         {
             bool fuzzyMatch = false;
 
-            // File sizes will not match when files are on disks with different allocation sizes
+            // File sizes will not match when files with identical content are stored on
+            // disks with different allocation sizes but since most people use the default
+            // then usually they will match, so let's try an exact match first.
 
             var item = Items.SingleOrDefault(_ =>
                 _.FileName == fi.Name &&
-                _.LastWriteLocal == fi.LastWriteTime &&
+                _.LastWriteTimeLocal == fi.LastWriteTime &&
                 _.Length == fi.Length);
 
             if (item is null)
             {
-                // Is it almost like one we already have ?
-                // If they are last written within 1 minute on either side, then we consider them to be the same archive;
+                // No exact match, is it almost like one we already have ? - we can't trust the file size so
+                // if they have the same name and version number and are last written within 5 seconds either
+                // side, then we consider them to be the same archive
 
-                DateTime minDate = fi.LastWriteTime.AddMinutes(-1);
-                DateTime maxDate = fi.LastWriteTime.AddMinutes(1);
+                // We do set the file create and last write time when we copy one but for some reason this doesn't
+                // always give them the same timestamp, it can vary by a second or two, which needs investigating TODO
+
+                DateTime minDate = fi.LastWriteTime.AddSeconds(-5);
+                DateTime maxDate = fi.LastWriteTime.AddSeconds(5);
 
                 item = Items.SingleOrDefault(_ =>
                     _.FileName == fi.Name &&
-                    _.LastWriteLocal >= minDate &&
-                    _.LastWriteLocal <= maxDate);
+                    _.LastWriteTimeLocal >= minDate &&
+                    _.LastWriteTimeLocal <= maxDate);
 
                 fuzzyMatch = true;
             }
@@ -58,7 +64,7 @@ namespace Archivist.Classes
         {
             FileName = fi.Name;
             Length = fi.Length;
-            LastWriteLocal = fi.LastWriteTime;
+            LastWriteTimeLocal = fi.LastWriteTime;
 
             IsVersioned = fi.IsVersionedFile();
             BaseFileName = FileVersionHelpers.GetBaseFileName(fi.Name);
@@ -71,7 +77,7 @@ namespace Archivist.Classes
 
         public string FileName { get; set; }
         public long Length { get; set; }
-        public DateTime LastWriteLocal { get; set; }
+        public DateTime LastWriteTimeLocal { get; set; }
         public List<FileReportItemInstance> Instances { get; set; }
 
         public string BaseFileName { get; private set; }

@@ -109,7 +109,7 @@ namespace Archivist.Services
 
                 if (Directory.Exists(_appSettings.LogDirectoryPath))
                 {
-                    DateTime useDate = _appSettings.UseUtcTime ? DateTime.UtcNow : DateTime.Now;
+                    DateTime useDate = DateTime.Now;
                     string fileName = $"Archivist-{_jobDetails.JobNameToRun}-{useDate.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)}.log";
                     _logFileName = Path.Combine(_appSettings.LogDirectoryPath, fileName);
                     _logToFile = true;
@@ -186,7 +186,7 @@ namespace Archivist.Services
                 }
             }
 
-            foreach (var msg in result.UnprocessedMessages.OrderBy(_ => _.CreatedUtc))
+            foreach (var msg in result.UnprocessedMessages.OrderBy(_ => _.CreatedLocal))
             {
                 await AddLogAsync(
                     new LogEntry(
@@ -328,7 +328,7 @@ namespace Archivist.Services
             {
                 using (FileStream sourceStream = new(_logFileName!, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
                 {
-                    byte[] encodedText = Encoding.Unicode.GetBytes(entry.FormatForFile(_appSettings.UseUtcTime));
+                    byte[] encodedText = Encoding.Unicode.GetBytes(entry.FormatForFile());
                     await sourceStream.WriteAsync(encodedText);
                 };
             }
