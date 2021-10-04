@@ -1,4 +1,7 @@
 # Archivist
+
+**Please note, I have recently removed and renamed some settings, but haven't updated the descriptions and samples below yet, if you catch me in this shameful state feel free to tell me I'm a bad person and I'll get that done right away.**
+
 A C# Net Core archiving/backup utility.
 
 I got frustrated with existing backup systems for Windows and wanted something to do both sporadic and regular backups, allow me to backup each individual set of files in exactly the way I want it to be to different combinations of local, external and network drives. 
@@ -64,7 +67,7 @@ A list of each archive the system found in the primary archive directory, how ma
 
 This includes files that were not created by Archivist, you can manually add files there and they will be copied to the destination directories according to the include and exclude settings for each, and reported on.
 
-In the screenshot below it is reassuring me that there are 3 copies of my HyperVExports archive, and warning me that only one copy of my movies archive was found (there are offline backups that it can't see).
+In the screenshot below it is reassuring me that there are 3 copies of my HyperVExports archive, and warning me that only one copy of my movies archive was found (there are offline backups that it can't see, phew !).
 
 <img alt="Archive file list" title="Archive file list" src="https://github.com/silentdiverchris/Archivist/raw/master/Screenshots/Report1.png">
 
@@ -102,38 +105,34 @@ There are three main parts to the process, done in the order listed below.
 
 ## Securing directories
 
-You can nominate a list of 'secure directories' that the system will automatically encrypt files found in, each to its own individual '.aes' file, and optionally remove the unencrypted version.
+You can nominate a list of 'secure directories' that the system will automatically encrypt files found in, each to its own individual '.aes' file, and then remove the unencrypted version.
 
 The reason for this process being that I like to keep credentials, account details and other secret stuff in little text files, screen shots and the like in various directories, decrypting them manually to view and update them, and either immediately (re-)encrypt manually or more likely, leave them for Archivist to process. 
 
-My main development PC runs various Archivist jobs several times a day so nothing stays unsecured for long and will always be secured before any archiving is done so I know no sensitive data is in plain text in any of my backups.
+My main development PC runs Archivist jobs several times a day so nothing stays unsecured for long and will always be secured before any archiving is done so I know no sensitive data is in plain text in any of my backups.
 
 It will take each file name and append '.aes' to it to determine the encrypted file name, so 'SecretPassword.txt' will be encrypted into 'SecretPassword.txt.aes'.
 
-It will ignore any file called 'clue.txt' in upper, lower or mixed case, I use a file of that name to store a cryptic reminder of the password I use for files in that directory.
+It will ignore any file called 'clue.txt' in upper, lower or mixed case, I use a file of that name to store a cryptic reminder of the password I use for files in that directory in case I forget, that's a hard coded 'magic file name'.
 
 When files are encrypted it sets the last write time to that of the source file, and uses the last write times to determine which file is most recent.
 
 When Archivist runs it will encrypt any files in secure directories that are not of the form '\*.aes' if the unencrypted version has a later write time. 
 
-It will then optionally delete the unencrypted version if an encrypted version exists once it is sure the encryption happened successfully, configuration setting DeleteArchiveAfterEncryption controls whether it deletes of the unencrypted files.
+It will then delete the unencrypted version once it is sure the encryption happened successfully.
 
-This setting defaults to false, which isn't the recommended value but works on the basis of "Don't delete stuff unless specifically told to" and allows a new user to verify that it's working how it should before trusting it.
-
-If DeleteArchiveAfterEncryption is set to true, and it finds an unencrypted file with a write time the same as, or earlier than the encrypted version it will assume the file was manually unencrypted to view it, and just delete the file, retaining the encrypted one. 
-
-If the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption and optionally deleting the unencrypted version.
+If the unencrypted file has a later last write time it will re-encrypt it, overwriting the previous encryption and deleting the unencrypted version.
 
 To nominate secure directories, add them to the GlobalSecureDirectories or SecureDirectories list in the [application settings](#AppSettings) file.
 
 <a name="ArchivingSourceDirectories"></a>
 ## Archiving source directories
 
-The second part of the process is to take the list of directories in the GlobalSourceDirectories and SourceDirectories configuration and recursively zip each into a single output file in a nominated directory, known as the primary archive directory,  specified in the configuration as PrimaryArchiveDirectoryName.
+The second part of the process is to take the list of directories in the GlobalSourceDirectories and SourceDirectories configuration and recursively zip each into a single output file in a nominated directory, known as the primary archive directory, specified in the configuration as PrimaryArchiveDirectoryName.
 
 This uses the 'ZipFile.CreateFromDirectory' interface in Microsoft's Sytem.IO.Compression library, see the [Microsoft documentation](https://docs.microsoft.com/en-us/dotnet/api/system.io.compression?view=net-5.0) for details.
 
-Currently there is no way to tell it to only zip a subset of the files in a source directory, it always recursively zips the whole thing.
+Currently there is no way to tell it to only zip a subset of the files in a source directory, it always recursively zips the whole thing. If you want to be more selective you can add each subdirectory as a separate source directory.
 
 The resulting zip files can then optionally be encrypted, creating a file with a '.aes' extension, so 'ArchivedFile.zip' is encrypted to 'ArchivedFile.zip.aes'. Set the EncryptOutput configuration setting on the source directory to enable this. 
 
@@ -199,17 +198,19 @@ An archive of folder 'Development' would normally create file 'Development.zip',
 
 Setting RetainMaximumVersions to 3, for example, would leave those as-is when 'Development-0003.zip' was created, then when 'Development-0004.zip' was created would delete 'Development-0001.zip', retaining the last 3.
 
-When it gets to 9900 it will start generating warnings, and at 9999 it will generate an error and not create the next version of that file. Currently you need to renumber the files, e.g. back to 0001, 0002 etc. to get it working again. 
+When it gets to 9900 it will start generating warnings, and at 9999 it will generate an error and not create the next version of that file. 
 
-The system stores no internal record of what it calls files, it goes from what it finds at the time.
+Currently you will need to manually renumber the files, e.g. back to 0001, 0002 etc. to get it working again. 
 
-Using the Retain\[Minimim/Maximum]Versions settings you can tell it to keep the number of versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision, it judges purely by the digits in the file names.
+The system stores no internal record of what it calls files, no state is saved at all, it determines what the next version number is from the highest existing number.
+
+Using the RetainVersions setting you can tell it to keep the number of versions you like. It will delete the ones with the lowest numbers, which would usually be the oldest if you haven't touched the files since but the file timestamps aren't a factor in the decision, it judges purely by the version digits in the file names.
 
 If it finds any file name that isn't of the form \[base file name]\[hyphen\]\[4 digits\]\[dot]\[extension] it won't touch it. Nor will it touch any file that has a \[base file name] that it isn't actively writing at the time.
 
-If AddVersionSuffix for a directory is false, files will not be versioned and there will only ever be one version of each archive in that directory.
+All files created by Archivist will be named with the versioned format.
 
-This versioning can start to eat up disk space of course, the system will report the space free on drives it uses to the console/log, and generate a warning if it is below 50Gb, currently.
+This versioning can start to eat up disk space, the system will report the space free on drives it uses to the console/log, and generate a warning if it is below 50Gb, currently.
 
 This behaviour can be limited by specifying RetainYoungerThanDays, which will make sure no files are deleted if they were last written to less than that many days ago, regardless of the number of versions, see below for more details.
 
@@ -217,9 +218,9 @@ This behaviour can be limited by specifying RetainYoungerThanDays, which will ma
 
 At two points in the process, namely when a zip archive is created and after copying it to an archive directory, the system can delete older generations of each file and so keep a specific number of them. 
 
-To do this, set the AddVersionSuffix, RetainMinimumVersions, RetainMaximumVersions and RetainYoungerThanDays settings on the directory in question.
+To do this, set the RetainVersions and RetainYoungerThanDays settings on the directory in question.
 
-The RetainMinimumVersions and RetainMaximumVersions settings define how many versions will be kept, limited by the RetainYoungerThanDays setting, which ensures that no file is deleted if it was last written to less than that number of days ago, regardless of the RetainMaximumVersions setting.
+The RetainVersions setting define how many versions will be kept, limited by the RetainYoungerThanDays setting, which ensures that no file is deleted if it was last written to less than that number of days ago, regardless of the RetainVersions setting.
 
 The RetainYoungerThanDays setting will not cause older files to be deleted, it only prevents younger files being deleted.
 
@@ -560,6 +561,8 @@ None, archive directories just have the shared settings, above.
 The list of changes I plan to make, encoded for the [Jiminy](https://github.com/silentdiverchris/Jiminy) todo/gtd system.
 
 =ctx-project:Archivist-p:low=
-
+=b:n-pri:2= Update screenshots
+=b:n-pri:2= Update appsettigns.json samples
+=b:n-pri:1= Review settings descriptions
 =b:n-pri:2= Store concerns report thresholds of versions and hours stale as configurable settings
 
