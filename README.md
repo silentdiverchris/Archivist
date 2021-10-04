@@ -14,17 +14,17 @@ It's not ideal for non-technical users, it has no GUI and relies on considered t
 
 Rather than dump a single subset of everything to one place, it can archive different sets of files in different directories to multiple places depending on inclusion and exclusion file specifications, retaining a complete history of them in one place such as a massive local or NAS volume, and just the latest X versions and/or the last Y days worth of various selections of them on any number of other fixed or removable volumes.
 
-While I want to be proof against fire, burglary and ransomware attack though rotating removable USB archives stored elsewhere and uploading AES Encrypted archives to the cloud, I also want to know that I always have at least 2 copies of everything that is important immediately to hand as proof against hardware failure or accidental deletion.
+While I want to be proof against fire, burglary and ransomware attack though rotating removable USB archives stored elsewhere and uploading AES Encrypted archives to the cloud, I also want to know that I always have at least 2 copies of everything that is important immediately to hand on different physical devices as proof against hardware failure or accidental deletion.
 
-I have 5 fixed SSD drives of 128, 256 or 512Gb capacity on my main machine, rather than one large disk / point of failure and store a subset of my archives on all of them, so each  has an 'Archives' directory and a set of filters that define what gets copied to which and how many generations are retained on each. Manually that'd get rather complicated but Archiver makes it very simple.
+I have 5 fixed SSD drives of 128, 256 or 512Gb capacity on my main machine, rather than one large disk / point of failure and I store a different subset of my archives on all of them, so each has an 'Archives' directory and set my Archivist filters to define what gets copied to which and how many generations are retained on each. Manually that'd get rather complicated but Archivist makes it very simple.
 
-You can define different backup jobs, perhaps one to back up everything to everywhere on an automated schedule and/or via a shortcut, one to add new photos and movies to an archive every week, set up desktop shortcuts to fire off backups of specific, frequently changing files like code and documents to fast internal drives, or to a specific volume if it's mounted, or whatever happens to be mapped to F: at the time.
+You can define different backup jobs, perhaps one to back up everything to everywhere on an automated schedule and/or via a shortcut, one to add new photos and movies to an archive every week, set up desktop shortcuts to fire off backups of specific, frequently changing files like code and documents to fast internal drives, or to a specific named volume if it's mounted (regardless of drive letter), or to whatever happens to be mapped to drive F: at the time.
 
 There is no UI other than the console output, it's driven from a single json configuration file 'appsettings.json' and reports to the console, plus optionally to a text log file and/or a SQL table and/or the Windows event log.
 
-While it can theoretically be compiled for use on Linux or Mac or in a Docker container, it has only been tested or used on native Windows 10.
+While it can theoretically be compiled for use on Linux or Mac or in a Docker container, it has only been tested or used on native Windows 10. I use Linux too, so intend to start running Archivist on there too, at some point.
 
-This was written to do exactly what I personally want from an archiving system, it's not intended to be a panacea for everyone but I hope it pretty much covers what most people might want from such a thing. Feel free to ask for a feature to be added, or feel even freer to add it yourself.
+Archivist was written to do exactly what I personally want from a backup, it's not intended to be a panacea for everyone but I hope it pretty much covers what most people might want from such a thing. Feel free to ask for a feature to be added, or feel even freer to add it yourself.
 
 For the purposes of this document, an 'archive' is pretty much synonymous with a zip file of a nominated source directory.
 
@@ -38,7 +38,8 @@ The code is licensed under [The MIT Licence](https://opensource.org/licenses/mit
 # Installation
 There is no installer package, currently you need to download the code and build it locally. 
 
-I'll generate a proper release/installer soon when it's stabilised a bit.
+I'll generate a proper release/installer soon....
+==pri:1-b:n= Create release package
 
 It was created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, so if you want to build it locally you'll definitely need at least the former, and will probably get a raft of downgrade issues if you don't use the latter.
 
@@ -55,7 +56,7 @@ No, it doesn't write to or delete any of the source files it processes, nor does
 
 It doesn't address the source files individually in this code at all, it purely reads the source directories to zip them up (see [below](#ArchivingSourceDirectories) for details); with one optional exception, below.
 
-If you enable the 'secure directories' function by defining some, it will delete unencrypted files in the set of secure directories, only when it's specifically told to with the DeleteSourceAfterEncrypt setting (which defaults to false), only after having checked an encrypted version already exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
+If you enable the 'secure directories' function by defining some, it will delete unencrypted files in the set of secure directories, but only after having checked an encrypted version already exists, or that a new encryption reported success and that the newly encrypted version of the file exists.
 
 # Reports
 The system produces three reports after each run, currently they are written to the console as well as the log. Colour coding has things to be comfortable about in green, and things to be concerned about in yellow.
