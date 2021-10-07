@@ -3,6 +3,7 @@ using Archivist.Helpers;
 using Archivist.Services;
 using Archivist.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -43,7 +44,7 @@ namespace Archivist
             Result result = new("MainProcess.Initialise");
 
             DateTime startTime = DateTime.UtcNow;
-            result.AddInfo($"Archivist starting at {startTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS)}");
+            result.AddInfo($"Archivist starting at {startTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_DAY)}");
 
             if (_logService.LoggingToFile)
             {
@@ -114,6 +115,12 @@ namespace Archivist
 
             if (!result.HasErrors)
             {
+                // We already round the times for new files we create ourselves, but other files may
+                // exist in in the primary archive directory that we didn't create, so we just round the
+                // lot, it will only alter the timestamps of files that haven't already been rounded
+
+                FileUtilities.RoundDirectoryTimes(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, new List<string> { "*.zip", "*.aes" });
+
                 using (var fileService = new FileService(_appSettings.SelectedJob, _appSettings, _logService))
                 {
                     using (var compressionService = new CompressionService(_appSettings.SelectedJob, _appSettings, _logService, _appSettings.AESEncryptPath!))

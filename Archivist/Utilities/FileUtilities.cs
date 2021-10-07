@@ -1,5 +1,6 @@
 ﻿using Archivist.Classes;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 
@@ -8,11 +9,31 @@ namespace Archivist.Utilities
     internal static class FileUtilities
     {
         /// <summary>
+        /// Round the creation and last write times in all files in 
+        /// a directory with one of the matching specifications
+        /// </summary>
+        /// <param name="directoryPath"></param>
+        internal static void RoundDirectoryTimes(string directoryPath, List<string> fileSpecifications)
+        {
+            if (Directory.Exists(directoryPath))
+            {
+                foreach (var fileSpec in fileSpecifications)
+                {
+                    foreach (var fileName in Directory.GetFiles(directoryPath, fileSpec))
+                    {
+                        RoundFileTimes(fileName);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Round the LastWriteTime and CreationTime to the nearest whole second.
         /// The reason being, when we copy files around we synchronise last write and 
         /// create timestamps, but with file systems like exFAT we lose some accuracy 
-        /// as compared to NTFS, say. Having the timestamps as exact seconds means 
-        /// files created on NTFS and copied to exFAT have identical timestamps.
+        /// as compared to NTFS, say, so when we compare timestamps they don't match. 
+        /// Having the timestamps as exact seconds means files created on NTFS and 
+        /// copied to exFAT or whatever format have identical timestamps.
         /// </summary>
         /// <param name="fullFileName"></param>
         internal static void RoundFileTimes(string fullFileName)
@@ -21,21 +42,25 @@ namespace Archivist.Utilities
 
             if (fi.Exists)
             {
-                fi.LastWriteTime = new DateTime(fi.LastWriteTime.Ticks - fi.LastWriteTime.Ticks % TimeSpan.TicksPerSecond);
-                fi.CreationTime = new DateTime(fi.CreationTime.Ticks - fi.CreationTime.Ticks % TimeSpan.TicksPerSecond);
+                var lwt = fi.LastWriteTime;
+                var crt = fi.CreationTime;
 
-                //var lwt = fi.LastWriteTime;
-                //var crt = fi.CreationTime;
+                var lwtr = new DateTime(lwt.Ticks - lwt.Ticks % TimeSpan.TicksPerSecond);
+                var crtr = new DateTime(crt.Ticks - crt.Ticks % TimeSpan.TicksPerSecond);
 
-                //var lwtr = new DateTime(lwt.Ticks - lwt.Ticks % TimeSpan.TicksPerSecond);
-                //var crtr = new DateTime(crt.Ticks - crt.Ticks % TimeSpan.TicksPerSecond);
+                if (fi.LastWriteTime != lwtr)
+                {
+                    fi.LastWriteTime = lwtr;
+                }
 
-                //fi.LastWriteTime = lwtr;
-                //fi.CreationTime = crtr;
+                if (fi.CreationTime != crtr)
+                {
+                    fi.CreationTime = crtr;
+                }
             }
             else
             {
-                throw new Exception($"RoundFileTimes file '{fullFileName}' does not exdist");
+                throw new Exception($"RoundFileTimes file '{fullFileName}' does not exist");
             }
         }
 

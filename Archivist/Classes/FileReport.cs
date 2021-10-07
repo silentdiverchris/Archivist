@@ -29,15 +29,16 @@ namespace Archivist.Classes
 
             if (item is null)
             {
-                // No exact match, is it almost like one we already have ? - we can't trust the file size so
-                // if they have the same name and version number and are last written within 5 seconds either
-                // side, then we consider them to be the same archive
+                // No exact match, is it almost like one we already have ? - we can't completely trust the file
+                // size due so if they have the same name and are last written within 2 seconds either side, then
+                // we consider them to be the same archive
 
-                // We do set the file create and last write time when we copy one but for some reason this doesn't
-                // always give them the same timestamp, it can vary by a second or two, which needs investigating TODO
+                // The last write fuzzy match shouldn't be necessary with all new archives (as per 5th Oct) because
+                // new archives should have tiestamps rounded to the nearest second, no no loss of accuracy when
+                // copied from NTFS to exFAT for example, remove this when proven... TODO
 
-                DateTime minDate = fi.LastWriteTime.AddSeconds(-5);
-                DateTime maxDate = fi.LastWriteTime.AddSeconds(5);
+                DateTime minDate = fi.LastWriteTime.AddSeconds(-2);
+                DateTime maxDate = fi.LastWriteTime.AddSeconds(2);
 
                 item = Items.SingleOrDefault(_ =>
                     _.FileName == fi.Name &&

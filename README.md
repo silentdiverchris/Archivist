@@ -1,4 +1,5 @@
 # Archivist
+=ctx-project:Archivist-p:low=
 
 **Please note, I have recently removed and renamed some settings, but haven't updated the descriptions and samples below yet, if you catch me in this shameful state feel free to tell me I'm a bad person and I'll get that done right away.**
 
@@ -561,7 +562,7 @@ None, archive directories just have the shared settings, above.
 ## Jiminy items
 The list of changes I plan to make, encoded for the [Jiminy](https://github.com/silentdiverchris/Jiminy) todo/gtd system.
 
-=ctx-project:Archivist-p:low=
+
 =b:n-pri:2= Update screenshots
 =b:n-pri:2= Update appsettigns.json samples
 =b:n-pri:1= Review settings descriptions

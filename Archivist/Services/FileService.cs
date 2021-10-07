@@ -468,12 +468,12 @@ namespace Archivist.Services
                     var dstTicks = fiDest.LastWriteTime.Ticks;
 
                     // If we copy between different disk formats we can lose some accuracy, eg
-                    // from NTFS to exFAT. We now round to the nearest second, so this should no 
-                    // longer happen
+                    // from NTFS to exFAT. We now round to the nearest second on creating the
+                    // initial comnpressed files, so this should no longer happen
 
                     if (srcTicks != dstTicks)
                     {
-                        result.AddWarning($"LastWrite ticks differ {srcTicks} & {dstTicks}");
+                        result.AddWarning($"LastWrite ticks differ {new FileInfo(srcFil.FullName).LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)} is {srcTicks} & {fiDest.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)} is {dstTicks}");
                     }
                 }
                 else

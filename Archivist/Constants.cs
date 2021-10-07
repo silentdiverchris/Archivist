@@ -16,6 +16,7 @@
         internal const int DB_TIMEOUT_SECONDS = 10;
 
         internal const string DATE_FORMAT_DATE_TIME_LONG_SECONDS = "d MMM yyyy HH:mm:ss";
+        internal const string DATE_FORMAT_DATE_TIME_LONG_SECONDS_DAY = "ddd d MMM yyyy HH:mm:ss";
         internal const string DATE_FORMAT_DATE_TIME_LONG_SECONDS_FIXED_WIDTH = "dd MMM yyyy HH:mm:ss";
         internal const string DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS = "yyyyMMddHHmmss";
 
