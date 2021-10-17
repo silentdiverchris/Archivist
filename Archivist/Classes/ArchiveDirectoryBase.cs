@@ -220,7 +220,7 @@ namespace Archivist.Classes
 
         internal string Path => _baseDirectory.DirectoryPath!;
 
-        internal IEnumerable<ArchiveFileInstance> AllFiles => _existingFiles;
+        internal IEnumerable<ArchiveFileInstance> AllFiles => _existingFiles.OrderBy(_ => _.BaseFileName);
         internal IEnumerable<ArchiveFileInstance> Files => _existingFiles.Where(_ => _.Ignored == false);
         internal IEnumerable<ArchiveFileInstance> IgnoredFiles => _existingFiles.Where(_ => _.Ignored == true);
         internal IEnumerable<ArchiveFileInstance> VersionedFileInstances => Files.Where(_ => _.IsVersioned == true);

@@ -82,7 +82,7 @@ namespace Archivist.Classes
             // Versioned files first, only copy those versions that are more recent than
             // those which already exist in the destination
 
-            foreach (var priArcFil in _primary.VersionedFileInstances)
+            foreach (var priArcFil in _primary.VersionedFileInstances.OrderBy(_ => _.FileName)) // Should already be in this order, if so, no harm done
             {
                 foreach (var dstArchive in _destinations.Where(_ => _.IsEnabledAndAvailable))
                 {

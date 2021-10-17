@@ -323,14 +323,11 @@ namespace Archivist.Services
 
             await DeleteTemporaryFiles();
 
-            // Copy the latest, priority and smallest files first. If destination disk space is limited, best to fit
-            // several of the latest, high priority and smallest archives in than fill the lot with one large archive
-
             var actions = archiveRegister.Actions
                 .Where(_ => _.Type == enArchiveActionType.Copy)
                 .OrderByDescending(_ => _.SourceFile!.IslatestVersion)
                 .OrderBy(_ => _.SourceFile!.DirectoryPriority)
-                .OrderBy(_ => _.SourceFile!.Length)
+                .OrderBy(_ => _.SourceFile!.FileName)
                 .ThenBy(_ => _.DestinationDirectory!.Path);
 
             foreach (var act in actions)
