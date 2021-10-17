@@ -18,8 +18,8 @@ namespace Archivist.Classes
         private List<Regex> _includeRegexList = new();
         private List<Regex> _excludeRegexList = new();
 
-        internal bool IsAvailable => _baseDirectory.IsAvailable; 
-        internal bool IsEnabledAndAvailable => _baseDirectory.IsAvailable && _baseDirectory.IsEnabled; 
+        internal bool IsAvailable => _baseDirectory.IsAvailable;
+        internal bool IsEnabledAndAvailable => _baseDirectory.IsAvailable && _baseDirectory.IsEnabled;
         internal BaseDirectoryFiles? BaseDirectory => _baseDirectory;
 
         internal ArchiveDirectoryBase(enDirectoryType type, BaseDirectoryFiles? bdf = null, string? path = null)
@@ -41,7 +41,7 @@ namespace Archivist.Classes
                         }
 
                         if (!Directory.Exists(path))
-                        { 
+                        {
                             throw new ArgumentException($"DirectoryBase constructor for type {type} given non-existant path '{path}'");
                         }
 
@@ -62,7 +62,7 @@ namespace Archivist.Classes
 
                         if (bdf is not null)
                         {
-                            _baseDirectory = bdf;                            
+                            _baseDirectory = bdf;
                         }
                         else
                         {
@@ -202,16 +202,19 @@ namespace Archivist.Classes
                     if (set is not null)
                     {
                         string latestFileName = set.Versions.OrderBy(_ => _).Last();
-                        
-                        var filInst = _existingFiles.SingleOrDefault(_ => _.FullName.EndsWith(latestFileName));
 
-                        if (filInst is not null)
+                        var latestInstances = _existingFiles.Where(_ => _.FullName.EndsWith(latestFileName));
+
+                        if (latestInstances.Any())
                         {
-                            filInst.SetIsLatestVersion();
+                            foreach (var filInst in latestInstances)
+                            {
+                                filInst.SetIsLatestVersion();
+                            }
                         }
                         else
                         {
-                            throw new Exception($"ArchiveDirectoryBase.Initialise failed to find latest instance {latestFileName}");
+                            throw new Exception($"ArchiveDirectoryBase.Initialise failed to find latest instances of {latestFileName}");
                         }
                     }
                 }
