@@ -43,7 +43,7 @@ namespace Archivist.Classes
     {
         internal DirectoryStatistics Statistics { get; set; } = new();
 
-        internal DateTime CreatedUtc { get; private set; } = DateTime.UtcNow;
+        internal DateTime CreatedTime { get; private set; } = DateTime.Now;
 
         internal List<ResultMessage> Messages { get; set; } = new();
         internal string FunctionName { get; private set; }

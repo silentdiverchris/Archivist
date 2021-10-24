@@ -7,13 +7,13 @@ namespace Archivist.Classes
         internal JobDetails(
             string jobNameToRun)
         {
-            StartedUtc = DateTime.UtcNow;
+            StartTime = DateTime.Now;
             JobNameToRun = jobNameToRun;
         }
 
         internal string JobNameToRun { get; set; }
 
-        internal DateTime? StartedUtc { get; set; } = null;
-        internal DateTime? EndedUtc { get; set; } = null;
+        internal DateTime? StartTime { get; set; } = null;
+        internal DateTime? EndTime { get; set; } = null;
     }
 }

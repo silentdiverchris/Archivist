@@ -43,7 +43,7 @@ namespace Archivist
         {
             Result result = new("MainProcess.Initialise");
 
-            DateTime startTime = DateTime.UtcNow;
+            DateTime startTime = DateTime.Now;
             result.AddInfo($"Archivist starting at {startTime.ToString(Constants.DATE_FORMAT_DATE_TIME_LONG_SECONDS_DAY)}");
 
             if (_logService.LoggingToFile)
@@ -163,7 +163,7 @@ namespace Archivist
 
             await _logService.ProcessResult(result, reportAllStatistics: true);
 
-            _jobDetails.EndedUtc = DateTime.UtcNow;
+            _jobDetails.EndTime = DateTime.Now;
 
             if (result.HasErrors)
             {
