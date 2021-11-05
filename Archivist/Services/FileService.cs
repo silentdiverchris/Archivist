@@ -470,7 +470,8 @@ namespace Archivist.Services
 
                     if (srcTicks != dstTicks)
                     {
-                        result.AddWarning($"LastWrite ticks differ {srcFil.FullName} {new FileInfo(srcFil.FullName).LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)} is {srcTicks} & {fiDest.FullName} {fiDest.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)} is {dstTicks}");
+                        result.AddWarning($"Ticks differ {srcFil.FullName} & {fiDest.FullName}");
+                        result.AddWarning($"Ticks differ {new FileInfo(srcFil.FullName).LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)} is {srcTicks} & {fiDest.LastWriteTime.ToString(Constants.DATE_FORMAT_DATE_TIME_YYYYMMDDHHMMSS)} is {dstTicks}");
                     }
                 }
                 else

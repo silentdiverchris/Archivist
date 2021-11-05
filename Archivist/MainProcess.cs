@@ -115,9 +115,9 @@ namespace Archivist
 
             if (!result.HasErrors)
             {
-                // We already round the times for new files we create ourselves, but other files may
-                // exist in in the primary archive directory that we didn't create, so we just round the
-                // lot, it will only alter the timestamps of files that haven't already been rounded
+                // We already round the timestamps for new files we create ourselves to the nearest second, but other files may
+                // exist in in the primary archive directory that we didn't create, so we just round the lot, it will only alter
+                // the timestamps of files that haven't already been rounded so no great additional workload here.
 
                 FileUtilities.RoundDirectoryTimes(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, new List<string> { "*.zip", "*.aes" });
 
@@ -128,7 +128,7 @@ namespace Archivist
                         var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob, _appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
                         _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Compress);
 
-                        // This will be replaced by the commented out action-based version below
+                        // This will eventually be replaced by the commented out action-based version below
                         Result compressionResult = await compressionService.CompressSources();
                         result.SubsumeResult(compressionResult);
 

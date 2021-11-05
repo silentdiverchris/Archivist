@@ -15,7 +15,7 @@ namespace Archivist.Classes
     /// when nobody is paying me by the day to write this :). 
     /// 
     /// In the end we're spending minutes at a time compressing and copying gigabytes of archive data all over 
-    /// the place; saving a fraction of a second of CPU time along the way really isn't worth the effort, so 
+    /// the place. Saving a fraction of a second of CPU time along the way really isn't worth the effort, so 
     /// we just regenerate it before each stage, nice and simple.
     /// </summary>
 
@@ -74,7 +74,7 @@ namespace Archivist.Classes
             // Determine source directories that need to be compressed into archives in the primary archive directory
             foreach (var srcDir in activeSources)
             {
-                // TODO
+                // TODO implement this at some point...
             }
 
             // Determine files to be copied from the primary archive directory to other archive directories
@@ -119,7 +119,7 @@ namespace Archivist.Classes
             }
 
             // Determine which versioned files need to be deleted in the primary archive directory, we don't ever
-            // delete non-versioned files, we didn't create them, we just copy them around.
+            // delete non-versioned files, we didn't create them so we're not going to delete them, just copy them around.
 
             foreach (string baseFileName in _primary.VersionedFileSets.BaseFileNames)
             {

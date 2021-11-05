@@ -16,7 +16,7 @@ namespace Archivist.Classes
 
         private readonly bool _ignored = false;
 
-        // This was an afterthought so tacked on late in the day, ought to be determined on the fly rather than updated later TODO
+        // This was an afterthought so tacked on late in the day, neater to determine it on the fly rather than set at the end TODO
         private bool _isLatestVersion = false;
         
         internal ArchiveFileInstance(string filePath, BaseDirectoryFiles? directory, bool ignored, bool isLatestVersion, Result result)
@@ -71,6 +71,11 @@ namespace Archivist.Classes
         internal DateTime CreationTimeLocal => _fileInfo.CreationTime;
         internal Result Result => _result;
 
+        /// <summary>
+        /// Tells the instance it's the latest version of it's base file, but there's nothing to stop more than
+        /// one file, or no file to have this flag. This was an afterthought so tacked on late in the day, need  
+        /// to determine it in the base file class TODO
+        /// </summary>
         internal void SetIsLatestVersion()
         {
             _isLatestVersion = true;

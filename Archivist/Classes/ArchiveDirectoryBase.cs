@@ -12,14 +12,15 @@ namespace Archivist.Classes
     {
         private readonly enDirectoryType _type;
         private readonly BaseDirectoryFiles _baseDirectory;
-        private readonly List<ArchiveFileInstance> _existingFiles = new();
         private readonly VersionedFileSets _versionedFileSets = new();
 
-        private List<Regex> _includeRegexList = new();
-        private List<Regex> _excludeRegexList = new();
+        private readonly List<ArchiveFileInstance> _existingFiles = new();
+        private readonly List<Regex> _includeRegexList = new();
+        private readonly List<Regex> _excludeRegexList = new();
 
         internal bool IsAvailable => _baseDirectory.IsAvailable;
         internal bool IsEnabledAndAvailable => _baseDirectory.IsAvailable && _baseDirectory.IsEnabled;
+
         internal BaseDirectoryFiles? BaseDirectory => _baseDirectory;
 
         internal ArchiveDirectoryBase(enDirectoryType type, BaseDirectoryFiles? bdf = null, string? path = null)
@@ -42,7 +43,7 @@ namespace Archivist.Classes
 
                         if (!Directory.Exists(path))
                         {
-                            throw new ArgumentException($"DirectoryBase constructor for type {type} given non-existant path '{path}'");
+                            throw new ArgumentException($"DirectoryBase constructor for type {type} given invalid path '{path}'");
                         }
 
                         _baseDirectory = new BaseDirectoryFiles()
@@ -142,7 +143,7 @@ namespace Archivist.Classes
 
                     bool include = true;
 
-                    // Source and destination directories have inclusion and exclusion file specifications, honour them...
+                    // Source and destination directories can have inclusion and exclusion file specifications, honour them...
 
                     if (_type == enDirectoryType.Source || _type == enDirectoryType.Destination)
                     {
@@ -193,7 +194,8 @@ namespace Archivist.Classes
                     }
                 }
 
-                // Mark latest versions, it'd be nice to do this on the fly TODO
+                // Mark latest versions, this was a late addition so is a bit hamfisted right now, nothing prevents two
+                // versions, or no versions being the latest other than the code below, which determines which to mark TODO
 
                 foreach (string baseFileName in _versionedFileSets.BaseFileNames)
                 {

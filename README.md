@@ -1,7 +1,7 @@
 # Archivist
 =ctx-project:Archivist-p:low=
 
-**Please note, I have recently removed and renamed some settings, but haven't updated the descriptions and samples below yet, if you catch me in this shameful state feel free to tell me I'm a bad person and I'll get that done right away.**
+**Please note, I have recently removed and renamed some settings, but haven't finished updating the descriptions and samples below yet, if you catch me in this shameful state feel free to tell me I'm a bad person and I'll get it finished a little sooner.**
 
 A C# Net Core archiving/backup utility.
 
@@ -11,7 +11,7 @@ I also wanted to be able to set up shortcuts to backup specific subsets of files
 
 And so it came to pass that Archivist was born, almost certainly to the sound of celestial trumpets.
 
-It's not ideal for non-technical users, it has no GUI and relies on considered tweaking of a potentially large .json file, but for a vaguely technical user who can be bothered to put some time into setting it up, Archivist can be a relatively mighty backup solution.
+It's not ideal for non-technical users, it has no GUI and relies on considered tweaking of a potentially large .json file, but for a vaguely technical user who can be bothered to put some time into setting it up, Archivist can be a mighty backup solution.
 
 Rather than dump a single subset of everything to one place, it can archive different sets of files in different directories to multiple places depending on inclusion and exclusion file specifications, retaining a complete history of them in one place such as a massive local or NAS volume, and just the latest X versions and/or the last Y days worth of various selections of them on any number of other fixed or removable volumes.
 
@@ -40,7 +40,7 @@ The code is licensed under [The MIT Licence](https://opensource.org/licenses/mit
 There is no installer package, currently you need to download the code and build it locally. 
 
 I'll generate a proper release/installer soon....
-==pri:1-b:n= Create release package
+=pri:1-b:n= Create release package
 
 It was created with Net Core 6.0.0 preview 6 and Visual Studio 2022 beta, so if you want to build it locally you'll definitely need at least the former, and will probably get a raft of downgrade issues if you don't use the latter.
 

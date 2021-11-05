@@ -1,4 +1,5 @@
 ﻿using Archivist.Classes;
+using Archivist.Helpers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -45,8 +46,8 @@ namespace Archivist.Utilities
                 var lwt = fi.LastWriteTime;
                 var crt = fi.CreationTime;
 
-                var lwtr = new DateTime(lwt.Ticks - lwt.Ticks % TimeSpan.TicksPerSecond);
-                var crtr = new DateTime(crt.Ticks - crt.Ticks % TimeSpan.TicksPerSecond);
+                var lwtr = lwt.Floor(new TimeSpan(0,0,1));
+                var crtr = crt.Floor(new TimeSpan(0, 0, 1));
 
                 if (fi.LastWriteTime != lwtr)
                 {
@@ -92,7 +93,8 @@ namespace Archivist.Utilities
 
             DriveInfo? found = null; // drives.SingleOrDefault(_ => _.VolumeLabel == label);
 
-            // If we use linq an exception is thrown if one of the drives isn't readable, so...
+            // If we use linq to do this an exception is thrown if one of the drives isn't
+            // readable but we don't get told which, so...
 
             foreach (var drv in drives)
             {
@@ -107,8 +109,8 @@ namespace Archivist.Utilities
                 catch
                 {
                     // There's something wrong with the volume, we don't really care
-                    // what, it's certainly not one we can get a label from or use so
-                    // just ignore it.
+                    // what, the fact we are here means it's not one we're going to
+                    // get a label for, so just ignore it.
                 }
             }
 
@@ -212,9 +214,9 @@ namespace Archivist.Utilities
         }
 
         /// <summary>
-        /// We have a couple of out parrameters, since we have to get a FileInfo here and at least 
+        /// We have a couple of out parameters, since we have to get a FileInfo here and at least 
         /// one caller wants the last write and the length just after the call, we might as well get 
-        /// the data for them rather than they create another FileInfo
+        /// the data and hand it back to them, rather than they create another FileInfo
         /// </summary>
         /// <param name="filePath"></param>
         /// <param name="daysAgo"></param>
