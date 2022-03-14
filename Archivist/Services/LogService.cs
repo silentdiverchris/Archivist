@@ -249,7 +249,7 @@ namespace Archivist.Services
         /// <returns></returns>
         private async Task AddLogAsync (LogEntry entry)
         {
-            if (entry.Text is not null && _appSettings.VerboseEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Warning || entry.Severity == enSeverity.Error)
+            if (entry.Text is not null && _appSettings.VerboseEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Error)
             {
                 EventLogHelpers.WriteEntry(entry.Text!, severity: entry.Severity);
             }

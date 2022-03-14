@@ -57,7 +57,7 @@ namespace Archivist.Utilities
                 suffix +
                 new string(c: _space, count: extraSpaces);
 
-            // We want one backspace for each character we are about to write, so we always leave the
+            // We append a backspace for each character we are about to write, so as to always leave the
             // cursor at the beginning of the line
 
             string backSpaces = new(c: _backSpace, count: line.Length);

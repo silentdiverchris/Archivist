@@ -383,6 +383,7 @@ namespace Archivist.Services
                 string tempDestFileName = dstFullName + ".copying";
 
                 // Don't write this to the console, it gets it's own snazzy progress indicator
+
                 result.AddDebug($"Copying {srcFil.FullName} to {dstDir.Path} {FileUtilities.GetByteSizeAsText(srcFil.Length)}");
                 await _logService.ProcessResult(result);
 
@@ -391,9 +392,10 @@ namespace Archivist.Services
                     File.Delete(tempDestFileName);
                 }
 
+                // Don't bother with the snazzy progress display for small files, they are processed too quickly to bother
+
                 decimal percentageComplete = 0;
 
-                // Don't bother with the snazzy progress display for small files
                 bool showProgress = srcFil.Length > (srcFil.IsOnSlowVolume ? 1 * 1024 * 1024 : 5 * 1024 * 1024);
 
                 Progress<KeyValuePair<long, long>> progressReporter = new();
@@ -505,32 +507,27 @@ namespace Archivist.Services
 
             var rootFiles = root.GetFiles("*.*", SearchOption.TopDirectoryOnly);
 
-            var later = rootFiles.FirstOrDefault(_ => _.LastWriteTime > laterThanLocal);
+            var laterFile = rootFiles.FirstOrDefault(_ => _.LastWriteTime > laterThanLocal);
 
-            if (later != null)
+            if (laterFile != null)
             {
-                return later;
+                return laterFile;
             }
             else if (recursive)
             {
                 // Ah well, worth a try, check any subdirectories one by one. Best to do it
-                // this way rather than GetFiles the whole lot recursivenly, there could be
-                // thousands of them.
-                
-                // We don't need the full set, just one later file will do.
+                // this way rather than getting the whole lot recursively and then looking, there
+                // could be thousands of them and just one later file will do.
 
                 foreach (var di in root.GetDirectories())
                 {
-                    // Recurse below each sub-directory, we could make a recursive function to
-                    // just take each directory's root content one by one, which would be faster 
-
                     var allFiles = di.GetFiles("*.*", SearchOption.AllDirectories); 
 
-                    later = allFiles.FirstOrDefault(_ => _.LastWriteTime > laterThanLocal);
+                    laterFile = allFiles.FirstOrDefault(_ => _.LastWriteTime > laterThanLocal);
 
-                    if (later is not null)
+                    if (laterFile is not null)
                     {
-                        return later;
+                        return laterFile;
                     }
                 }
             }

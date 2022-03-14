@@ -188,7 +188,7 @@ namespace Archivist.Utilities
 
                 double bytesFree = di.TotalFreeSpace;
 
-                const double threshold = 50L * 1024 * 1024 * 1024;
+                const double threshold = 20L * 1024 * 1024 * 1024;
 
                 string? volLabStr = volumeLabel is null
                     ? null

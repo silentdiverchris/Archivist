@@ -232,7 +232,8 @@ namespace Archivist.Utilities
 
                 if (!Directory.Exists(src.DirectoryPath) && !src.IsRemovable)
                 {
-                    result.AddError($"SourceDirectories.DirectoryPath '{src.DirectoryPath}' does not exist");
+                    result.AddWarning($"SourceDirectories.DirectoryPath '{src.DirectoryPath}' does not exist, disabling for this session.");
+                    src.IsEnabled = false;
                 }
 
                 if (src.RetainMaximumVersions < Constants.RETAIN_VERSIONS_MINIMUM)
