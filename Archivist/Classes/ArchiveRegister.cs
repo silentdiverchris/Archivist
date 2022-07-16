@@ -126,8 +126,8 @@ namespace Archivist.Classes
                 var versions = _primary.VersionedFileSets.VersionsOfFile(baseFileName);
 
                 // TODO need to get these from the source directories themselves
-                var retainMaximumVersions = 2;
-                var retainYoungerThanDays = 2;
+                var retainMaximumVersions = 5;
+                var retainYoungerThanDays = 5;
 
                 int removeCount = versions.Count() - retainMaximumVersions;
 
