@@ -1,6 +1,6 @@
-﻿using Archivist.Utilities;
-using System;
+﻿using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace Archivist.Classes
@@ -15,7 +15,7 @@ namespace Archivist.Classes
 
         /// <summary>
         /// If non-null, find a drive with this label and combine with the DirectoryPath 
-        /// to determine the directory to be used. Allows for removable dribes that get 
+        /// to determine the directory to be used. Allows for removable drives that get 
         /// mounted with different letters to be identified.
         /// If the DirectoryPath has a drive designation, eg 'D:\Archive', this property 
         /// is ignored (specifically characters 2 and 3 are ':\'), so to use this function, set
@@ -24,13 +24,13 @@ namespace Archivist.Classes
         public string? VolumeLabel { get; set; }
 
         /// <summary>
-        /// The path of this directory, soem directories are identified by a path name 
+        /// The path of this directory, some directories are identified by a path name 
         /// and volume label rather than drive letter, so this sets up the drive letter 
         /// on first use where necessary
         /// </summary>
         /// 
         public string? DirectoryPath
-        {            
+        {
             get
             {
                 if (!_pathInitialised)
@@ -111,9 +111,11 @@ namespace Archivist.Classes
             {
                 if (DirectoryPath!.Contains(@":\") == false)
                 {
-                    DriveInfo? drive = FileUtilities.GetDriveByLabel(VolumeLabel);
+                    // Network volume, find the drive letter
 
-                    if (drive is not null)
+                    var drive = DriveInfo.GetDrives().SingleOrDefault(_ => _.VolumeLabel == VolumeLabel);
+
+                    if (drive != null)
                     {
                         DirectoryPath = Path.Join(drive.Name, DirectoryPath);
                     }
@@ -121,12 +123,12 @@ namespace Archivist.Classes
                     {
                         if (IsRemovable)
                         {
-                            // That's fine, it's not mounted
+                            // That's fine, it's just not mounted/mapped right now
                         }
                         else
                         {
                             throw new Exception($"IdentifyVolume cannot find volume '{VolumeLabel}'");
-                        }
+                        }                        
                     }
                 }
                 //else

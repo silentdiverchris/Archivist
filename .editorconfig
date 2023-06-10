@@ -5,3 +5,5 @@ dotnet_diagnostic.IDE1006.severity = silent
 
 # IDE0032: Use auto property
 dotnet_style_prefer_auto_properties = false
+
+spelling_languages = en-gb

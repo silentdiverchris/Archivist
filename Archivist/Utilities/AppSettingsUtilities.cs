@@ -21,9 +21,7 @@ namespace Archivist.Utilities
         internal static void CreateDefaultAppSettings(string fileName)
         {
             if (File.Exists(fileName))
-            {
                 File.Delete(fileName);
-            }
 
             var appSettings = new AppSettings
             {

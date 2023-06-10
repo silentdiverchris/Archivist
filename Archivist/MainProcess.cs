@@ -121,41 +121,40 @@ namespace Archivist
 
                 FileUtilities.RoundDirectoryTimes(_appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, new List<string> { "*.zip", "*.aes" });
 
-                using (var fileService = new FileService(_appSettings.SelectedJob, _appSettings, _logService))
+                using var fileService = new FileService(_appSettings.SelectedJob, _appSettings, _logService);
+
+                using (var compressionService = new CompressionService(_appSettings.SelectedJob, _appSettings, _logService, _appSettings.AESEncryptPath!))
                 {
-                    using (var compressionService = new CompressionService(_appSettings.SelectedJob, _appSettings, _logService, _appSettings.AESEncryptPath!))
-                    {
-                        var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob, _appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
-                        _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Compress);
+                    var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob, _appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
+                    _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Compress);
 
-                        // This will eventually be replaced by the commented out action-based version below
-                        Result compressionResult = await compressionService.CompressSources();
-                        result.SubsumeResult(compressionResult);
+                    // This will eventually be replaced by the commented out action-based version below
+                    Result compressionResult = await compressionService.CompressSources();
+                    result.SubsumeResult(compressionResult);
 
-                        // Doesn't do anything yet...
-                        //Result executeResult = await compressionService.ExecuteFileCompressionActions(archiveRegister);
-                        //result.SubsumeResult(executeResult);
-                    }
+                    // Doesn't do anything yet...
+                    //Result executeResult = await compressionService.ExecuteFileCompressionActions(archiveRegister);
+                    //result.SubsumeResult(executeResult);
+                }
 
-                    if (!result.HasErrors)
-                    {
-                        // Regenerate the register for the copy actions
-                        var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob, _appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
-                        _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Copy);
+                if (!result.HasErrors)
+                {
+                    // Regenerate the register for the copy actions
+                    var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob, _appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
+                    _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Copy);
 
-                        Result executeResult = await fileService.ExecuteFileCopyActions(archiveRegister);
-                        result.SubsumeResult(executeResult);
+                    Result executeResult = await fileService.ExecuteFileCopyActions(archiveRegister);
+                    result.SubsumeResult(executeResult);
 
-                        // Regenerate the register for the delete actions
-                        archiveRegister = new ArchiveRegister(_appSettings.SelectedJob, _appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
-                        _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Delete);
+                    // Regenerate the register for the delete actions
+                    archiveRegister = new ArchiveRegister(_appSettings.SelectedJob, _appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
+                    _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Delete);
 
-                        Result deleteResult = await fileService.ExecuteFileDeleteActions(archiveRegister);
-                        result.SubsumeResult(deleteResult);
+                    Result deleteResult = await fileService.ExecuteFileDeleteActions(archiveRegister);
+                    result.SubsumeResult(deleteResult);
 
-                        Result reportResult = await fileService.GenerateFileReport();
-                        result.SubsumeResult(reportResult);
-                    }
+                    Result reportResult = await fileService.GenerateFileReport();
+                    result.SubsumeResult(reportResult);
                 }
             }
 
