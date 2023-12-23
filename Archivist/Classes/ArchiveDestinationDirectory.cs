@@ -2,7 +2,7 @@
 
 namespace Archivist.Classes
 {
-    internal class ArchiveDestinationDirectory : ArchiveDirectoryBase
+    public class ArchiveDestinationDirectory : ArchiveDirectoryBase
     {
         internal ArchiveDestinationDirectory(BaseDirectoryFiles dir) : base(enDirectoryType.Destination, dir.GetBase())
         {

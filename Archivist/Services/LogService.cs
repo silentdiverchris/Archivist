@@ -44,8 +44,8 @@ namespace Archivist.Services
         /// <param name="connectionString"></param>
         /// <param name="logDirectoryName"></param>
         internal LogService(
-            JobDetails jobDetails, 
-            AppSettings appSettings, 
+            JobDetails jobDetails,
+            AppSettings appSettings,
             ConsoleDelegate consoleDelegate)
         {
             _consoleDelegate = consoleDelegate;
@@ -60,7 +60,7 @@ namespace Archivist.Services
                 {
                     _logToSql = true;
                 }
-                else 
+                else
                 {
                     result.AddError("Logging to SQL not enabled, database doesn't exist or cannot be initialised");
                 }
@@ -117,16 +117,45 @@ namespace Archivist.Services
             }
         }
 
-        internal void DumpArchiveRegistry(ArchiveRegister archiveRegistry, enArchiveActionType? type = null)
+        internal void DumpArchiveRegistry(ArchiveRegister archiveRegistry, enArchiveActionType? type = null, bool dumpSources = false, bool dumpDestinations = false)
         {
             var actions = archiveRegistry.Actions.Where(_ => (type == null || _.Type == type));
+
+            var sourceList = archiveRegistry.Sources.OrderBy(_ => _.Path);
+
+            if (dumpSources)
+            {
+                LogToConsole(new LogEntry($"There are {sourceList.Count().NumberOrNo()} sources to process", consoleBlankLineBefore: true));
+
+                foreach (var src in sourceList)
+                {
+                    LogToConsole(new LogEntry(src.Path));
+                }
+            }
+
+            if (dumpDestinations)
+            {
+                var destList = archiveRegistry.Destinations.OrderBy(_ => _.Path);
+
+                LogToConsole(new LogEntry($"There are {destList.Count().NumberOrNo()} destinations to process", consoleBlankLineBefore: true));
+
+                foreach (var dst in destList)
+                {
+                    LogToConsole(new LogEntry(dst.Path));
+                }
+            }
+
+            foreach (var act in actions.OrderBy(_ => _.Type))
+            {
+                LogToConsole(new LogEntry(act.Description));
+            }
 
             string? actionText = type is not null
                 ? type.ToString()!.ToLower().SuffixIfNotEmpty()
                 : null;
 
             LogToConsole(new LogEntry($"There are {actions.Count().NumberOrNo()} {actionText}actions to process", consoleBlankLineBefore: true));
-            
+
             foreach (var act in actions.OrderBy(_ => _.Type))
             {
                 LogToConsole(new LogEntry(act.Description));
@@ -143,8 +172,8 @@ namespace Archivist.Services
         /// <param name="reportAllStatistics">Logs detailed file and byte statistics</param>
         /// <returns></returns>
         internal async Task ProcessResult(
-            Result result, 
-            bool reportCompletion = false, 
+            Result result,
+            bool reportCompletion = false,
             bool reportItemCounts = false,
             bool reportAllStatistics = false)
         {
@@ -198,7 +227,7 @@ namespace Archivist.Services
                 if (msg.Exception is not null)
                 {
                     await AddLogAsync(
-                        new LogEntry (
+                        new LogEntry(
                             logText: msg.Exception.Message,
                             severity: msg.Severity,
                             consoleBlankLineBefore: msg.ConsoleBlankLineBefore,
@@ -247,7 +276,7 @@ namespace Archivist.Services
         /// </summary>
         /// <param name="entry"></param>
         /// <returns></returns>
-        private async Task AddLogAsync (LogEntry entry)
+        private async Task AddLogAsync(LogEntry entry)
         {
             if (entry.Text is not null && _appSettings.VerboseEventLog || entry.AlwaysWriteToEventLog || entry.Severity == enSeverity.Error)
             {
@@ -292,7 +321,7 @@ namespace Archivist.Services
 
                     SqlCommand cmd = new(sql, conn);
 
-                    var storedProcExists = cmd.ExecuteScalar().ToString(); 
+                    var storedProcExists = cmd.ExecuteScalar().ToString();
 
                     if (storedProcExists == "0")
                     {

@@ -40,7 +40,7 @@ namespace Archivist.Classes
 
                     if (VolumeLabel is not null)
                     {
-                        VerifyVolume();
+                        VerifyVolumeIsAvailable(false);
                     }
                 }
 
@@ -105,37 +105,49 @@ namespace Archivist.Classes
             }
         }
 
-        public void VerifyVolume()
+        public bool VerifyVolumeIsAvailable(bool failIfRemoveableDoesntExist)
         {
-            if (!string.IsNullOrEmpty(VolumeLabel))
+            try
             {
-                if (DirectoryPath!.Contains(@":\") == false)
+                if (!string.IsNullOrEmpty(VolumeLabel))
                 {
-                    // Network volume, find the drive letter
-
-                    var drive = DriveInfo.GetDrives().SingleOrDefault(_ => _.VolumeLabel == VolumeLabel);
-
-                    if (drive != null)
+                    if (DirectoryPath!.Contains(@":\") == false)
                     {
-                        DirectoryPath = Path.Join(drive.Name, DirectoryPath);
-                    }
-                    else
-                    {
-                        if (IsRemovable)
+                        // Network volume, find the drive letter
+
+                        var drives = DriveInfo.GetDrives();
+
+                        var drive = drives.SingleOrDefault(_ => _.VolumeLabel == VolumeLabel);
+
+                        if (drive != null)
                         {
-                            // That's fine, it's just not mounted/mapped right now
+                            DirectoryPath = Path.Join(drive.Name, DirectoryPath);
                         }
                         else
                         {
-                            throw new Exception($"IdentifyVolume cannot find volume '{VolumeLabel}'");
-                        }                        
+                            if (IsRemovable)
+                            {
+                                if (failIfRemoveableDoesntExist)
+                                    throw new Exception($"VerifyVolumeIsAvailable cannot find removeable volume '{VolumeLabel}'");
+                            }
+                            else
+                            {
+                                throw new Exception($"VerifyVolumeIsAvailable cannot find volume '{VolumeLabel}'");
+                            }
+                        }
                     }
+                    //else
+                    //{
+                    //    throw new Exception($"IdentifyVolume found VolumeLabel '{VolumeLabel}' but DirectoryPath '{DirectoryPath}' has a nominated drive");
+                    //}
                 }
-                //else
-                //{
-                //    throw new Exception($"IdentifyVolume found VolumeLabel '{VolumeLabel}' but DirectoryPath '{DirectoryPath}' has a nominated drive");
-                //}
             }
+            catch (Exception ex)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public bool IsToBeProcessed(Job jobSpec)

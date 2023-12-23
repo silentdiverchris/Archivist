@@ -8,7 +8,7 @@ using static Archivist.Enumerations;
 
 namespace Archivist.Classes
 {
-    internal class ArchiveDirectoryBase
+    public class ArchiveDirectoryBase
     {
         private readonly enDirectoryType _type;
         private readonly BaseDirectoryFiles _baseDirectory;

@@ -15,6 +15,8 @@ namespace Archivist.Classes
             return this;
         }
 
+        public bool IsForTesting { get; set; } = false;
+
         /// <summary>
         /// Retain a maximum of this many versions in this directory, zero means we keep all versions, which
         /// will eventually fill the volume. One gotcha is that if you set this lower on an archive directory

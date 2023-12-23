@@ -126,7 +126,7 @@ namespace Archivist
                 using (var compressionService = new CompressionService(_appSettings.SelectedJob, _appSettings, _logService, _appSettings.AESEncryptPath!))
                 {
                     var archiveRegister = new ArchiveRegister(_appSettings.SelectedJob, _appSettings.SelectedJob!.PrimaryArchiveDirectoryPath!, _appSettings.SelectedJob.SourceDirectories, _appSettings.SelectedJob.ArchiveDirectories);
-                    _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Compress);
+                    _logService.DumpArchiveRegistry(archiveRegister, enArchiveActionType.Compress, dumpSources: true, dumpDestinations: true);
 
                     // This will eventually be replaced by the commented out action-based version below
                     Result compressionResult = await compressionService.CompressSources();
@@ -204,7 +204,7 @@ namespace Archivist
 
             foreach (var dir in _appSettings.SelectedJob.ArchiveDirectories.Where(_ => _.IsEnabled && _.IsAvailable).OrderBy(_ => _.DirectoryPath))
             {
-                dir.VerifyVolume();
+                dir.VerifyVolumeIsAvailable(false);
                 result.SubsumeResult(FileUtilities.CheckDiskSpace(dir.DirectoryPath!, dir.VolumeLabel));
             }
 

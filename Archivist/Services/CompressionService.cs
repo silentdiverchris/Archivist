@@ -46,6 +46,7 @@ namespace Archivist.Services
 
                 var directoriesToCompress = _jobSpec.SourceDirectories
                     .Where(_ => _.IsToBeProcessed(_jobSpec))
+                    .Where(_ => _jobSpec.ProcessTestOnly == false || _jobSpec.ProcessTestOnly == true && _.IsForTesting)
                     .OrderBy(_ => _.Priority)
                     .ThenBy(_ => _.DirectoryPath);
 

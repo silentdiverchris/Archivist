@@ -3,7 +3,7 @@ using static Archivist.Enumerations;
 
 namespace Archivist.Classes
 {
-    internal class ArchiveSourceDirectory : ArchiveDirectoryBase
+    public class ArchiveSourceDirectory : ArchiveDirectoryBase
     {
         //private readonly SourceDirectory _sourceDirectory;
         private readonly string _baseArchiveFileName;

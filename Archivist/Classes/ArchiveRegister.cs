@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using static Archivist.Enumerations;
 
@@ -25,8 +26,12 @@ namespace Archivist.Classes
         private readonly ArchivePrimaryDirectory _primary;
 
         private readonly List<ArchiveAction> _actions = new();
+        
         private readonly List<ArchiveSourceDirectory> _sources = new();
+        public ImmutableList<ArchiveSourceDirectory> Sources => _sources.ToImmutableList();
+
         private readonly List<ArchiveDestinationDirectory> _destinations = new();
+        public ImmutableList<ArchiveDestinationDirectory> Destinations => _destinations.ToImmutableList();
 
         public ArchiveRegister(Job jobSpec, string primaryDirectoryPath, List<SourceDirectory> sources, List<ArchiveDirectory> destinations)
         {
@@ -35,12 +40,14 @@ namespace Archivist.Classes
 
             foreach (var src in sources)
             {
-                AddSourceDirectory(src);
+                if (jobSpec.ProcessTestOnly == false || jobSpec.ProcessTestOnly && src.IsForTesting)
+                    AddSourceDirectory(src);
             }
 
             foreach (var dst in destinations)
             {
-                AddDestinationDirectory(dst);
+                if (jobSpec.ProcessTestOnly == false || jobSpec.ProcessTestOnly && dst.IsForTesting)
+                    AddDestinationDirectory(dst);
             }
 
             // The constructors above have already populated the internal lists of existing files

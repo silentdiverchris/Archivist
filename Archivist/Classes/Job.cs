@@ -38,6 +38,11 @@ namespace Archivist.Classes
         public bool ProcessSlowVolumes { get; set; } = false;
 
         /// <summary>
+        /// Only process sources and destinations marked for test
+        /// </summary>
+        public bool ProcessTestOnly { get; set; } = false;
+
+        /// <summary>
         /// The place where the primary archives are created according to the set of source directories, which 
         /// are then copied out to the various archive directories, so ideally this is on a large and 
         /// reasonably fast volume.
