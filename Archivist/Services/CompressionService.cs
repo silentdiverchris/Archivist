@@ -59,6 +59,12 @@ namespace Archivist.Services
                         Result compressResult = await MaybeCompressSource(sourceDirectory, _jobSpec.PrimaryArchiveDirectoryPath);
 
                         result.SubsumeResult(compressResult);
+
+                        await _logService.ProcessResult(result, reportCompletion: false, reportItemCounts: false);
+
+                        // Don't allow one failed operation to stop the rest being processed
+
+                        result = new("CompressSources", false);
                     }
                     else
                     {
