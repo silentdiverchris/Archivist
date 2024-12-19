@@ -141,7 +141,14 @@ namespace Archivist.Services
 
                 foreach (var dst in destList)
                 {
-                    LogToConsole(new LogEntry(dst.Path));
+                    if (dst.BaseDirectory?.DirectoryPath == dst.Path)
+                    {
+                        LogToConsole(new LogEntry($"{dst.Path}"));
+                    }
+                    else
+                    {
+                        LogToConsole(new LogEntry($"{dst.Path} {dst.BaseDirectory?.DirectoryPath}"));
+                    }
                 }
             }
 
