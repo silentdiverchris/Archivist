@@ -197,7 +197,23 @@ namespace Archivist.Services
                                     File.Delete(tempDestFileName);
                                 }
 
-                                ZipFile.CreateFromDirectory(sourceDirectory.DirectoryPath!, tempDestFileName, (CompressionLevel)sourceDirectory.CompressionLevel, true);
+                                using (FileStream zipToOpen = new FileStream(tempDestFileName, FileMode.Create))
+                                using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Create))
+                                {
+                                    foreach (var file in Directory.GetFiles(sourceDirectory.DirectoryPath!))
+                                    {
+                                        var entryName = Path.GetFileName(file);
+                                        var entry = archive.CreateEntry(entryName);
+                                        entry.LastWriteTime = File.GetLastWriteTime(file);
+                                        using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                                        using (var stream = entry.Open())
+                                        {
+                                            fs.CopyTo(stream);
+                                        }
+                                    }
+                                }
+
+                                //ZipFile.CreateFromDirectory(sourceDirectory.DirectoryPath!, tempDestFileName, (CompressionLevel)sourceDirectory.CompressionLevel, true);
 
                                 if (File.Exists(tempDestFileName))
                                 {
